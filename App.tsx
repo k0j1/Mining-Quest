@@ -20,7 +20,9 @@ const App: React.FC = () => {
   const [gachaTab, setGachaTab] = useState<'Hero' | 'Equipment'>('Hero');
   const [gachaResult, setGachaResult] = useState<{ type: 'Hero' | 'Equipment'; data: any } | null>(null);
   const [isGachaRolling, setIsGachaRolling] = useState(false);
-  const [draggingIndex, setDraggingIndex] = useState<number | null>(null);
+  
+  // New selection state for swapping heroes
+  const [selectedHeroIndex, setSelectedHeroIndex] = useState<number | null>(null);
   
   // Equipment selection state
   const [equippingState, setEquippingState] = useState<{ heroId: string, slotIndex: number } | null>(null);
@@ -117,19 +119,20 @@ const App: React.FC = () => {
     }
   };
 
-  const onDragStart = (e: React.DragEvent, index: number) => {
-    setDraggingIndex(index);
-    e.dataTransfer.effectAllowed = 'move';
-  };
-
-  const onDrop = (e: React.DragEvent, dropIndex: number) => {
-    if (draggingIndex === null || draggingIndex === dropIndex) return;
-    const newHeroes = [...gameState.heroes];
-    const draggedHero = newHeroes[draggingIndex];
-    newHeroes.splice(draggingIndex, 1);
-    newHeroes.splice(dropIndex, 0, draggedHero);
-    setGameState(prev => ({ ...prev, heroes: newHeroes }));
-    setDraggingIndex(null);
+  const handleHeroClick = (index: number) => {
+    if (selectedHeroIndex === null) {
+      setSelectedHeroIndex(index);
+    } else if (selectedHeroIndex === index) {
+      setSelectedHeroIndex(null);
+    } else {
+      // Perform Swap
+      const newHeroes = [...gameState.heroes];
+      const temp = newHeroes[selectedHeroIndex];
+      newHeroes[selectedHeroIndex] = newHeroes[index];
+      newHeroes[index] = temp;
+      setGameState(prev => ({ ...prev, heroes: newHeroes }));
+      setSelectedHeroIndex(null);
+    }
   };
 
   const handleEquipClick = (heroId: string, slotIndex: number) => {
@@ -162,29 +165,36 @@ const App: React.FC = () => {
     switch (currentView) {
       case View.PARTY:
         return (
-          <div className="p-6 h-full overflow-y-auto pb-20">
-            <h1 className="text-2xl font-orbitron font-bold text-indigo-300 mb-2">パーティ編成</h1>
-            <p className="text-xs text-slate-500 mb-8">スロットの3名がメイン出撃部隊です</p>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="p-4 h-full overflow-y-auto pb-24">
+            <h1 className="text-xl font-orbitron font-bold text-indigo-300 mb-1">パーティ編成</h1>
+            <p className="text-[10px] text-slate-500 mb-6">タップして入れ替え対象を選択してください</p>
+            
+            <div className="grid grid-cols-3 gap-2 sm:gap-6 mb-8">
               {gameState.heroes.slice(0, 3).map((hero, idx) => (
-                <div key={hero.id} className="relative group">
-                  <div className="absolute -top-3 left-6 bg-indigo-600 text-[10px] font-black px-3 py-1 rounded-full z-20 shadow-xl border border-indigo-400">
-                    MAIN SLOT {idx + 1}
+                <div key={hero.id} className="relative">
+                  <div className="absolute -top-2 left-0 right-0 flex justify-center z-20">
+                    <span className="bg-indigo-600 text-[7px] font-black px-1.5 py-0.5 rounded-full shadow-lg border border-indigo-400 whitespace-nowrap">
+                      SLOT {idx + 1}
+                    </span>
                   </div>
                   <HeroCard 
                     hero={hero} 
                     index={idx}
-                    isDragging={draggingIndex === idx}
-                    onDragStart={onDragStart}
-                    onDrop={onDrop}
+                    isSelected={selectedHeroIndex === idx}
+                    onClick={() => handleHeroClick(idx)}
                     onEquipClick={handleEquipClick}
+                    isMainSlot
                   />
                 </div>
               ))}
             </div>
-            <div className="mt-12">
-              <h2 className="text-sm font-bold text-slate-500 mb-4 uppercase tracking-widest">リザーブ・メンバー</h2>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+
+            <div className="mt-8">
+              <h2 className="text-[10px] font-bold text-slate-500 mb-3 uppercase tracking-widest flex items-center">
+                <span className="w-1 h-3 bg-slate-700 mr-2 rounded-full"></span>
+                リザーブ・メンバー
+              </h2>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                  {gameState.heroes.slice(3).map((hero, idx) => {
                    const actualIndex = idx + 3;
                    return (
@@ -193,9 +203,8 @@ const App: React.FC = () => {
                       hero={hero} 
                       index={actualIndex}
                       compact 
-                      isDragging={draggingIndex === actualIndex}
-                      onDragStart={onDragStart}
-                      onDrop={onDrop}
+                      isSelected={selectedHeroIndex === actualIndex}
+                      onClick={() => handleHeroClick(actualIndex)}
                     />
                   );
                  })}
@@ -206,7 +215,7 @@ const App: React.FC = () => {
 
       case View.GACHA:
         return (
-          <div className="p-6 h-full overflow-y-auto pb-20 flex flex-col items-center">
+          <div className="p-6 h-full overflow-y-auto pb-24 flex flex-col items-center">
             <h1 className="text-2xl font-orbitron font-bold text-indigo-300 mb-6">採掘ガチャ</h1>
             <div className="flex bg-slate-900 p-1.5 rounded-2xl w-full max-w-md mb-8 border border-slate-800">
               <button 
@@ -270,19 +279,17 @@ const App: React.FC = () => {
   ];
 
   return (
-    <div className="flex flex-col h-full max-w-4xl mx-auto overflow-hidden relative shadow-2xl bg-slate-950 border-x border-slate-800">
-      {/* Main Content - Takes up all available space except Nav */}
-      <main className="flex-1 overflow-hidden relative">
+    <div className="fixed inset-0 flex flex-col max-w-4xl mx-auto overflow-hidden bg-slate-950 border-x border-slate-800">
+      {/* Main Area: Scrollable */}
+      <main className="flex-1 relative overflow-hidden">
         <MiningBackground />
         <div className="relative z-10 h-full">
           {renderContent()}
         </div>
       </main>
 
-      {/* Gacha Animation Overlay */}
+      {/* Overlays */}
       {gachaResult && <GachaEffect result={gachaResult} onClose={() => setGachaResult(null)} />}
-
-      {/* Equipment Selector Overlay */}
       {equippingState && (
         <EquipmentSelector 
           hero={gameState.heroes.find(h => h.id === equippingState.heroId)!}
@@ -294,24 +301,24 @@ const App: React.FC = () => {
         />
       )}
 
-      {/* Top Decoration */}
-      <div className="fixed top-0 left-0 w-full h-0.5 bg-gradient-to-r from-indigo-500 via-purple-500 to-indigo-500 z-[100]"></div>
-
-      {/* Bottom Nav - Strictly pinned to the bottom of the viewport area */}
-      <nav className="flex-none h-20 bg-slate-950/95 backdrop-blur-xl border-t border-slate-800 flex items-center justify-around px-2 z-[60] pb-[env(safe-area-inset-bottom)]">
+      {/* Sticky Bottom Nav */}
+      <nav className="flex-none bg-slate-950/98 backdrop-blur-2xl border-t border-slate-800 flex items-center justify-around px-2 z-[60] pb-[env(safe-area-inset-bottom)] h-[calc(5rem+env(safe-area-inset-bottom))]">
         {navItems.map(({ view, label, icon: Icon }) => (
           <button
             key={view}
             onClick={() => setCurrentView(view)}
-            className={`flex flex-col items-center justify-center transition-all duration-300 w-14 ${
+            className={`flex flex-col items-center justify-center transition-all duration-300 w-14 pb-1 ${
               currentView === view ? 'text-indigo-400 scale-110' : 'text-slate-500'
             }`}
           >
             <Icon className={`w-6 h-6 ${currentView === view ? 'drop-shadow-[0_0_10px_rgba(129,140,248,0.8)]' : ''}`} />
-            <span className="text-[10px] mt-1 font-bold">{label}</span>
+            <span className="text-[10px] mt-1.5 font-bold tracking-tight">{label}</span>
           </button>
         ))}
       </nav>
+
+      {/* Decorative top bar */}
+      <div className="fixed top-0 left-0 w-full h-0.5 bg-gradient-to-r from-indigo-500 via-purple-500 to-indigo-500 z-[100]"></div>
     </div>
   );
 };

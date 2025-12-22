@@ -8,20 +8,18 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Noto+Sans+JP:wght@400;700&display=swap" rel="stylesheet">
     <style>
-        :root {
-            --app-height: 100dvh;
-        }
         html, body {
-            height: var(--app-height);
+            height: 100%;
+            width: 100%;
             margin: 0;
             padding: 0;
             overflow: hidden;
+            position: fixed; /* 防止 mobile safari 的橡皮筋効果 */
             background-color: #020617;
         }
         #root {
-            height: var(--app-height);
-            display: flex;
-            flex-direction: column;
+            height: 100%;
+            width: 100%;
         }
         body {
             font-family: 'Noto Sans JP', sans-serif;

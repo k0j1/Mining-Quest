@@ -6,22 +6,20 @@ interface HeroCardProps {
   hero: Hero;
   index: number;
   compact?: boolean;
-  onDragStart?: (e: React.DragEvent, index: number) => void;
-  onDragOver?: (e: React.DragEvent) => void;
-  onDrop?: (e: React.DragEvent, index: number) => void;
-  isDragging?: boolean;
+  isSelected?: boolean;
+  onClick?: () => void;
   onEquipClick?: (heroId: string, slotIndex: number) => void;
+  isMainSlot?: boolean;
 }
 
 const HeroCard: React.FC<HeroCardProps> = ({ 
   hero, 
   index, 
   compact, 
-  onDragStart, 
-  onDragOver, 
-  onDrop,
-  isDragging,
-  onEquipClick
+  isSelected,
+  onClick,
+  onEquipClick,
+  isMainSlot
 }) => {
   const rarityColors = {
     Common: 'bg-slate-500',
@@ -30,50 +28,41 @@ const HeroCard: React.FC<HeroCardProps> = ({
     Legendary: 'bg-amber-500'
   };
 
+  const rarityBorders = {
+    Common: 'border-slate-500/50',
+    Rare: 'border-blue-500/50',
+    Epic: 'border-purple-500/50',
+    Legendary: 'border-amber-500/50'
+  };
+
   const slots = [0, 1, 2];
-
-  // Drag handlers
-  const handleDragStart = (e: React.DragEvent) => {
-    if (onDragStart) onDragStart(e, index);
-  };
-
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault();
-    if (onDragOver) onDragOver(e);
-  };
-
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    if (onDrop) onDrop(e, index);
-  };
 
   if (compact) {
     return (
       <div 
-        draggable
-        onDragStart={handleDragStart}
-        onDragOver={handleDragOver}
-        onDrop={handleDrop}
-        className={`flex items-center space-x-2 p-2 glass-panel rounded-lg cursor-grab active:cursor-grabbing transition-all ${isDragging ? 'opacity-30 scale-95' : 'opacity-100'} hover:border-indigo-500/50 relative overflow-visible`}
+        onClick={onClick}
+        className={`flex items-center space-x-2 p-2 glass-panel rounded-lg transition-all cursor-pointer ${
+          isSelected 
+            ? 'border-indigo-400 bg-indigo-500/20 ring-2 ring-indigo-500 shadow-[0_0_15px_rgba(99,102,241,0.5)]' 
+            : 'border-slate-800'
+        } active:scale-95`}
       >
         <div className="relative flex-shrink-0">
-          <img src={hero.imageUrl} className="w-10 h-10 rounded-lg border border-indigo-400 object-cover" alt={hero.name} />
-          <div className={`absolute -top-1 -left-1 w-3 h-3 rounded-full border border-white shadow-sm ${rarityColors[hero.rarity]}`}></div>
+          <img src={hero.imageUrl} className="w-10 h-10 rounded-lg border border-indigo-400/30 object-cover" alt={hero.name} />
+          <div className={`absolute -top-1 -left-1 w-2.5 h-2.5 rounded-full border border-white shadow-sm ${rarityColors[hero.rarity]}`}></div>
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex justify-between items-center mb-0.5">
-            <p className="font-bold text-[10px] truncate">{hero.name}</p>
+            <p className="font-bold text-[9px] truncate text-slate-200">{hero.name}</p>
             <div className="flex space-x-0.5">
                {slots.map(i => (
-                 <div key={i} className={`w-2 h-2 rounded-full ${hero.equipmentIds[i] ? 'bg-indigo-400' : 'bg-slate-700'}`}></div>
+                 <div key={i} className={`w-1.5 h-1.5 rounded-full ${hero.equipmentIds[i] ? 'bg-indigo-400' : 'bg-slate-700'}`}></div>
                ))}
             </div>
           </div>
           <div className="flex items-center space-x-2">
-            <span className="text-[12px] font-mono font-bold text-white flex-shrink-0">
-              HP: {hero.hp}
-            </span>
-            <div className="flex-1 bg-slate-700 h-1 rounded-full overflow-hidden">
+            <span className="text-[10px] font-mono font-bold text-slate-300">HP:{hero.hp}</span>
+            <div className="flex-1 bg-slate-800 h-1 rounded-full overflow-hidden">
               <div 
                 className="bg-green-500 h-full" 
                 style={{ width: `${(hero.hp / hero.maxHp) * 100}%` }}
@@ -87,37 +76,45 @@ const HeroCard: React.FC<HeroCardProps> = ({
 
   return (
     <div 
-      draggable
-      onDragStart={handleDragStart}
-      onDragOver={handleDragOver}
-      onDrop={handleDrop}
-      className={`relative group transition-all duration-300 ${isDragging ? 'opacity-30 scale-95' : 'opacity-100'} cursor-grab active:cursor-grabbing overflow-visible pb-4`}
+      onClick={onClick}
+      className={`relative group transition-all duration-300 cursor-pointer ${
+        isSelected ? 'scale-105 z-30' : 'scale-100 z-10'
+      } active:scale-95`}
     >
-      {/* Square Main Card Container */}
-      <div className={`relative w-full aspect-square rounded-2xl overflow-hidden border-2 border-slate-700 glass-panel shadow-2xl group-hover:border-indigo-400/80 transition-colors`}>
-        <img src={hero.imageUrl} className="absolute inset-0 w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-700" alt={hero.name} />
-        <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-transparent opacity-90"></div>
+      {/* Selection Glow */}
+      {isSelected && (
+        <div className="absolute -inset-1.5 bg-indigo-500/50 blur-xl animate-pulse rounded-3xl" />
+      )}
 
-        <div className="absolute top-2 left-2 flex flex-col gap-1 items-start">
-          <span className={`text-[8px] font-black px-1.5 py-0.5 rounded shadow-lg text-white uppercase tracking-wider ${rarityColors[hero.rarity]}`}>
-            {hero.rarity}
+      {/* Square Main Card Container */}
+      <div className={`relative w-full aspect-square rounded-xl sm:rounded-2xl overflow-hidden border-2 transition-all duration-500 ${
+        isSelected 
+          ? 'border-indigo-400 shadow-[0_0_20px_rgba(129,140,248,0.8)]' 
+          : `${rarityBorders[hero.rarity]} glass-panel`
+      }`}>
+        <img src={hero.imageUrl} className={`absolute inset-0 w-full h-full object-cover transition-transform duration-700 ${isSelected ? 'scale-110' : 'scale-100'}`} alt={hero.name} />
+        <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/20 to-transparent opacity-90"></div>
+
+        <div className="absolute top-1 left-1 flex flex-col gap-0.5 items-start z-20">
+          <span className={`text-[6px] font-black px-1 py-0.5 rounded shadow-lg text-white uppercase tracking-tighter ${rarityColors[hero.rarity]}`}>
+            {hero.rarity.substring(0, 1)}
           </span>
-          <span className="bg-slate-900/80 backdrop-blur-md px-2 py-0.5 rounded text-[8px] font-bold font-orbitron text-indigo-300 border border-indigo-500/30">
-            LV.{hero.level}
+          <span className="bg-slate-900/80 backdrop-blur-md px-1 py-0.5 rounded text-[6px] font-bold font-orbitron text-indigo-300 border border-indigo-500/30">
+            L.{hero.level}
           </span>
         </div>
 
-        <div className="absolute bottom-4 left-2.5 right-2.5">
-          <h3 className="text-[10px] sm:text-xs font-orbitron font-bold text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] truncate mb-0.5">
+        <div className="absolute bottom-1.5 left-1.5 right-1.5 z-20">
+          <h3 className="text-[7px] sm:text-[9px] font-orbitron font-bold text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)] truncate mb-0.5">
             {hero.name}
           </h3>
-          <div className="flex justify-between items-center">
-            <span className="text-[12px] sm:text-sm font-mono font-black text-white drop-shadow-md">
-              HP: {hero.hp} / 100
+          <div className="flex justify-between items-center space-x-1">
+            <span className="text-[6px] sm:text-[8px] font-mono font-black text-white/80 shrink-0">
+              {hero.hp}
             </span>
-            <div className="w-1/3 bg-slate-900/60 h-1 rounded-full overflow-hidden backdrop-blur-sm border border-white/5">
+            <div className="flex-1 bg-slate-900/60 h-0.5 sm:h-1 rounded-full overflow-hidden border border-white/5">
               <div 
-                className="bg-gradient-to-r from-red-500 via-yellow-500 to-green-500 h-full shadow-[0_0_8px_rgba(34,197,94,0.4)]"
+                className="bg-gradient-to-r from-red-500 to-green-500 h-full"
                 style={{ width: `${(hero.hp / hero.maxHp) * 100}%` }}
               />
             </div>
@@ -125,8 +122,8 @@ const HeroCard: React.FC<HeroCardProps> = ({
         </div>
       </div>
 
-      {/* Protruding Equipment Slots Design - Now interactive */}
-      <div className="absolute -bottom-1.5 right-1.5 flex gap-1 z-10">
+      {/* Equipment Slots - Scaled down for 3-col */}
+      <div className="absolute -bottom-1 -right-1 flex gap-0.5 z-40">
         {slots.map(i => (
           <button 
             key={i} 
@@ -134,17 +131,13 @@ const HeroCard: React.FC<HeroCardProps> = ({
               e.stopPropagation();
               if (onEquipClick) onEquipClick(hero.id, i);
             }}
-            className={`w-7 h-7 sm:w-9 sm:h-9 rounded-xl border-2 flex items-center justify-center shadow-2xl transition-all duration-300 transform group-hover:-translate-y-1.5 hover:scale-110 active:scale-95 ${
+            className={`w-5 h-5 sm:w-7 sm:h-7 rounded-md sm:rounded-lg border flex items-center justify-center shadow-lg transition-all duration-300 ${
               hero.equipmentIds[i] 
-                ? 'bg-indigo-600 border-indigo-300 shadow-indigo-500/50 text-white' 
-                : 'bg-slate-800/90 border-slate-700 border-dashed text-slate-500 backdrop-blur-sm hover:border-indigo-500/50 hover:text-indigo-400'
-            }`}
+                ? 'bg-indigo-600 border-indigo-300 text-[8px] sm:text-xs' 
+                : 'bg-slate-900/90 border-slate-700/50 border-dashed text-[8px] sm:text-xs text-slate-500 backdrop-blur-sm'
+            } active:scale-90`}
           >
-            {hero.equipmentIds[i] ? (
-              <span className="text-xs sm:text-base">⚒️</span>
-            ) : (
-              <span className="text-[10px] font-bold">+</span>
-            )}
+            {hero.equipmentIds[i] ? '⚒️' : '+'}
           </button>
         ))}
       </div>
