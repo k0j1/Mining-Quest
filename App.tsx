@@ -4,7 +4,7 @@ import { View, Hero, Equipment, Quest, GameState } from './types';
 import { INITIAL_HEROES, INITIAL_EQUIPMENT, ICONS } from './constants';
 import StatusBoard from './components/StatusBoard';
 import HeroCard from './components/HeroCard';
-import { getMiningInsight, generateGachaItem } from './services/geminiService';
+import { generateGachaItem } from './services/geminiService';
 
 const App: React.FC = () => {
   const [currentView, setCurrentView] = useState<View>(View.HOME);
@@ -14,17 +14,8 @@ const App: React.FC = () => {
     equipment: INITIAL_EQUIPMENT,
     activeQuests: []
   });
-  const [insight, setInsight] = useState<string>("採掘の極意を読み込み中...");
   const [gachaTab, setGachaTab] = useState<'Hero' | 'Equipment'>('Hero');
   const [draggingIndex, setDraggingIndex] = useState<number | null>(null);
-
-  useEffect(() => {
-    const fetchInsight = async () => {
-      const msg = await getMiningInsight();
-      setInsight(msg);
-    };
-    fetchInsight();
-  }, [currentView]);
 
   const handleDepart = () => {
     const newQuest: Quest = {
@@ -65,7 +56,7 @@ const App: React.FC = () => {
     setGameState(prev => ({
       ...prev,
       tokens: prev.tokens - cost,
-      heroes: prev.heroes.map(h => ({ ...h, hp: h.maxHp }))
+      heroes: prev.heroes.map(h => ({ ...h, hp: 100 })) // Use fixed 100
     }));
     alert("全てのヒーローのHPが回復しました！");
   };
@@ -88,7 +79,7 @@ const App: React.FC = () => {
           rarity: result.rarity || 'Common',
           level: 1,
           hp: 100,
-          maxHp: 100,
+          maxHp: 100, // Fixed at 100
           imageUrl: `https://picsum.photos/seed/${Math.random()}/300/400`,
           equipmentIds: []
         };
@@ -190,7 +181,7 @@ const App: React.FC = () => {
         );
 
       case View.GACHA:
-        return (/* Same as before */
+        return (
           <div className="p-6 h-full overflow-y-auto pb-32 flex flex-col items-center">
             <h1 className="text-2xl font-orbitron font-bold text-indigo-300 mb-6">幸運のガチャ</h1>
             
@@ -237,12 +228,6 @@ const App: React.FC = () => {
         return (
           <div className="h-full flex flex-col">
             <StatusBoard state={gameState} title="マイ・キャンプ" />
-            <div className="fixed bottom-24 left-4 right-4 bg-indigo-900/80 border border-indigo-400/30 p-4 rounded-2xl">
-              <p className="text-xs font-bold text-indigo-300 uppercase mb-1 flex items-center">
-                <span className="mr-2">💡</span> チワワ賢者の助言
-              </p>
-              <p className="text-sm italic">"{insight}"</p>
-            </div>
           </div>
         );
     }

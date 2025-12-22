@@ -67,16 +67,16 @@ const HeroCard: React.FC<HeroCardProps> = ({
                ))}
             </div>
           </div>
-          <div className="flex justify-between items-center mb-0.5">
-            <div className="flex-1 bg-slate-700 h-1 rounded-full mr-2">
+          <div className="flex items-center space-x-2">
+            <span className="text-[12px] font-mono font-bold text-white flex-shrink-0">
+              HP: {hero.hp}
+            </span>
+            <div className="flex-1 bg-slate-700 h-1 rounded-full overflow-hidden">
               <div 
-                className="bg-green-500 h-1 rounded-full" 
+                className="bg-green-500 h-full" 
                 style={{ width: `${(hero.hp / hero.maxHp) * 100}%` }}
               />
             </div>
-            <span className="text-[9px] font-mono text-slate-300 flex-shrink-0">
-              {hero.hp}/{hero.maxHp}
-            </span>
           </div>
         </div>
       </div>
@@ -97,7 +97,7 @@ const HeroCard: React.FC<HeroCardProps> = ({
         <img src={hero.imageUrl} className="absolute inset-0 w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-700" alt={hero.name} />
         
         {/* Dark overlay for readability */}
-        <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/20 to-transparent"></div>
+        <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-transparent opacity-90"></div>
 
         {/* Level & Rarity Tags */}
         <div className="absolute top-2 left-2 flex flex-col gap-1 items-start">
@@ -111,19 +111,19 @@ const HeroCard: React.FC<HeroCardProps> = ({
 
         {/* Hero Name & HP Info */}
         <div className="absolute bottom-4 left-2.5 right-2.5">
-          <div className="flex justify-between items-end mb-1">
-            <h3 className="text-[10px] sm:text-xs font-orbitron font-bold text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] truncate">
-              {hero.name}
-            </h3>
-            <span className="text-[8px] font-mono text-slate-300 drop-shadow-md">
-              {hero.hp}/{hero.maxHp}
+          <h3 className="text-[10px] sm:text-xs font-orbitron font-bold text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] truncate mb-0.5">
+            {hero.name}
+          </h3>
+          <div className="flex justify-between items-center">
+            <span className="text-[12px] sm:text-sm font-mono font-black text-white drop-shadow-md">
+              HP: {hero.hp} / 100
             </span>
-          </div>
-          <div className="w-full bg-slate-900/60 h-1.5 rounded-full overflow-hidden backdrop-blur-sm border border-white/5">
-            <div 
-              className="bg-gradient-to-r from-red-500 via-yellow-500 to-green-500 h-full shadow-[0_0_8px_rgba(34,197,94,0.4)]"
-              style={{ width: `${(hero.hp / hero.maxHp) * 100}%` }}
-            />
+            <div className="w-1/3 bg-slate-900/60 h-1 rounded-full overflow-hidden backdrop-blur-sm border border-white/5">
+              <div 
+                className="bg-gradient-to-r from-red-500 via-yellow-500 to-green-500 h-full shadow-[0_0_8px_rgba(34,197,94,0.4)]"
+                style={{ width: `${(hero.hp / hero.maxHp) * 100}%` }}
+              />
+            </div>
           </div>
         </div>
       </div>
