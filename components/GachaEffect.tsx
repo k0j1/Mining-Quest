@@ -21,14 +21,17 @@ const GachaEffect: React.FC<GachaEffectProps> = ({ result, onClose }) => {
 
   if (!result) return null;
 
-  const rarity = result.data.rarity || 'Common';
-  const rarityColors = {
-    Common: '#94a3b8',
-    Rare: '#3b82f6',
-    Epic: '#a855f7',
-    Legendary: '#eab308'
+  const rarity = result.data.rarity || 'C';
+  
+  const rarityColors: Record<string, string> = {
+    C: '#94a3b8',
+    UC: '#4ade80', // Green
+    R: '#3b82f6',
+    E: '#a855f7',
+    L: '#eab308'
   };
-  const color = rarityColors[rarity as keyof typeof rarityColors];
+  
+  const color = rarityColors[rarity] || '#94a3b8';
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950 overflow-hidden">
@@ -109,15 +112,21 @@ const GachaEffect: React.FC<GachaEffectProps> = ({ result, onClose }) => {
               </>
             ) : (
               <div className="w-full h-full flex flex-col items-center justify-center p-8 space-y-6 bg-slate-900/40">
-                <div className="text-8xl drop-shadow-[0_0_20px_rgba(255,255,255,0.3)]">⚒️</div>
+                <div className="text-8xl drop-shadow-[0_0_20px_rgba(255,255,255,0.3)]">
+                  {result.data.type === 'Pickaxe' ? '⛏️' : result.data.type === 'Helmet' ? '🪖' : '👢'}
+                </div>
                 <div className="text-center">
                   <div className="inline-block px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest mb-4 border border-white/20" style={{ backgroundColor: `${color}cc`, color: '#fff' }}>
                     {result.data.rarity}
                   </div>
                   <h3 className="text-2xl font-orbitron font-bold text-white mb-2">{result.data.name}</h3>
                   <div className="flex items-center justify-center space-x-2 text-indigo-400">
-                    <span className="text-xs font-black uppercase">Bonus</span>
-                    <span className="text-lg font-orbitron font-bold">+{result.data.bonus}</span>
+                    <span className="text-xs font-black uppercase">
+                       {result.data.type === 'Pickaxe' ? 'Reward' : result.data.type === 'Helmet' ? 'Def' : 'Speed'}
+                    </span>
+                    <span className="text-lg font-orbitron font-bold">
+                      {result.data.type === 'Pickaxe' ? '+' : '-'}{result.data.bonus}%
+                    </span>
                   </div>
                 </div>
               </div>

@@ -2,112 +2,150 @@
 import React from 'react';
 import { Hero, Equipment, QuestRank } from './types';
 
+// Equipment Stats Configuration
+export const EQUIPMENT_STATS = {
+  Pickaxe: { C: 3, UC: 6, R: 10, E: 15, L: 25 }, // Reward Increase %
+  Helmet: { C: 5, UC: 10, R: 15, E: 20, L: 30 }, // Damage Reduction %
+  Boots: { C: 3, UC: 6, R: 10, E: 15, L: 25 }    // Duration Reduction %
+};
+
 export const INITIAL_HEROES: Hero[] = [
   {
     id: 'h1',
     name: 'チワワ軍曹',
-    rarity: 'Epic',
+    species: 'Dog',
+    rarity: 'E',
+    trait: '不屈の魂',
+    damageReduction: 10,
     level: 12,
-    hp: 80,
+    hp: 100,
     maxHp: 100,
     imageUrl: 'https://picsum.photos/seed/dog1/300/400',
-    equipmentIds: ['e1']
+    equipmentIds: ['e1', '', '']
   },
   {
     id: 'h2',
-    name: '採掘見習い',
-    rarity: 'Common',
+    name: '三毛猫ミケ',
+    species: 'Cat',
+    rarity: 'C',
+    trait: '身軽',
+    damageReduction: 5,
     level: 5,
-    hp: 30,
+    hp: 100,
     maxHp: 100,
-    imageUrl: 'https://picsum.photos/seed/dog2/300/400',
-    equipmentIds: []
+    imageUrl: 'https://picsum.photos/seed/cat1/300/400',
+    equipmentIds: ['', '', '']
   },
   {
     id: 'h3',
     name: 'ゴールデン・バグ',
-    rarity: 'Legendary',
+    species: 'Dog',
+    rarity: 'L',
+    trait: '鋼の肉体',
+    damageReduction: 20,
     level: 25,
     hp: 100,
     maxHp: 100,
     imageUrl: 'https://picsum.photos/seed/dog3/300/400',
-    equipmentIds: ['e2']
+    equipmentIds: ['', 'e2', '']
   },
   {
     id: 'h4',
-    name: 'チョコ・チッパー',
-    rarity: 'Rare',
+    name: 'キャプテン・パロット',
+    species: 'Bird',
+    rarity: 'R',
+    trait: '空の監視者',
+    damageReduction: 8,
     level: 8,
-    hp: 60,
+    hp: 100,
     maxHp: 100,
-    imageUrl: 'https://picsum.photos/seed/dog4/300/400',
-    equipmentIds: []
+    imageUrl: 'https://picsum.photos/seed/bird1/300/400',
+    equipmentIds: ['', '', '']
   },
   {
     id: 'h5',
-    name: 'ブラック・ダイヤ',
-    rarity: 'Epic',
+    name: 'ブラック・パンサー',
+    species: 'Cat',
+    rarity: 'E',
+    trait: '闇に潜む',
+    damageReduction: 15,
     level: 15,
-    hp: 90,
+    hp: 100,
     maxHp: 100,
-    imageUrl: 'https://picsum.photos/seed/dog5/300/400',
-    equipmentIds: []
+    imageUrl: 'https://picsum.photos/seed/cat2/300/400',
+    equipmentIds: ['', '', '']
   },
   {
     id: 'h6',
     name: 'スピード・ラッセル',
-    rarity: 'Common',
+    species: 'Dog',
+    rarity: 'C',
+    trait: '走り屋',
+    damageReduction: 3,
     level: 3,
-    hp: 40,
+    hp: 100,
     maxHp: 100,
     imageUrl: 'https://picsum.photos/seed/dog6/300/400',
-    equipmentIds: []
+    equipmentIds: ['', '', '']
   },
   {
     id: 'h7',
-    name: 'マウンテン・キング',
-    rarity: 'Legendary',
+    name: '賢者フクロウ',
+    species: 'Bird',
+    rarity: 'L',
+    trait: '未来予知',
+    damageReduction: 25,
     level: 30,
     hp: 100,
     maxHp: 100,
-    imageUrl: 'https://picsum.photos/seed/dog7/300/400',
-    equipmentIds: []
+    imageUrl: 'https://picsum.photos/seed/bird2/300/400',
+    equipmentIds: ['', '', '']
   },
   {
     id: 'h8',
-    name: '穴掘りマニア',
-    rarity: 'Rare',
+    name: '穴掘りウサギ',
+    species: 'Other',
+    rarity: 'R',
+    trait: '逃げ足',
+    damageReduction: 12,
     level: 10,
-    hp: 70,
+    hp: 100,
     maxHp: 100,
-    imageUrl: 'https://picsum.photos/seed/dog8/300/400',
-    equipmentIds: []
+    imageUrl: 'https://picsum.photos/seed/rabbit1/300/400',
+    equipmentIds: ['', '', '']
   },
   {
     id: 'h9',
-    name: 'チワワ巫女',
-    rarity: 'Epic',
+    name: '柴犬・小太郎',
+    species: 'Dog',
+    rarity: 'E',
+    trait: '忠義',
+    damageReduction: 12,
     level: 18,
     hp: 100,
     maxHp: 100,
     imageUrl: 'https://picsum.photos/seed/dog9/300/400',
-    equipmentIds: []
+    equipmentIds: ['', '', '']
   },
   {
     id: 'h10',
-    name: 'ルーキー・ボーン',
-    rarity: 'Common',
+    name: '見習いハムスター',
+    species: 'Other',
+    rarity: 'C',
+    trait: 'ちょこまか',
+    damageReduction: 2,
     level: 1,
-    hp: 30,
+    hp: 100,
     maxHp: 100,
-    imageUrl: 'https://picsum.photos/seed/dog10/300/400',
-    equipmentIds: []
+    imageUrl: 'https://picsum.photos/seed/hamster1/300/400',
+    equipmentIds: ['', '', '']
   }
 ];
 
 export const INITIAL_EQUIPMENT: Equipment[] = [
-  { id: 'e1', name: '錆びたツルハシ', type: 'Pickaxe', bonus: 5, rarity: 'Common' },
-  { id: 'e2', name: '幸運のヘルメット', type: 'Helmet', bonus: 15, rarity: 'Rare' }
+  { id: 'e1', name: '錆びたツルハシ', type: 'Pickaxe', bonus: 3, rarity: 'C' },
+  { id: 'e2', name: '幸運のヘルメット', type: 'Helmet', bonus: 15, rarity: 'R' },
+  { id: 'e3', name: '瞬足ブーツ', type: 'Boots', bonus: 6, rarity: 'UC' }
 ];
 
 interface QuestConfig {

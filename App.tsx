@@ -12,7 +12,7 @@ import { generateGachaItem } from './services/geminiService';
 const App: React.FC = () => {
   const [currentView, setCurrentView] = useState<View>(View.HOME);
   const [gameState, setGameState] = useState<GameState>({
-    tokens: 12500,
+    tokens: 25000, // Doubled from 12500
     heroes: INITIAL_HEROES,
     equipment: INITIAL_EQUIPMENT,
     activeQuests: []
@@ -27,6 +27,20 @@ const App: React.FC = () => {
   // Equipment selection state
   const [equippingState, setEquippingState] = useState<{ heroId: string, slotIndex: number } | null>(null);
 
+  const getEquipmentEffect = (hero: Hero, type: 'Pickaxe' | 'Helmet' | 'Boots'): number => {
+    // Slot Map: 0:Pickaxe, 1:Helmet, 2:Boots
+    let slotIndex = -1;
+    if (type === 'Pickaxe') slotIndex = 0;
+    if (type === 'Helmet') slotIndex = 1;
+    if (type === 'Boots') slotIndex = 2;
+
+    const equipId = hero.equipmentIds[slotIndex];
+    if (!equipId) return 0;
+    
+    const equip = gameState.equipment.find(e => e.id === equipId);
+    return equip ? equip.bonus : 0;
+  };
+
   const handleDepart = (rank: QuestRank) => {
     const config = QUEST_CONFIG[rank];
     const mainHeroes = gameState.heroes.slice(0, 3);
@@ -37,7 +51,7 @@ const App: React.FC = () => {
       return;
     }
 
-    // 2. Check General Health (Must be alive)
+    // 2. Check General Health
     if (mainHeroes.some(h => h.hp <= 0)) {
       alert("HPが0のヒーローが編成に含まれています。回復してください。");
       return;
@@ -51,14 +65,20 @@ const App: React.FC = () => {
       }
     }
 
-    // 4. Create Quest
+    // 4. Calculate Duration Reduction (Boots)
+    const totalBootsBonus = mainHeroes.reduce((acc, hero) => acc + getEquipmentEffect(hero, 'Boots'), 0);
+    const reductionMultiplier = Math.max(0.1, 1 - (totalBootsBonus / 100));
+    const actualDuration = Math.floor(config.duration * reductionMultiplier);
+
+    // 5. Create Quest
     const newQuest: Quest = {
       id: Math.random().toString(),
       name: config.name,
       rank: rank,
       duration: config.duration,
-      endTime: Date.now() + config.duration * 1000,
-      reward: Math.floor((config.minReward + config.maxReward) / 2), // Display expected reward
+      actualDuration: actualDuration,
+      endTime: Date.now() + actualDuration * 1000,
+      reward: Math.floor((config.minReward + config.maxReward) / 2),
       status: 'active'
     };
 
@@ -68,7 +88,10 @@ const App: React.FC = () => {
       activeQuests: [...prev.activeQuests, newQuest]
     }));
 
-    alert(`${config.name}へ出発しました！\n所要時間: ${Math.floor(config.duration / 60)}分`);
+    const durationMsg = reductionMultiplier < 1 
+      ? `(装備効果で ${(config.duration/60).toFixed(0)}分 → ${(actualDuration/60).toFixed(1)}分 に短縮！)` 
+      : ``;
+    alert(`${config.name}へ出発しました！\n所要時間: ${(actualDuration/60).toFixed(1)}分 ${durationMsg}`);
     setCurrentView(View.HOME);
   };
 
@@ -89,34 +112,60 @@ const App: React.FC = () => {
     const newHeroes = [...gameState.heroes];
     const mainPartyIndices = [0, 1, 2];
 
+    // Calculate Party Total Pickaxe Bonus
+    const partyPickaxeBonus = mainPartyIndices.reduce((acc, idx) => {
+       if (idx >= newHeroes.length) return acc;
+       return acc + getEquipmentEffect(newHeroes[idx], 'Pickaxe');
+    }, 0);
+
     completed.forEach(quest => {
       const config = QUEST_CONFIG[quest.rank];
       
-      // Calculate Reward
-      const reward = Math.floor(Math.random() * (config.maxReward - config.minReward + 1)) + config.minReward;
-      totalReward += reward;
+      // Calculate Base Reward
+      const baseReward = Math.floor(Math.random() * (config.maxReward - config.minReward + 1)) + config.minReward;
+      
+      // Apply Pickaxe Bonus
+      const bonusReward = Math.floor(baseReward * (partyPickaxeBonus / 100));
+      const finalReward = baseReward + bonusReward;
+      
+      totalReward += finalReward;
       
       report += `【${quest.name} (Rank ${quest.rank})】\n`;
-      report += `💰 報酬: ${reward} $CHH\n`;
+      report += `💰 報酬: ${finalReward} $CHH (基本:${baseReward} + 装備:${bonusReward})\n`;
 
       // Apply Damage / Death to Main Party
       mainPartyIndices.forEach(idx => {
         if (idx >= newHeroes.length) return;
+        const hero = newHeroes[idx];
         
         // Skip if already dead/removed in this loop
-        if (deadHeroes.includes(newHeroes[idx].id)) return;
+        if (deadHeroes.includes(hero.id)) return;
 
         // Death Check (Rank L only usually)
         if (config.deathChance > 0 && Math.random() < config.deathChance) {
-           deadHeroes.push(newHeroes[idx].id);
-           report += `💀 悲報: ${newHeroes[idx].name} は帰らぬ犬となりました...\n`;
+           deadHeroes.push(hero.id);
+           report += `💀 悲報: ${hero.name} は帰らぬ犬となりました...\n`;
         } else {
-           // Damage
-           const dmg = Math.floor(Math.random() * (config.maxDmg - config.minDmg + 1)) + config.minDmg;
-           const currentHp = newHeroes[idx].hp;
-           const newHp = Math.max(0, currentHp - dmg);
-           newHeroes[idx] = { ...newHeroes[idx], hp: newHp };
-           report += `💥 ${newHeroes[idx].name}: -${dmg} HP (残: ${newHp})\n`;
+           // Damage Calculation
+           const rawDmg = Math.floor(Math.random() * (config.maxDmg - config.minDmg + 1)) + config.minDmg;
+           
+           // Apply Trait + Helmet Damage Reduction
+           const helmetBonus = getEquipmentEffect(hero, 'Helmet');
+           const totalReduction = hero.damageReduction + helmetBonus;
+           
+           let finalDmg = rawDmg;
+           let reductionMsg = "";
+           
+           if (totalReduction > 0) {
+             const reduceAmount = Math.ceil(rawDmg * (totalReduction / 100));
+             finalDmg = Math.max(0, rawDmg - reduceAmount);
+             reductionMsg = `(軽減 -${reduceAmount}: 特性${hero.damageReduction}%+装備${helmetBonus}%)`;
+           }
+
+           const currentHp = hero.hp;
+           const newHp = Math.max(0, currentHp - finalDmg);
+           newHeroes[idx] = { ...hero, hp: newHp };
+           report += `💥 ${hero.name}: -${finalDmg} HP ${reductionMsg} (残: ${newHp})\n`;
         }
       });
       report += "\n";
@@ -135,24 +184,54 @@ const App: React.FC = () => {
     alert(report);
   };
 
-  const handleRecovery = () => {
-    const cost = 500;
-    if (gameState.tokens < cost) {
+  const handlePotion = (heroId: string) => {
+    const COST = 200;
+    const RECOVER_AMOUNT = 10;
+    
+    if (gameState.tokens < COST) {
       alert("トークンが足りません！");
       return;
     }
+
     setGameState(prev => ({
       ...prev,
-      tokens: prev.tokens - cost,
-      heroes: prev.heroes.map(h => ({ ...h, hp: h.maxHp }))
+      tokens: prev.tokens - COST,
+      heroes: prev.heroes.map(h => {
+        if (h.id === heroId) {
+          const newHp = Math.min(h.maxHp, h.hp + RECOVER_AMOUNT);
+          return { ...h, hp: newHp };
+        }
+        return h;
+      })
     }));
-    alert("全てのヒーローのHPが回復しました！");
+  };
+
+  const handleElixir = (heroId: string) => {
+    const COST = 1200;
+    
+    if (gameState.tokens < COST) {
+      alert("トークンが足りません！");
+      return;
+    }
+
+    setGameState(prev => ({
+      ...prev,
+      tokens: prev.tokens - COST,
+      heroes: prev.heroes.map(h => {
+        if (h.id === heroId) {
+          return { ...h, hp: h.maxHp };
+        }
+        return h;
+      })
+    }));
   };
 
   const handleGacha = async () => {
-    const cost = 1000;
+    // New Costs
+    const cost = gachaTab === 'Hero' ? 10000 : 6000;
+
     if (gameState.tokens < cost) {
-      alert("トークンが足りません！");
+      alert(`トークンが足りません！ (必要: ${cost.toLocaleString()} $CHH)`);
       return;
     }
 
@@ -167,22 +246,25 @@ const App: React.FC = () => {
           if (gachaTab === 'Hero') {
             const newHero: Hero = {
               id: Math.random().toString(),
-              name: result.name || "謎のチワワ",
-              rarity: result.rarity || 'Common',
+              name: result.name || "謎の動物",
+              species: result.species || "Other",
+              rarity: result.rarity || 'C', // Ensure it uses QuestRank
+              trait: result.trait || "なし",
+              damageReduction: result.damageReduction || 0,
               level: 1,
-              hp: 100,
-              maxHp: 100,
+              hp: 100, // Fixed 100
+              maxHp: 100, // Fixed 100
               imageUrl: `https://picsum.photos/seed/${Math.random()}/300/400`,
-              equipmentIds: []
+              equipmentIds: ['', '', ''] // Init 3 empty slots
             };
             nextState.heroes = [...prev.heroes, newHero];
           } else {
             const newEquip: Equipment = {
               id: Math.random().toString(),
-              name: result.name || "鉄のつるはし",
+              name: result.name || "謎の装備",
               type: result.type || 'Pickaxe',
-              bonus: Math.floor(Math.random() * 20) + 5,
-              rarity: result.rarity || 'Common'
+              bonus: result.bonus || 0,
+              rarity: result.rarity || 'C'
             };
             nextState.equipment = [...prev.equipment, newEquip];
           }
@@ -222,11 +304,11 @@ const App: React.FC = () => {
       heroes: prev.heroes.map(hero => {
         if (hero.id !== equippingState.heroId) return hero;
         const newEquipIds = [...hero.equipmentIds];
+        
+        // Directly set slot (0, 1, or 2) corresponds to type constraint in Selector
         if (equipmentId === null) {
-          // Remove item
           newEquipIds[equippingState.slotIndex] = '';
         } else {
-          // Add/Replace item
           newEquipIds[equippingState.slotIndex] = equipmentId;
         }
         return { ...hero, equipmentIds: newEquipIds };
@@ -289,46 +371,69 @@ const App: React.FC = () => {
         );
 
       case View.GACHA:
+        const heroCost = 10000;
+        const equipCost = 6000;
+        const currentCost = gachaTab === 'Hero' ? heroCost : equipCost;
+        const canAfford = gameState.tokens >= currentCost;
+
         return (
-          <div className="p-6 h-full overflow-y-auto pb-24 flex flex-col items-center">
-            <h1 className="text-2xl font-orbitron font-bold text-indigo-300 mb-6">採掘ガチャ</h1>
-            <div className="flex bg-slate-900 p-1.5 rounded-2xl w-full max-w-md mb-8 border border-slate-800">
-              <button 
-                className={`flex-1 py-3 rounded-xl font-bold transition-all ${gachaTab === 'Hero' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-500'}`}
-                onClick={() => setGachaTab('Hero')}
-              >
-                ヒーロー
-              </button>
-              <button 
-                className={`flex-1 py-3 rounded-xl font-bold transition-all ${gachaTab === 'Equipment' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-500'}`}
-                onClick={() => setGachaTab('Equipment')}
-              >
-                装備品
-              </button>
-            </div>
-            <div className="glass-panel p-10 rounded-[2.5rem] text-center space-y-8 max-w-md w-full border-t-8 border-t-yellow-500 shadow-2xl relative overflow-hidden">
-              {isGachaRolling && (
-                <div className="absolute inset-0 z-50 bg-slate-950/90 backdrop-blur-sm flex flex-col items-center justify-center p-6 space-y-4">
-                  <div className="w-16 h-16 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
-                  <p className="font-orbitron font-bold text-indigo-400 animate-pulse">CONNECTING...</p>
+          <div className="flex flex-col h-full bg-slate-950">
+             {/* Sticky Header */}
+             <div className="p-6 bg-slate-900/80 border-b border-slate-800 sticky top-0 z-20 backdrop-blur-md flex-none">
+                <div className="flex justify-between items-center">
+                  <h1 className="text-xl font-orbitron font-bold text-indigo-300">採掘ガチャ</h1>
+                  <div className="flex items-center space-x-2 bg-slate-800 px-4 py-1.5 rounded-full border border-yellow-500/50 shadow-[0_0_15px_rgba(234,179,8,0.2)]">
+                    <span className="text-yellow-400 text-sm font-black">$CHH:</span>
+                    <span className="font-orbitron text-lg font-bold">{gameState.tokens.toLocaleString()}</span>
+                  </div>
                 </div>
-              )}
-              <div className="relative inline-block">
-                <div className="text-7xl animate-bounce drop-shadow-[0_0_20px_rgba(234,179,8,0.5)]">🎁</div>
-                <div className="absolute inset-0 animate-ping bg-yellow-500/20 rounded-full"></div>
               </div>
-              <div>
-                <h2 className="text-2xl font-bold mb-2">{gachaTab === 'Hero' ? '新しいチワワを呼ぶ' : '地下の遺物を探す'}</h2>
-                <p className="text-slate-400 text-sm">コスト: <span className="text-yellow-400 font-black text-lg">1,000 $CHH</span></p>
-              </div>
-              <button 
-                onClick={handleGacha}
-                disabled={isGachaRolling}
-                className={`w-full py-5 bg-gradient-to-b from-yellow-400 to-yellow-600 text-slate-950 rounded-2xl font-black text-xl hover:brightness-110 active:scale-95 transition-all shadow-xl shadow-yellow-900/20 ${isGachaRolling ? 'opacity-50 cursor-not-allowed grayscale' : ''}`}
-              >
-                ガチャを回す
-              </button>
-            </div>
+
+             <div className="flex-1 overflow-y-auto p-6 pb-24 flex flex-col items-center">
+                <div className="flex bg-slate-900 p-1.5 rounded-2xl w-full max-w-md mb-8 border border-slate-800">
+                  <button 
+                    className={`flex-1 py-3 rounded-xl font-bold transition-all ${gachaTab === 'Hero' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-500'}`}
+                    onClick={() => setGachaTab('Hero')}
+                  >
+                    ヒーロー
+                  </button>
+                  <button 
+                    className={`flex-1 py-3 rounded-xl font-bold transition-all ${gachaTab === 'Equipment' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-500'}`}
+                    onClick={() => setGachaTab('Equipment')}
+                  >
+                    装備品
+                  </button>
+                </div>
+                <div className="glass-panel p-10 rounded-[2.5rem] text-center space-y-8 max-w-md w-full border-t-8 border-t-yellow-500 shadow-2xl relative overflow-hidden">
+                  {isGachaRolling && (
+                    <div className="absolute inset-0 z-50 bg-slate-950/90 backdrop-blur-sm flex flex-col items-center justify-center p-6 space-y-4">
+                      <div className="w-16 h-16 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
+                      <p className="font-orbitron font-bold text-indigo-400 animate-pulse">CONNECTING...</p>
+                    </div>
+                  )}
+                  <div className="relative inline-block">
+                    <div className="text-7xl animate-bounce drop-shadow-[0_0_20px_rgba(234,179,8,0.5)]">🎁</div>
+                    <div className="absolute inset-0 animate-ping bg-yellow-500/20 rounded-full"></div>
+                  </div>
+                  <div>
+                    <h2 className="text-2xl font-bold mb-2">{gachaTab === 'Hero' ? '新しい相棒を呼ぶ' : '地下の遺物を探す'}</h2>
+                    <p className="text-slate-400 text-sm">
+                      コスト: <span className={`font-black text-lg ${canAfford ? 'text-yellow-400' : 'text-red-400'}`}>{currentCost.toLocaleString()} $CHH</span>
+                    </p>
+                  </div>
+                  <button 
+                    onClick={handleGacha}
+                    disabled={isGachaRolling || !canAfford}
+                    className={`w-full py-5 bg-gradient-to-b from-yellow-400 to-yellow-600 text-slate-950 rounded-2xl font-black text-xl shadow-xl shadow-yellow-900/20 transition-all ${
+                      (isGachaRolling || !canAfford)
+                        ? 'opacity-50 cursor-not-allowed grayscale' 
+                        : 'hover:brightness-110 active:scale-95'
+                    }`}
+                  >
+                    {isGachaRolling ? '通信中...' : !canAfford ? 'トークン不足' : 'ガチャを回す'}
+                  </button>
+                </div>
+             </div>
           </div>
         );
 
@@ -415,8 +520,74 @@ const App: React.FC = () => {
 
       case View.RETURN:
         return <StatusBoard state={gameState} view={View.RETURN} title="帰還ポッド" actionButtonLabel="報酬を回収して帰還" onAction={handleReturn} />;
+      
       case View.RECOVERY:
-        return <StatusBoard state={gameState} view={View.RECOVERY} title="チワワ・エステ" actionButtonLabel="HP全回復 (500 $CHH)" onAction={handleRecovery} />;
+        return (
+          <div className="flex flex-col h-full bg-slate-950">
+             {/* Sticky Header */}
+             <div className="p-6 bg-slate-900/80 border-b border-slate-800 sticky top-0 z-20 backdrop-blur-md flex-none">
+                <div className="flex justify-between items-center">
+                  <h1 className="text-xl font-orbitron font-bold text-indigo-300">チワワ・エステ</h1>
+                  <div className="flex items-center space-x-2 bg-slate-800 px-4 py-1.5 rounded-full border border-yellow-500/50 shadow-[0_0_15px_rgba(234,179,8,0.2)]">
+                    <span className="text-yellow-400 text-sm font-black">$CHH:</span>
+                    <span className="font-orbitron text-lg font-bold">{gameState.tokens.toLocaleString()}</span>
+                  </div>
+                </div>
+              </div>
+
+             <div className="flex-1 overflow-y-auto p-4 space-y-3 pb-24">
+                <p className="text-xs text-slate-500 mb-2">ヒーローを選択して回復アイテムを使用します</p>
+                {gameState.heroes.map((hero) => {
+                  const hpPercent = (hero.hp / hero.maxHp) * 100;
+                  const isFull = hero.hp >= hero.maxHp;
+                  
+                  return (
+                    <div key={hero.id} className="glass-panel p-3 rounded-xl border border-slate-700 flex flex-col sm:flex-row gap-3 items-center">
+                       {/* Hero Info */}
+                       <div className="flex items-center gap-3 w-full sm:w-auto flex-1">
+                          <img src={hero.imageUrl} className="w-12 h-12 rounded-lg object-cover border border-slate-600" alt={hero.name} />
+                          <div className="flex-1 min-w-0">
+                             <div className="flex justify-between items-center">
+                                <h3 className="font-bold text-sm text-slate-200 truncate">{hero.name}</h3>
+                                <span className={`text-[10px] px-1.5 py-0.5 rounded font-black ${hero.hp < 30 ? 'bg-red-500/20 text-red-400' : 'bg-green-500/20 text-green-400'}`}>
+                                   HP {hero.hp}/{hero.maxHp}
+                                </span>
+                             </div>
+                             <div className="h-1.5 bg-slate-800 rounded-full mt-1 overflow-hidden">
+                                <div className={`h-full transition-all duration-500 ${hero.hp < 30 ? 'bg-red-500' : 'bg-green-500'}`} style={{ width: `${hpPercent}%` }}></div>
+                             </div>
+                          </div>
+                       </div>
+
+                       {/* Action Buttons */}
+                       <div className="flex gap-2 w-full sm:w-auto shrink-0">
+                          <button 
+                            onClick={() => handlePotion(hero.id)}
+                            disabled={isFull}
+                            className="flex-1 sm:flex-none flex flex-col items-center justify-center py-2 px-3 bg-slate-800 border border-slate-700 rounded-lg hover:bg-slate-700 active:scale-95 disabled:opacity-30 disabled:pointer-events-none transition-all"
+                          >
+                             <span className="text-lg">🩹</span>
+                             <span className="text-[9px] font-bold text-slate-400">傷薬 (+10)</span>
+                             <span className="text-[10px] font-orbitron text-yellow-500">200 $CHH</span>
+                          </button>
+                          
+                          <button 
+                             onClick={() => handleElixir(hero.id)}
+                             disabled={isFull}
+                             className="flex-1 sm:flex-none flex flex-col items-center justify-center py-2 px-3 bg-indigo-900/30 border border-indigo-500/30 rounded-lg hover:bg-indigo-900/50 active:scale-95 disabled:opacity-30 disabled:pointer-events-none transition-all shadow-[0_0_10px_rgba(99,102,241,0.1)]"
+                          >
+                             <span className="text-lg">🧪</span>
+                             <span className="text-[9px] font-bold text-indigo-300">特効薬 (MAX)</span>
+                             <span className="text-[10px] font-orbitron text-yellow-500">1,200 $CHH</span>
+                          </button>
+                       </div>
+                    </div>
+                  );
+                })}
+             </div>
+          </div>
+        );
+
       case View.HOME:
       default:
         return <StatusBoard state={gameState} view={View.HOME} title="ベースキャンプ" />;

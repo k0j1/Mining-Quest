@@ -87,7 +87,9 @@ const StatusBoard: React.FC<StatusBoardProps> = ({ state, actionButtonLabel, onA
               {state.equipment.length > 0 ? (
                 state.equipment.map(e => (
                   <div key={e.id} className="bg-slate-900/60 border border-slate-800 p-2 rounded-lg flex items-center space-x-2">
-                    <div className="text-lg">⚒️</div>
+                    <div className="text-lg">
+                      {e.type === 'Pickaxe' ? '⛏️' : e.type === 'Helmet' ? '🪖' : '👢'}
+                    </div>
                     <div className="min-w-0">
                       <p className="text-[10px] font-bold truncate text-indigo-300">{e.name}</p>
                       <p className="text-[9px] text-slate-500">Bonus: +{e.bonus}</p>

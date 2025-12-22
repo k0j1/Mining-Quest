@@ -10,30 +10,36 @@ export enum View {
 
 export type QuestRank = 'C' | 'UC' | 'R' | 'E' | 'L';
 
+export type Species = 'Dog' | 'Cat' | 'Bird' | 'Other';
+
 export interface Hero {
   id: string;
   name: string;
-  rarity: 'Common' | 'Rare' | 'Epic' | 'Legendary';
+  species: Species;
+  rarity: QuestRank;
+  trait: string; // e.g. "厚い毛皮"
+  damageReduction: number; // Percentage e.g. 5 for -5%
   level: number;
   hp: number;
-  maxHp: number;
+  maxHp: number; // Fixed at 100 usually
   imageUrl: string;
-  equipmentIds: string[];
+  equipmentIds: string[]; // [0]: Pickaxe, [1]: Helmet, [2]: Boots
 }
 
 export interface Equipment {
   id: string;
   name: string;
-  type: 'Pickaxe' | 'Helmet' | 'Vest';
+  type: 'Pickaxe' | 'Helmet' | 'Boots';
   bonus: number;
-  rarity: 'Common' | 'Rare' | 'Epic' | 'Legendary';
+  rarity: QuestRank; // C, UC, R, E, L
 }
 
 export interface Quest {
   id: string;
   name: string;
   rank: QuestRank;
-  duration: number; // in seconds
+  duration: number; // in seconds (original duration)
+  actualDuration: number; // in seconds (after boots reduction)
   endTime: number; // timestamp
   reward: number; // Estimated or minimum reward for display, actual calc on return
   status: 'active' | 'completed';

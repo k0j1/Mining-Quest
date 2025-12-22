@@ -21,21 +21,31 @@ const HeroCard: React.FC<HeroCardProps> = ({
   onEquipClick,
   isMainSlot
 }) => {
-  const rarityColors = {
-    Common: 'bg-slate-500',
-    Rare: 'bg-blue-600',
-    Epic: 'bg-purple-600',
-    Legendary: 'bg-amber-500'
+  const rarityColors: Record<string, string> = {
+    C: 'bg-slate-500',
+    UC: 'bg-emerald-500',
+    R: 'bg-blue-600',
+    E: 'bg-purple-600',
+    L: 'bg-amber-500'
   };
 
-  const rarityBorders = {
-    Common: 'border-slate-500/50',
-    Rare: 'border-blue-500/50',
-    Epic: 'border-purple-500/50',
-    Legendary: 'border-amber-500/50'
+  const rarityBorders: Record<string, string> = {
+    C: 'border-slate-500/50',
+    UC: 'border-emerald-500/50',
+    R: 'border-blue-500/50',
+    E: 'border-purple-500/50',
+    L: 'border-amber-500/50'
   };
 
-  const slots = [0, 1, 2];
+  const speciesIcon = {
+    Dog: '🐕',
+    Cat: '🐈',
+    Bird: '🦅',
+    Other: '🐾'
+  };
+
+  // Fixed slot types: 0=Pickaxe, 1=Helmet, 2=Boots
+  const slotIcons = ['⛏️', '🪖', '👢'];
 
   if (compact) {
     return (
@@ -49,13 +59,16 @@ const HeroCard: React.FC<HeroCardProps> = ({
       >
         <div className="relative flex-shrink-0">
           <img src={hero.imageUrl} className="w-10 h-10 rounded-lg border border-indigo-400/30 object-cover" alt={hero.name} />
-          <div className={`absolute -top-1 -left-1 w-2.5 h-2.5 rounded-full border border-white shadow-sm ${rarityColors[hero.rarity]}`}></div>
+          <div className={`absolute -top-1 -left-1 w-3 h-3 flex items-center justify-center rounded-full bg-slate-900 border border-white shadow-sm text-[8px]`}>
+            {speciesIcon[hero.species] || '🐾'}
+          </div>
+          <div className={`absolute -bottom-1 -right-1 w-2.5 h-2.5 rounded-full border border-white shadow-sm ${rarityColors[hero.rarity] || rarityColors.C}`}></div>
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex justify-between items-center mb-0.5">
             <p className="font-bold text-[9px] truncate text-slate-200">{hero.name}</p>
             <div className="flex space-x-0.5">
-               {slots.map(i => (
+               {[0, 1, 2].map(i => (
                  <div key={i} className={`w-1.5 h-1.5 rounded-full ${hero.equipmentIds[i] ? 'bg-indigo-400' : 'bg-slate-700'}`}></div>
                ))}
             </div>
@@ -69,6 +82,9 @@ const HeroCard: React.FC<HeroCardProps> = ({
               />
             </div>
           </div>
+          {hero.damageReduction > 0 && (
+             <p className="text-[8px] text-green-400 mt-0.5">🛡️{hero.trait} (-{hero.damageReduction}%)</p>
+          )}
         </div>
       </div>
     );
@@ -90,19 +106,28 @@ const HeroCard: React.FC<HeroCardProps> = ({
       <div className={`relative w-full aspect-square rounded-xl sm:rounded-2xl overflow-hidden border-2 transition-all duration-500 ${
         isSelected 
           ? 'border-indigo-400 shadow-[0_0_20px_rgba(129,140,248,0.8)]' 
-          : `${rarityBorders[hero.rarity]} glass-panel`
+          : `${rarityBorders[hero.rarity] || rarityBorders.C} glass-panel`
       }`}>
         <img src={hero.imageUrl} className={`absolute inset-0 w-full h-full object-cover transition-transform duration-700 ${isSelected ? 'scale-110' : 'scale-100'}`} alt={hero.name} />
         <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/20 to-transparent opacity-90"></div>
 
         <div className="absolute top-1 left-1 flex flex-col gap-0.5 items-start z-20">
-          <span className={`text-[6px] font-black px-1 py-0.5 rounded shadow-lg text-white uppercase tracking-tighter ${rarityColors[hero.rarity]}`}>
-            {hero.rarity.substring(0, 1)}
+          <span className={`text-[6px] font-black px-1 py-0.5 rounded shadow-lg text-white uppercase tracking-tighter ${rarityColors[hero.rarity] || rarityColors.C}`}>
+            {hero.rarity}
           </span>
-          <span className="bg-slate-900/80 backdrop-blur-md px-1 py-0.5 rounded text-[6px] font-bold font-orbitron text-indigo-300 border border-indigo-500/30">
-            L.{hero.level}
+          <span className="bg-slate-900/80 backdrop-blur-md px-1 py-0.5 rounded text-[8px] font-bold border border-white/20">
+            {speciesIcon[hero.species] || '🐾'}
           </span>
         </div>
+
+        {/* Trait Badge */}
+        {hero.damageReduction > 0 && (
+          <div className="absolute top-1 right-1 z-20">
+            <span className="bg-green-900/80 backdrop-blur-md px-1.5 py-0.5 rounded text-[6px] font-bold text-green-300 border border-green-500/30 flex items-center shadow-lg">
+              🛡️ -{hero.damageReduction}%
+            </span>
+          </div>
+        )}
 
         <div className="absolute bottom-1.5 left-1.5 right-1.5 z-20">
           <h3 className="text-[7px] sm:text-[9px] font-orbitron font-bold text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)] truncate mb-0.5">
@@ -124,7 +149,7 @@ const HeroCard: React.FC<HeroCardProps> = ({
 
       {/* Equipment Slots - Scaled down for 3-col */}
       <div className="absolute -bottom-1 -right-1 flex gap-0.5 z-40">
-        {slots.map(i => (
+        {[0, 1, 2].map(i => (
           <button 
             key={i} 
             onClick={(e) => {
@@ -137,7 +162,10 @@ const HeroCard: React.FC<HeroCardProps> = ({
                 : 'bg-slate-900/90 border-slate-700/50 border-dashed text-[8px] sm:text-xs text-slate-500 backdrop-blur-sm'
             } active:scale-90`}
           >
-            {hero.equipmentIds[i] ? '⚒️' : '+'}
+            {/* Show Equipment Type Icon always, opaque if empty, bright if equipped */}
+            <span className={hero.equipmentIds[i] ? 'opacity-100' : 'opacity-40 grayscale'}>
+               {slotIcons[i]}
+            </span>
           </button>
         ))}
       </div>

@@ -21,17 +21,25 @@ const EquipmentSelector: React.FC<EquipmentSelectorProps> = ({
 }) => {
   const currentEquippedId = hero.equipmentIds[slotIndex];
 
+  // Map slot index to required type
+  const requiredType = slotIndex === 0 ? 'Pickaxe' : slotIndex === 1 ? 'Helmet' : 'Boots';
+  const typeIcon = slotIndex === 0 ? '⛏️' : slotIndex === 1 ? '🪖' : '👢';
+
   // Check if an item is equipped by ANY hero
   const getEquippedBy = (id: string) => {
     return allHeroes.find(h => h.equipmentIds.includes(id));
   };
 
-  const rarityColors = {
-    Common: 'text-slate-400',
-    Rare: 'text-blue-400',
-    Epic: 'text-purple-400',
-    Legendary: 'text-amber-400'
+  const rarityColors: Record<string, string> = {
+    C: 'text-slate-400',
+    UC: 'text-green-400', // Changed to match theme: green/emerald
+    R: 'text-blue-400',
+    E: 'text-purple-400',
+    L: 'text-amber-400',
   };
+
+  // Filter equipment by type
+  const filteredList = equipmentList.filter(e => e.type === requiredType);
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
@@ -39,7 +47,9 @@ const EquipmentSelector: React.FC<EquipmentSelectorProps> = ({
         <div className="p-6 border-b border-slate-800 flex justify-between items-center bg-slate-900/50">
           <div>
             <h2 className="text-xl font-orbitron font-bold text-white">装備を選択</h2>
-            <p className="text-xs text-slate-400">{hero.name} - Slot {slotIndex + 1}</p>
+            <p className="text-xs text-slate-400 flex items-center gap-1">
+              {hero.name} - Slot {slotIndex + 1} <span className="text-lg">{typeIcon}</span> ({requiredType})
+            </p>
           </div>
           <button onClick={onClose} className="p-2 hover:bg-slate-800 rounded-full text-slate-400">
             ✕
@@ -56,13 +66,13 @@ const EquipmentSelector: React.FC<EquipmentSelectorProps> = ({
             <span>装備を外す</span>
           </button>
 
-          {equipmentList.length === 0 && (
+          {filteredList.length === 0 && (
             <div className="py-12 text-center text-slate-500 text-sm">
-              所持している装備がありません
+              {requiredType}を持っていません
             </div>
           )}
 
-          {equipmentList.map(item => {
+          {filteredList.map(item => {
             const equippedBy = getEquippedBy(item.id);
             const isEquippedByThisHeroSlot = currentEquippedId === item.id;
             const isEquippedElsewhere = equippedBy && !isEquippedByThisHeroSlot;
@@ -77,13 +87,17 @@ const EquipmentSelector: React.FC<EquipmentSelectorProps> = ({
                   ${isEquippedElsewhere ? 'opacity-50 grayscale' : ''}
                 `}
               >
-                <div className="text-2xl">⚒️</div>
+                <div className="text-2xl">{typeIcon}</div>
                 <div className="flex-1 min-w-0">
                   <div className="flex justify-between">
-                    <p className={`font-bold text-sm ${rarityColors[item.rarity]}`}>{item.name}</p>
+                    <p className={`font-bold text-sm ${rarityColors[item.rarity] || rarityColors.C}`}>{item.name}</p>
                     <span className="text-[10px] text-slate-500 uppercase font-black">{item.rarity}</span>
                   </div>
-                  <p className="text-[10px] text-slate-400">Bonus: +{item.bonus} ({item.type})</p>
+                  <p className="text-[10px] text-slate-400">
+                    {item.type === 'Pickaxe' ? `報酬 +${item.bonus}%` : 
+                     item.type === 'Helmet' ? `被ダメ -${item.bonus}%` : 
+                     `時間 -${item.bonus}%`}
+                  </p>
                 </div>
                 {isEquippedElsewhere && (
                   <div className="text-[8px] bg-slate-800 px-2 py-1 rounded text-slate-400 font-bold">
