@@ -13,11 +13,10 @@ export interface Hero {
   name: string;
   rarity: 'Common' | 'Rare' | 'Epic' | 'Legendary';
   level: number;
-  power: number;
-  luck: number;
-  stamina: number;
-  maxStamina: number;
+  hp: number;
+  maxHp: number;
   imageUrl: string;
+  equipmentIds: string[]; // Max 3 items
 }
 
 export interface Equipment {

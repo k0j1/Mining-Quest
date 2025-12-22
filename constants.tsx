@@ -8,33 +8,30 @@ export const INITIAL_HEROES: Hero[] = [
     name: 'チワワ軍曹',
     rarity: 'Epic',
     level: 12,
-    power: 45,
-    luck: 20,
-    stamina: 80,
-    maxStamina: 100,
-    imageUrl: 'https://picsum.photos/seed/dog1/300/400'
+    hp: 80,
+    maxHp: 100,
+    imageUrl: 'https://picsum.photos/seed/dog1/300/400',
+    equipmentIds: ['e1']
   },
   {
     id: 'h2',
     name: '採掘見習い',
     rarity: 'Common',
     level: 5,
-    power: 15,
-    luck: 50,
-    stamina: 30,
-    maxStamina: 50,
-    imageUrl: 'https://picsum.photos/seed/dog2/300/400'
+    hp: 30,
+    maxHp: 100,
+    imageUrl: 'https://picsum.photos/seed/dog2/300/400',
+    equipmentIds: []
   },
   {
     id: 'h3',
     name: 'ゴールデン・バグ',
     rarity: 'Legendary',
     level: 25,
-    power: 120,
-    luck: 85,
-    stamina: 150,
-    maxStamina: 200,
-    imageUrl: 'https://picsum.photos/seed/dog3/300/400'
+    hp: 100,
+    maxHp: 100,
+    imageUrl: 'https://picsum.photos/seed/dog3/300/400',
+    equipmentIds: ['e2']
   }
 ];
 

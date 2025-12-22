@@ -23,7 +23,6 @@ const App: React.FC = () => {
       setInsight(msg);
     };
     fetchInsight();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentView]);
 
   const handleDepart = () => {
@@ -65,9 +64,9 @@ const App: React.FC = () => {
     setGameState(prev => ({
       ...prev,
       tokens: prev.tokens - cost,
-      heroes: prev.heroes.map(h => ({ ...h, stamina: h.maxStamina }))
+      heroes: prev.heroes.map(h => ({ ...h, hp: h.maxHp }))
     }));
-    alert("全てのヒーローのスタミナが回復しました！");
+    alert("全てのヒーローのHPが回復しました！");
   };
 
   const handleGacha = async () => {
@@ -87,11 +86,10 @@ const App: React.FC = () => {
           name: result.name || "謎のチワワ",
           rarity: result.rarity || 'Common',
           level: 1,
-          power: Math.floor(Math.random() * 50) + 10,
-          luck: Math.floor(Math.random() * 50) + 10,
-          stamina: 100,
-          maxStamina: 100,
-          imageUrl: `https://picsum.photos/seed/${Math.random()}/300/400`
+          hp: 100,
+          maxHp: 100,
+          imageUrl: `https://picsum.photos/seed/${Math.random()}/300/400`,
+          equipmentIds: []
         };
         setGameState(prev => ({ ...prev, tokens: prev.tokens - cost, heroes: [...prev.heroes, newHero] }));
       } else {
@@ -119,6 +117,16 @@ const App: React.FC = () => {
                 <HeroCard key={hero.id} hero={hero} />
               ))}
             </div>
+            {gameState.heroes.length > 3 && (
+              <div className="mt-8">
+                <h2 className="text-sm font-bold text-slate-500 mb-4 uppercase tracking-widest">待機メンバー</h2>
+                <div className="grid grid-cols-1 gap-4">
+                   {gameState.heroes.slice(3).map(hero => (
+                    <HeroCard key={hero.id} hero={hero} compact />
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         );
 
@@ -143,7 +151,7 @@ const App: React.FC = () => {
             </div>
 
             <div className="glass-panel p-8 rounded-3xl text-center space-y-6 max-w-md w-full border-t-4 border-t-yellow-500 shadow-2xl">
-              <div className="text-5xl">🎁</div>
+              <div className="text-5xl animate-bounce">🎁</div>
               <h2 className="text-2xl font-bold">{gachaTab === 'Hero' ? '新しい仲間を迎えよう' : '伝説の道具を探そう'}</h2>
               <p className="text-slate-400">1回: <span className="text-yellow-400 font-bold">1,000 CHIWA</span></p>
               <button 
@@ -152,10 +160,6 @@ const App: React.FC = () => {
               >
                 ガチャを回す
               </button>
-            </div>
-            
-            <div className="mt-8 text-center bg-slate-900/50 p-4 rounded-xl max-w-md">
-              <p className="text-xs text-slate-500 italic">「今日は当たりそうな気がするワン！」</p>
             </div>
           </div>
         );
@@ -167,15 +171,17 @@ const App: React.FC = () => {
         return <StatusBoard state={gameState} title="拠点へ帰還" actionButtonLabel="報酬を受け取って帰還する" onAction={handleReturn} />;
       
       case View.RECOVERY:
-        return <StatusBoard state={gameState} title="癒やしの泉" actionButtonLabel="スタミナを全回復する (500 CHIWA)" onAction={handleRecovery} />;
+        return <StatusBoard state={gameState} title="癒やしの泉" actionButtonLabel="HPを全回復する (500 CHIWA)" onAction={handleRecovery} />;
       
       case View.HOME:
       default:
         return (
           <div className="h-full flex flex-col">
             <StatusBoard state={gameState} title="マイ・キャンプ" />
-            <div className="fixed bottom-24 left-4 right-4 bg-indigo-900/80 border border-indigo-400/30 p-4 rounded-2xl animate-pulse">
-              <p className="text-xs font-bold text-indigo-300 uppercase mb-1">チワワ賢者の助言</p>
+            <div className="fixed bottom-24 left-4 right-4 bg-indigo-900/80 border border-indigo-400/30 p-4 rounded-2xl">
+              <p className="text-xs font-bold text-indigo-300 uppercase mb-1 flex items-center">
+                <span className="mr-2">💡</span> チワワ賢者の助言
+              </p>
               <p className="text-sm italic">"{insight}"</p>
             </div>
           </div>
