@@ -162,7 +162,7 @@ const App: React.FC = () => {
     switch (currentView) {
       case View.PARTY:
         return (
-          <div className="p-6 h-full overflow-y-auto pb-10">
+          <div className="p-6 h-full overflow-y-auto pb-20">
             <h1 className="text-2xl font-orbitron font-bold text-indigo-300 mb-2">パーティ編成</h1>
             <p className="text-xs text-slate-500 mb-8">スロットの3名がメイン出撃部隊です</p>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -179,11 +179,6 @@ const App: React.FC = () => {
                     onDrop={onDrop}
                     onEquipClick={handleEquipClick}
                   />
-                </div>
-              ))}
-              {Array.from({ length: Math.max(0, 3 - gameState.heroes.length) }).map((_, idx) => (
-                <div key={`empty-${idx}`} className="aspect-square border-2 border-dashed border-slate-800 rounded-3xl flex items-center justify-center bg-slate-900/30">
-                  <span className="text-slate-700 font-bold">空きスロット</span>
                 </div>
               ))}
             </div>
@@ -211,7 +206,7 @@ const App: React.FC = () => {
 
       case View.GACHA:
         return (
-          <div className="p-6 h-full overflow-y-auto pb-10 flex flex-col items-center">
+          <div className="p-6 h-full overflow-y-auto pb-20 flex flex-col items-center">
             <h1 className="text-2xl font-orbitron font-bold text-indigo-300 mb-6">採掘ガチャ</h1>
             <div className="flex bg-slate-900 p-1.5 rounded-2xl w-full max-w-md mb-8 border border-slate-800">
               <button 
@@ -231,11 +226,9 @@ const App: React.FC = () => {
               {isGachaRolling && (
                 <div className="absolute inset-0 z-50 bg-slate-950/90 backdrop-blur-sm flex flex-col items-center justify-center p-6 space-y-4">
                   <div className="w-16 h-16 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
-                  <p className="font-orbitron font-bold text-indigo-400 animate-pulse">CONNECTING TO CHH NETWORK...</p>
-                  <p className="text-[10px] text-slate-500 text-center">Gemini AIが新しいチワワを召喚しています。少々お待ちくださいワン！</p>
+                  <p className="font-orbitron font-bold text-indigo-400 animate-pulse">CONNECTING...</p>
                 </div>
               )}
-              
               <div className="relative inline-block">
                 <div className="text-7xl animate-bounce drop-shadow-[0_0_20px_rgba(234,179,8,0.5)]">🎁</div>
                 <div className="absolute inset-0 animate-ping bg-yellow-500/20 rounded-full"></div>
@@ -249,7 +242,7 @@ const App: React.FC = () => {
                 disabled={isGachaRolling}
                 className={`w-full py-5 bg-gradient-to-b from-yellow-400 to-yellow-600 text-slate-950 rounded-2xl font-black text-xl hover:brightness-110 active:scale-95 transition-all shadow-xl shadow-yellow-900/20 ${isGachaRolling ? 'opacity-50 cursor-not-allowed grayscale' : ''}`}
               >
-                {isGachaRolling ? '召喚中...' : 'ガチャを回す'}
+                ガチャを回す
               </button>
             </div>
           </div>
@@ -276,10 +269,9 @@ const App: React.FC = () => {
     { view: View.RECOVERY, label: '回復', icon: ICONS.RECOVERY },
   ];
 
-  const currentEquippingHero = equippingState ? gameState.heroes.find(h => h.id === equippingState.heroId) : null;
-
   return (
-    <div className="flex flex-col h-screen max-w-4xl mx-auto overflow-hidden relative shadow-2xl bg-slate-950 border-x border-slate-800">
+    <div className="flex flex-col h-full max-w-4xl mx-auto overflow-hidden relative shadow-2xl bg-slate-950 border-x border-slate-800">
+      {/* Main Content - Takes up all available space except Nav */}
       <main className="flex-1 overflow-hidden relative">
         <MiningBackground />
         <div className="relative z-10 h-full">
@@ -291,9 +283,9 @@ const App: React.FC = () => {
       {gachaResult && <GachaEffect result={gachaResult} onClose={() => setGachaResult(null)} />}
 
       {/* Equipment Selector Overlay */}
-      {equippingState && currentEquippingHero && (
+      {equippingState && (
         <EquipmentSelector 
-          hero={currentEquippingHero}
+          hero={gameState.heroes.find(h => h.id === equippingState.heroId)!}
           slotIndex={equippingState.slotIndex}
           equipmentList={gameState.equipment}
           allHeroes={gameState.heroes}
@@ -302,11 +294,11 @@ const App: React.FC = () => {
         />
       )}
 
-      {/* Top Gradient Bar */}
+      {/* Top Decoration */}
       <div className="fixed top-0 left-0 w-full h-0.5 bg-gradient-to-r from-indigo-500 via-purple-500 to-indigo-500 z-[100]"></div>
 
-      {/* Non-fixed Bottom Nav - Prevents content overlap */}
-      <nav className="h-20 bg-slate-950/95 backdrop-blur-xl border-t border-slate-800 flex items-center justify-around px-2 z-[60] shrink-0">
+      {/* Bottom Nav - Strictly pinned to the bottom of the viewport area */}
+      <nav className="flex-none h-20 bg-slate-950/95 backdrop-blur-xl border-t border-slate-800 flex items-center justify-around px-2 z-[60] pb-[env(safe-area-inset-bottom)]">
         {navItems.map(({ view, label, icon: Icon }) => (
           <button
             key={view}
