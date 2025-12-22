@@ -139,7 +139,7 @@ const App: React.FC = () => {
             <div className="grid grid-cols-3 gap-2 sm:gap-4 mb-8">
               {gameState.heroes.slice(0, 3).map((hero, idx) => (
                 <div key={hero.id} className="relative">
-                  <div className="absolute -top-2 left-1/2 -translate-x-1/2 bg-indigo-600 text-[8px] font-bold px-2 py-0.5 rounded-full z-10 shadow-lg border border-indigo-400">
+                  <div className="absolute -top-2 left-1/2 -translate-x-1/2 bg-indigo-600 text-[8px] font-bold px-2 py-0.5 rounded-full z-20 shadow-lg border border-indigo-400">
                     SLOT {idx + 1}
                   </div>
                   <HeroCard 
@@ -153,8 +153,10 @@ const App: React.FC = () => {
               ))}
               {/* Fill empty slots if less than 3 heroes */}
               {Array.from({ length: Math.max(0, 3 - gameState.heroes.length) }).map((_, idx) => (
-                <div key={`empty-${idx}`} className="aspect-[2/3] border-2 border-dashed border-slate-700 rounded-xl flex items-center justify-center bg-slate-900/50">
-                   <span className="text-slate-600 text-[10px] font-bold">空きスロット</span>
+                <div key={`empty-${idx}`} className="pb-4">
+                  <div className="aspect-square border-2 border-dashed border-slate-700 rounded-xl flex items-center justify-center bg-slate-900/50">
+                    <span className="text-slate-600 text-[8px] font-bold">空き</span>
+                  </div>
                 </div>
               ))}
             </div>
@@ -188,7 +190,7 @@ const App: React.FC = () => {
         );
 
       case View.GACHA:
-        return (
+        return (/* Same as before */
           <div className="p-6 h-full overflow-y-auto pb-32 flex flex-col items-center">
             <h1 className="text-2xl font-orbitron font-bold text-indigo-300 mb-6">幸運のガチャ</h1>
             
