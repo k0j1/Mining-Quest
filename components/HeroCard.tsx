@@ -10,6 +10,7 @@ interface HeroCardProps {
   onDragOver?: (e: React.DragEvent) => void;
   onDrop?: (e: React.DragEvent, index: number) => void;
   isDragging?: boolean;
+  onEquipClick?: (heroId: string, slotIndex: number) => void;
 }
 
 const HeroCard: React.FC<HeroCardProps> = ({ 
@@ -19,7 +20,8 @@ const HeroCard: React.FC<HeroCardProps> = ({
   onDragStart, 
   onDragOver, 
   onDrop,
-  isDragging 
+  isDragging,
+  onEquipClick
 }) => {
   const rarityColors = {
     Common: 'bg-slate-500',
@@ -93,13 +95,9 @@ const HeroCard: React.FC<HeroCardProps> = ({
     >
       {/* Square Main Card Container */}
       <div className={`relative w-full aspect-square rounded-2xl overflow-hidden border-2 border-slate-700 glass-panel shadow-2xl group-hover:border-indigo-400/80 transition-colors`}>
-        {/* Full Image background */}
         <img src={hero.imageUrl} className="absolute inset-0 w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-700" alt={hero.name} />
-        
-        {/* Dark overlay for readability */}
         <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-transparent opacity-90"></div>
 
-        {/* Level & Rarity Tags */}
         <div className="absolute top-2 left-2 flex flex-col gap-1 items-start">
           <span className={`text-[8px] font-black px-1.5 py-0.5 rounded shadow-lg text-white uppercase tracking-wider ${rarityColors[hero.rarity]}`}>
             {hero.rarity}
@@ -109,7 +107,6 @@ const HeroCard: React.FC<HeroCardProps> = ({
           </span>
         </div>
 
-        {/* Hero Name & HP Info */}
         <div className="absolute bottom-4 left-2.5 right-2.5">
           <h3 className="text-[10px] sm:text-xs font-orbitron font-bold text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] truncate mb-0.5">
             {hero.name}
@@ -128,15 +125,19 @@ const HeroCard: React.FC<HeroCardProps> = ({
         </div>
       </div>
 
-      {/* Protruding Equipment Slots Design */}
+      {/* Protruding Equipment Slots Design - Now interactive */}
       <div className="absolute -bottom-1.5 right-1.5 flex gap-1 z-10">
         {slots.map(i => (
-          <div 
+          <button 
             key={i} 
-            className={`w-7 h-7 sm:w-9 sm:h-9 rounded-xl border-2 flex items-center justify-center shadow-2xl transition-all duration-300 transform group-hover:-translate-y-1.5 ${
+            onClick={(e) => {
+              e.stopPropagation();
+              if (onEquipClick) onEquipClick(hero.id, i);
+            }}
+            className={`w-7 h-7 sm:w-9 sm:h-9 rounded-xl border-2 flex items-center justify-center shadow-2xl transition-all duration-300 transform group-hover:-translate-y-1.5 hover:scale-110 active:scale-95 ${
               hero.equipmentIds[i] 
                 ? 'bg-indigo-600 border-indigo-300 shadow-indigo-500/50 text-white' 
-                : 'bg-slate-800/90 border-slate-700 border-dashed text-slate-500 backdrop-blur-sm'
+                : 'bg-slate-800/90 border-slate-700 border-dashed text-slate-500 backdrop-blur-sm hover:border-indigo-500/50 hover:text-indigo-400'
             }`}
           >
             {hero.equipmentIds[i] ? (
@@ -144,7 +145,7 @@ const HeroCard: React.FC<HeroCardProps> = ({
             ) : (
               <span className="text-[10px] font-bold">+</span>
             )}
-          </div>
+          </button>
         ))}
       </div>
     </div>

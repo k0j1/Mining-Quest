@@ -4,6 +4,9 @@ import { View, Hero, Equipment, Quest, GameState } from './types';
 import { INITIAL_HEROES, INITIAL_EQUIPMENT, ICONS } from './constants';
 import StatusBoard from './components/StatusBoard';
 import HeroCard from './components/HeroCard';
+import MiningBackground from './components/MiningBackground';
+import GachaEffect from './components/GachaEffect';
+import EquipmentSelector from './components/EquipmentSelector';
 import { generateGachaItem } from './services/geminiService';
 
 const App: React.FC = () => {
@@ -15,7 +18,12 @@ const App: React.FC = () => {
     activeQuests: []
   });
   const [gachaTab, setGachaTab] = useState<'Hero' | 'Equipment'>('Hero');
+  const [gachaResult, setGachaResult] = useState<{ type: 'Hero' | 'Equipment'; data: any } | null>(null);
+  const [isGachaRolling, setIsGachaRolling] = useState(false);
   const [draggingIndex, setDraggingIndex] = useState<number | null>(null);
+  
+  // Equipment selection state
+  const [equippingState, setEquippingState] = useState<{ heroId: string, slotIndex: number } | null>(null);
 
   const handleDepart = () => {
     const newQuest: Quest = {
@@ -30,21 +38,24 @@ const App: React.FC = () => {
       ...prev,
       activeQuests: [...prev.activeQuests, newQuest]
     }));
-    alert("クエストに出発しました！");
   };
 
   const handleReturn = () => {
-    if (gameState.activeQuests.length === 0) {
-      alert("帰還するクエストがありません。");
+    const now = Date.now();
+    const completed = gameState.activeQuests.filter(q => q.endTime <= now);
+    
+    if (completed.length === 0) {
+      alert("まだ完了したクエストはありません。タイマーの終了をお待ちください。");
       return;
     }
-    const totalReward = gameState.activeQuests.reduce((acc, q) => acc + q.reward, 0);
+
+    const totalReward = completed.reduce((acc, q) => acc + q.reward, 0);
     setGameState(prev => ({
       ...prev,
       tokens: prev.tokens + totalReward,
-      activeQuests: []
+      activeQuests: prev.activeQuests.filter(q => q.endTime > now)
     }));
-    alert(`${totalReward} CHIWAを獲得して帰還しました！`);
+    alert(`${totalReward} $CHHを獲得しました！`);
   };
 
   const handleRecovery = () => {
@@ -56,7 +67,7 @@ const App: React.FC = () => {
     setGameState(prev => ({
       ...prev,
       tokens: prev.tokens - cost,
-      heroes: prev.heroes.map(h => ({ ...h, hp: 100 })) // Use fixed 100
+      heroes: prev.heroes.map(h => ({ ...h, hp: h.maxHp }))
     }));
     alert("全てのヒーローのHPが回復しました！");
   };
@@ -68,37 +79,44 @@ const App: React.FC = () => {
       return;
     }
 
-    alert("ガチャ演出中...");
-    const result = await generateGachaItem(gachaTab);
-    
-    if (result) {
-      if (gachaTab === 'Hero') {
-        const newHero: Hero = {
-          id: Math.random().toString(),
-          name: result.name || "謎のチワワ",
-          rarity: result.rarity || 'Common',
-          level: 1,
-          hp: 100,
-          maxHp: 100, // Fixed at 100
-          imageUrl: `https://picsum.photos/seed/${Math.random()}/300/400`,
-          equipmentIds: []
-        };
-        setGameState(prev => ({ ...prev, tokens: prev.tokens - cost, heroes: [...prev.heroes, newHero] }));
-      } else {
-        const newEquip: Equipment = {
-          id: Math.random().toString(),
-          name: result.name || "鉄のつるはし",
-          type: result.type || 'Pickaxe',
-          bonus: Math.floor(Math.random() * 20) + 5,
-          rarity: 'Common'
-        };
-        setGameState(prev => ({ ...prev, tokens: prev.tokens - cost, equipment: [...prev.equipment, newEquip] }));
+    setIsGachaRolling(true);
+    try {
+      const result = await generateGachaItem(gachaTab);
+      if (result) {
+        setGachaResult({ type: gachaTab, data: result });
+        
+        setGameState(prev => {
+          const nextState = { ...prev, tokens: prev.tokens - cost };
+          if (gachaTab === 'Hero') {
+            const newHero: Hero = {
+              id: Math.random().toString(),
+              name: result.name || "謎のチワワ",
+              rarity: result.rarity || 'Common',
+              level: 1,
+              hp: 100,
+              maxHp: 100,
+              imageUrl: `https://picsum.photos/seed/${Math.random()}/300/400`,
+              equipmentIds: []
+            };
+            nextState.heroes = [...prev.heroes, newHero];
+          } else {
+            const newEquip: Equipment = {
+              id: Math.random().toString(),
+              name: result.name || "鉄のつるはし",
+              type: result.type || 'Pickaxe',
+              bonus: Math.floor(Math.random() * 20) + 5,
+              rarity: result.rarity || 'Common'
+            };
+            nextState.equipment = [...prev.equipment, newEquip];
+          }
+          return nextState;
+        });
       }
-      alert(`${result.name}を獲得しました！`);
+    } finally {
+      setIsGachaRolling(false);
     }
   };
 
-  // Drag and Drop handlers
   const onDragStart = (e: React.DragEvent, index: number) => {
     setDraggingIndex(index);
     e.dataTransfer.effectAllowed = 'move';
@@ -106,32 +124,52 @@ const App: React.FC = () => {
 
   const onDrop = (e: React.DragEvent, dropIndex: number) => {
     if (draggingIndex === null || draggingIndex === dropIndex) return;
-
     const newHeroes = [...gameState.heroes];
     const draggedHero = newHeroes[draggingIndex];
     newHeroes.splice(draggingIndex, 1);
     newHeroes.splice(dropIndex, 0, draggedHero);
-
     setGameState(prev => ({ ...prev, heroes: newHeroes }));
     setDraggingIndex(null);
+  };
+
+  const handleEquipClick = (heroId: string, slotIndex: number) => {
+    setEquippingState({ heroId, slotIndex });
+  };
+
+  const handleSelectEquipment = (equipmentId: string | null) => {
+    if (!equippingState) return;
+
+    setGameState(prev => ({
+      ...prev,
+      heroes: prev.heroes.map(hero => {
+        if (hero.id !== equippingState.heroId) return hero;
+        const newEquipIds = [...hero.equipmentIds];
+        if (equipmentId === null) {
+          // Remove item
+          newEquipIds[equippingState.slotIndex] = '';
+        } else {
+          // Add/Replace item
+          newEquipIds[equippingState.slotIndex] = equipmentId;
+        }
+        return { ...hero, equipmentIds: newEquipIds };
+      })
+    }));
+
+    setEquippingState(null);
   };
 
   const renderContent = () => {
     switch (currentView) {
       case View.PARTY:
         return (
-          <div className="p-4 h-full overflow-y-auto pb-32">
-            <div className="mb-4">
-              <h1 className="text-xl font-orbitron font-bold text-indigo-300">パーティ編成</h1>
-              <p className="text-[10px] text-slate-400">ドラッグして順番を入れ替えます（上位3人が出撃メンバー）</p>
-            </div>
-
-            {/* Top 3 Slots (Formation) */}
-            <div className="grid grid-cols-3 gap-2 sm:gap-4 mb-8">
+          <div className="p-6 h-full overflow-y-auto pb-10">
+            <h1 className="text-2xl font-orbitron font-bold text-indigo-300 mb-2">パーティ編成</h1>
+            <p className="text-xs text-slate-500 mb-8">スロットの3名がメイン出撃部隊です</p>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {gameState.heroes.slice(0, 3).map((hero, idx) => (
-                <div key={hero.id} className="relative">
-                  <div className="absolute -top-2 left-1/2 -translate-x-1/2 bg-indigo-600 text-[8px] font-bold px-2 py-0.5 rounded-full z-20 shadow-lg border border-indigo-400">
-                    SLOT {idx + 1}
+                <div key={hero.id} className="relative group">
+                  <div className="absolute -top-3 left-6 bg-indigo-600 text-[10px] font-black px-3 py-1 rounded-full z-20 shadow-xl border border-indigo-400">
+                    MAIN SLOT {idx + 1}
                   </div>
                   <HeroCard 
                     hero={hero} 
@@ -139,23 +177,19 @@ const App: React.FC = () => {
                     isDragging={draggingIndex === idx}
                     onDragStart={onDragStart}
                     onDrop={onDrop}
+                    onEquipClick={handleEquipClick}
                   />
                 </div>
               ))}
-              {/* Fill empty slots if less than 3 heroes */}
               {Array.from({ length: Math.max(0, 3 - gameState.heroes.length) }).map((_, idx) => (
-                <div key={`empty-${idx}`} className="pb-4">
-                  <div className="aspect-square border-2 border-dashed border-slate-700 rounded-xl flex items-center justify-center bg-slate-900/50">
-                    <span className="text-slate-600 text-[8px] font-bold">空き</span>
-                  </div>
+                <div key={`empty-${idx}`} className="aspect-square border-2 border-dashed border-slate-800 rounded-3xl flex items-center justify-center bg-slate-900/30">
+                  <span className="text-slate-700 font-bold">空きスロット</span>
                 </div>
               ))}
             </div>
-
-            {/* Bench / Inventory Grid */}
-            <div className="mt-6">
-              <h2 className="text-xs font-bold text-slate-500 mb-3 uppercase tracking-widest border-l-2 border-slate-700 pl-2">ベンチヒーロー</h2>
-              <div className="grid grid-cols-2 gap-3">
+            <div className="mt-12">
+              <h2 className="text-sm font-bold text-slate-500 mb-4 uppercase tracking-widest">リザーブ・メンバー</h2>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                  {gameState.heroes.slice(3).map((hero, idx) => {
                    const actualIndex = idx + 3;
                    return (
@@ -171,65 +205,65 @@ const App: React.FC = () => {
                   );
                  })}
               </div>
-              {gameState.heroes.length <= 3 && (
-                <p className="text-center text-slate-600 text-xs py-8 bg-slate-900/20 rounded-xl border border-dashed border-slate-800">
-                  控えのヒーローはいません
-                </p>
-              )}
             </div>
           </div>
         );
 
       case View.GACHA:
         return (
-          <div className="p-6 h-full overflow-y-auto pb-32 flex flex-col items-center">
-            <h1 className="text-2xl font-orbitron font-bold text-indigo-300 mb-6">幸運のガチャ</h1>
-            
-            <div className="flex bg-slate-800 p-1 rounded-xl w-full max-w-md mb-8">
+          <div className="p-6 h-full overflow-y-auto pb-10 flex flex-col items-center">
+            <h1 className="text-2xl font-orbitron font-bold text-indigo-300 mb-6">採掘ガチャ</h1>
+            <div className="flex bg-slate-900 p-1.5 rounded-2xl w-full max-w-md mb-8 border border-slate-800">
               <button 
-                className={`flex-1 py-2 rounded-lg font-bold transition-all ${gachaTab === 'Hero' ? 'bg-indigo-600 text-white' : 'text-slate-400'}`}
+                className={`flex-1 py-3 rounded-xl font-bold transition-all ${gachaTab === 'Hero' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-500'}`}
                 onClick={() => setGachaTab('Hero')}
               >
                 ヒーロー
               </button>
               <button 
-                className={`flex-1 py-2 rounded-lg font-bold transition-all ${gachaTab === 'Equipment' ? 'bg-indigo-600 text-white' : 'text-slate-400'}`}
+                className={`flex-1 py-3 rounded-xl font-bold transition-all ${gachaTab === 'Equipment' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-500'}`}
                 onClick={() => setGachaTab('Equipment')}
               >
                 装備品
               </button>
             </div>
-
-            <div className="glass-panel p-8 rounded-3xl text-center space-y-6 max-w-md w-full border-t-4 border-t-yellow-500 shadow-2xl">
-              <div className="text-5xl animate-bounce">🎁</div>
-              <h2 className="text-2xl font-bold">{gachaTab === 'Hero' ? '新しい仲間を迎えよう' : '伝説の道具を探そう'}</h2>
-              <p className="text-slate-400">1回: <span className="text-yellow-400 font-bold">1,000 CHIWA</span></p>
+            <div className="glass-panel p-10 rounded-[2.5rem] text-center space-y-8 max-w-md w-full border-t-8 border-t-yellow-500 shadow-2xl relative overflow-hidden">
+              {isGachaRolling && (
+                <div className="absolute inset-0 z-50 bg-slate-950/90 backdrop-blur-sm flex flex-col items-center justify-center p-6 space-y-4">
+                  <div className="w-16 h-16 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
+                  <p className="font-orbitron font-bold text-indigo-400 animate-pulse">CONNECTING TO CHH NETWORK...</p>
+                  <p className="text-[10px] text-slate-500 text-center">Gemini AIが新しいチワワを召喚しています。少々お待ちくださいワン！</p>
+                </div>
+              )}
+              
+              <div className="relative inline-block">
+                <div className="text-7xl animate-bounce drop-shadow-[0_0_20px_rgba(234,179,8,0.5)]">🎁</div>
+                <div className="absolute inset-0 animate-ping bg-yellow-500/20 rounded-full"></div>
+              </div>
+              <div>
+                <h2 className="text-2xl font-bold mb-2">{gachaTab === 'Hero' ? '新しいチワワを呼ぶ' : '地下の遺物を探す'}</h2>
+                <p className="text-slate-400 text-sm">コスト: <span className="text-yellow-400 font-black text-lg">1,000 $CHH</span></p>
+              </div>
               <button 
                 onClick={handleGacha}
-                className="w-full py-4 bg-yellow-500 text-slate-900 rounded-xl font-black text-xl hover:bg-yellow-400 active:scale-95 transition-all shadow-[0_0_20px_rgba(234,179,8,0.4)]"
+                disabled={isGachaRolling}
+                className={`w-full py-5 bg-gradient-to-b from-yellow-400 to-yellow-600 text-slate-950 rounded-2xl font-black text-xl hover:brightness-110 active:scale-95 transition-all shadow-xl shadow-yellow-900/20 ${isGachaRolling ? 'opacity-50 cursor-not-allowed grayscale' : ''}`}
               >
-                ガチャを回す
+                {isGachaRolling ? '召喚中...' : 'ガチャを回す'}
               </button>
             </div>
           </div>
         );
 
       case View.DEPART:
-        return <StatusBoard state={gameState} title="クエスト出発" actionButtonLabel="探検に出発する (5分)" onAction={handleDepart} />;
-      
+        return <StatusBoard state={gameState} view={View.DEPART} title="出発ゲート" actionButtonLabel="探検に出発 (5分)" onAction={handleDepart} />;
       case View.RETURN:
-        return <StatusBoard state={gameState} title="拠点へ帰還" actionButtonLabel="報酬を受け取って帰還する" onAction={handleReturn} />;
-      
+        return <StatusBoard state={gameState} view={View.RETURN} title="帰還ポッド" actionButtonLabel="報酬を回収して帰還" onAction={handleReturn} />;
       case View.RECOVERY:
-        return <StatusBoard state={gameState} title="癒やしの泉" actionButtonLabel="HPを全回復する (500 CHIWA)" onAction={handleRecovery} />;
-      
+        return <StatusBoard state={gameState} view={View.RECOVERY} title="チワワ・エステ" actionButtonLabel="HP全回復 (500 $CHH)" onAction={handleRecovery} />;
       case View.HOME:
       default:
-        return (
-          <div className="h-full flex flex-col">
-            <StatusBoard state={gameState} title="マイ・キャンプ" />
-          </div>
-        );
+        return <StatusBoard state={gameState} view={View.HOME} title="ベースキャンプ" />;
     }
   };
 
@@ -242,15 +276,37 @@ const App: React.FC = () => {
     { view: View.RECOVERY, label: '回復', icon: ICONS.RECOVERY },
   ];
 
+  const currentEquippingHero = equippingState ? gameState.heroes.find(h => h.id === equippingState.heroId) : null;
+
   return (
-    <div className="flex flex-col h-screen max-w-4xl mx-auto overflow-hidden relative shadow-2xl bg-slate-950">
-      {/* Main Viewport */}
+    <div className="flex flex-col h-screen max-w-4xl mx-auto overflow-hidden relative shadow-2xl bg-slate-950 border-x border-slate-800">
       <main className="flex-1 overflow-hidden relative">
-        {renderContent()}
+        <MiningBackground />
+        <div className="relative z-10 h-full">
+          {renderContent()}
+        </div>
       </main>
 
-      {/* Navigation Bar */}
-      <nav className="fixed bottom-0 left-0 right-0 max-w-4xl mx-auto h-20 bg-slate-900/90 backdrop-blur-xl border-t border-slate-700 flex items-center justify-around px-2 z-50">
+      {/* Gacha Animation Overlay */}
+      {gachaResult && <GachaEffect result={gachaResult} onClose={() => setGachaResult(null)} />}
+
+      {/* Equipment Selector Overlay */}
+      {equippingState && currentEquippingHero && (
+        <EquipmentSelector 
+          hero={currentEquippingHero}
+          slotIndex={equippingState.slotIndex}
+          equipmentList={gameState.equipment}
+          allHeroes={gameState.heroes}
+          onSelect={handleSelectEquipment}
+          onClose={() => setEquippingState(null)}
+        />
+      )}
+
+      {/* Top Gradient Bar */}
+      <div className="fixed top-0 left-0 w-full h-0.5 bg-gradient-to-r from-indigo-500 via-purple-500 to-indigo-500 z-[100]"></div>
+
+      {/* Non-fixed Bottom Nav - Prevents content overlap */}
+      <nav className="h-20 bg-slate-950/95 backdrop-blur-xl border-t border-slate-800 flex items-center justify-around px-2 z-[60] shrink-0">
         {navItems.map(({ view, label, icon: Icon }) => (
           <button
             key={view}
@@ -259,14 +315,11 @@ const App: React.FC = () => {
               currentView === view ? 'text-indigo-400 scale-110' : 'text-slate-500'
             }`}
           >
-            <Icon className={`w-6 h-6 ${currentView === view ? 'drop-shadow-[0_0_8px_rgba(129,140,248,0.8)]' : ''}`} />
+            <Icon className={`w-6 h-6 ${currentView === view ? 'drop-shadow-[0_0_10px_rgba(129,140,248,0.8)]' : ''}`} />
             <span className="text-[10px] mt-1 font-bold">{label}</span>
           </button>
         ))}
       </nav>
-      
-      {/* Visual Decoration */}
-      <div className="fixed top-0 left-0 w-full h-1 bg-gradient-to-r from-indigo-500 via-purple-500 to-indigo-500 animate-[gradient_3s_linear_infinite]"></div>
     </div>
   );
 };

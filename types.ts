@@ -16,7 +16,7 @@ export interface Hero {
   hp: number;
   maxHp: number;
   imageUrl: string;
-  equipmentIds: string[]; // Max 3 items
+  equipmentIds: string[];
 }
 
 export interface Equipment {
@@ -24,7 +24,7 @@ export interface Equipment {
   name: string;
   type: 'Pickaxe' | 'Helmet' | 'Vest';
   bonus: number;
-  rarity: string;
+  rarity: 'Common' | 'Rare' | 'Epic' | 'Legendary';
 }
 
 export interface Quest {
