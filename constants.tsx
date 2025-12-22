@@ -32,6 +32,76 @@ export const INITIAL_HEROES: Hero[] = [
     maxHp: 100,
     imageUrl: 'https://picsum.photos/seed/dog3/300/400',
     equipmentIds: ['e2']
+  },
+  {
+    id: 'h4',
+    name: 'チョコ・チッパー',
+    rarity: 'Rare',
+    level: 8,
+    hp: 60,
+    maxHp: 80,
+    imageUrl: 'https://picsum.photos/seed/dog4/300/400',
+    equipmentIds: []
+  },
+  {
+    id: 'h5',
+    name: 'ブラック・ダイヤ',
+    rarity: 'Epic',
+    level: 15,
+    hp: 90,
+    maxHp: 120,
+    imageUrl: 'https://picsum.photos/seed/dog5/300/400',
+    equipmentIds: []
+  },
+  {
+    id: 'h6',
+    name: 'スピード・ラッセル',
+    rarity: 'Common',
+    level: 3,
+    hp: 40,
+    maxHp: 50,
+    imageUrl: 'https://picsum.photos/seed/dog6/300/400',
+    equipmentIds: []
+  },
+  {
+    id: 'h7',
+    name: 'マウンテン・キング',
+    rarity: 'Legendary',
+    level: 30,
+    hp: 150,
+    maxHp: 150,
+    imageUrl: 'https://picsum.photos/seed/dog7/300/400',
+    equipmentIds: []
+  },
+  {
+    id: 'h8',
+    name: '穴掘りマニア',
+    rarity: 'Rare',
+    level: 10,
+    hp: 70,
+    maxHp: 70,
+    imageUrl: 'https://picsum.photos/seed/dog8/300/400',
+    equipmentIds: []
+  },
+  {
+    id: 'h9',
+    name: 'チワワ巫女',
+    rarity: 'Epic',
+    level: 18,
+    hp: 110,
+    maxHp: 110,
+    imageUrl: 'https://picsum.photos/seed/dog9/300/400',
+    equipmentIds: []
+  },
+  {
+    id: 'h10',
+    name: 'ルーキー・ボーン',
+    rarity: 'Common',
+    level: 1,
+    hp: 30,
+    maxHp: 30,
+    imageUrl: 'https://picsum.photos/seed/dog10/300/400',
+    equipmentIds: []
   }
 ];
 
