@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Hero, Equipment } from './types';
+import { Hero, Equipment, QuestRank } from './types';
 
 export const INITIAL_HEROES: Hero[] = [
   {
@@ -109,6 +109,72 @@ export const INITIAL_EQUIPMENT: Equipment[] = [
   { id: 'e1', name: '錆びたツルハシ', type: 'Pickaxe', bonus: 5, rarity: 'Common' },
   { id: 'e2', name: '幸運のヘルメット', type: 'Helmet', bonus: 15, rarity: 'Rare' }
 ];
+
+interface QuestConfig {
+  name: string;
+  duration: number; // seconds
+  minReward: number;
+  maxReward: number;
+  burnCost: number;
+  minDmg: number;
+  maxDmg: number;
+  deathChance: number; // 0 to 1
+  minHpReq?: number;
+}
+
+export const QUEST_CONFIG: Record<QuestRank, QuestConfig> = {
+  C: {
+    name: '近場の採掘場',
+    duration: 15 * 60,
+    minReward: 2,
+    maxReward: 200,
+    burnCost: 0,
+    minDmg: 2,
+    maxDmg: 5,
+    deathChance: 0
+  },
+  UC: {
+    name: '忘れられた坑道',
+    duration: 30 * 60,
+    minReward: 5,
+    maxReward: 500,
+    burnCost: 20,
+    minDmg: 4,
+    maxDmg: 12,
+    deathChance: 0
+  },
+  R: {
+    name: '水晶の地底湖',
+    duration: 60 * 60,
+    minReward: 10,
+    maxReward: 1200,
+    burnCost: 50,
+    minDmg: 10,
+    maxDmg: 40,
+    deathChance: 0
+  },
+  E: {
+    name: '灼熱のマグマ帯',
+    duration: 3 * 60 * 60,
+    minReward: 30,
+    maxReward: 3000,
+    burnCost: 150,
+    minDmg: 20,
+    maxDmg: 70,
+    deathChance: 0,
+    minHpReq: 71
+  },
+  L: {
+    name: '奈落の深淵',
+    duration: 8 * 60 * 60,
+    minReward: 80,
+    maxReward: 8000,
+    burnCost: 300,
+    minDmg: 40,
+    maxDmg: 100,
+    deathChance: 1 / 61 // approx 1.64%
+  }
+};
 
 export const ICONS = {
   HOME: (props: any) => (
