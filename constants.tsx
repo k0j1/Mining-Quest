@@ -1,7 +1,8 @@
 
 import React from 'react';
+import { Hero, Equipment } from './types';
 
-export const INITIAL_HEROES = [
+export const INITIAL_HEROES: Hero[] = [
   {
     id: 'h1',
     name: 'チワワ軍曹',
@@ -37,7 +38,7 @@ export const INITIAL_HEROES = [
   }
 ];
 
-export const INITIAL_EQUIPMENT = [
+export const INITIAL_EQUIPMENT: Equipment[] = [
   { id: 'e1', name: '錆びたツルハシ', type: 'Pickaxe', bonus: 5, rarity: 'Common' },
   { id: 'e2', name: '幸運のヘルメット', type: 'Helmet', bonus: 15, rarity: 'Rare' }
 ];
