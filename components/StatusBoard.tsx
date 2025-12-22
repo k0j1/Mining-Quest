@@ -65,8 +65,9 @@ const StatusBoard: React.FC<StatusBoardProps> = ({ state, actionButtonLabel, onA
         <div className="mt-4">
           <h2 className="text-sm font-bold text-slate-400 mb-3 uppercase tracking-wider">待機中のヒーロー</h2>
           <div className="grid grid-cols-1 gap-3">
-            {state.heroes.map(hero => (
-              <HeroCard key={hero.id} hero={hero} compact />
+            {state.heroes.map((hero, index) => (
+              /* Added missing index prop to HeroCard */
+              <HeroCard key={hero.id} hero={hero} index={index} compact />
             ))}
           </div>
         </div>

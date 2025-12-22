@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Hero, Equipment, Quest, GameState } from './types';
 import { INITIAL_HEROES, INITIAL_EQUIPMENT, ICONS } from './constants';
 import StatusBoard from './components/StatusBoard';
@@ -16,6 +16,7 @@ const App: React.FC = () => {
   });
   const [insight, setInsight] = useState<string>("採掘の極意を読み込み中...");
   const [gachaTab, setGachaTab] = useState<'Hero' | 'Equipment'>('Hero');
+  const [draggingIndex, setDraggingIndex] = useState<number | null>(null);
 
   useEffect(() => {
     const fetchInsight = async () => {
@@ -106,27 +107,83 @@ const App: React.FC = () => {
     }
   };
 
+  // Drag and Drop handlers
+  const onDragStart = (e: React.DragEvent, index: number) => {
+    setDraggingIndex(index);
+    e.dataTransfer.effectAllowed = 'move';
+  };
+
+  const onDrop = (e: React.DragEvent, dropIndex: number) => {
+    if (draggingIndex === null || draggingIndex === dropIndex) return;
+
+    const newHeroes = [...gameState.heroes];
+    const draggedHero = newHeroes[draggingIndex];
+    newHeroes.splice(draggingIndex, 1);
+    newHeroes.splice(dropIndex, 0, draggedHero);
+
+    setGameState(prev => ({ ...prev, heroes: newHeroes }));
+    setDraggingIndex(null);
+  };
+
   const renderContent = () => {
     switch (currentView) {
       case View.PARTY:
         return (
-          <div className="p-6 h-full overflow-y-auto pb-32">
-            <h1 className="text-2xl font-orbitron font-bold text-indigo-300 mb-6">編成ヒーロー</h1>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {gameState.heroes.slice(0, 3).map(hero => (
-                <HeroCard key={hero.id} hero={hero} />
+          <div className="p-4 h-full overflow-y-auto pb-32">
+            <div className="mb-4">
+              <h1 className="text-xl font-orbitron font-bold text-indigo-300">パーティ編成</h1>
+              <p className="text-[10px] text-slate-400">ドラッグして順番を入れ替えます（上位3人が出撃メンバー）</p>
+            </div>
+
+            {/* Top 3 Slots (Formation) */}
+            <div className="grid grid-cols-3 gap-2 sm:gap-4 mb-8">
+              {gameState.heroes.slice(0, 3).map((hero, idx) => (
+                <div key={hero.id} className="relative">
+                  <div className="absolute -top-2 left-1/2 -translate-x-1/2 bg-indigo-600 text-[8px] font-bold px-2 py-0.5 rounded-full z-10 shadow-lg border border-indigo-400">
+                    SLOT {idx + 1}
+                  </div>
+                  <HeroCard 
+                    hero={hero} 
+                    index={idx}
+                    isDragging={draggingIndex === idx}
+                    onDragStart={onDragStart}
+                    onDrop={onDrop}
+                  />
+                </div>
+              ))}
+              {/* Fill empty slots if less than 3 heroes */}
+              {Array.from({ length: Math.max(0, 3 - gameState.heroes.length) }).map((_, idx) => (
+                <div key={`empty-${idx}`} className="aspect-[2/3] border-2 border-dashed border-slate-700 rounded-xl flex items-center justify-center bg-slate-900/50">
+                   <span className="text-slate-600 text-[10px] font-bold">空きスロット</span>
+                </div>
               ))}
             </div>
-            {gameState.heroes.length > 3 && (
-              <div className="mt-8">
-                <h2 className="text-sm font-bold text-slate-500 mb-4 uppercase tracking-widest">待機メンバー</h2>
-                <div className="grid grid-cols-1 gap-4">
-                   {gameState.heroes.slice(3).map(hero => (
-                    <HeroCard key={hero.id} hero={hero} compact />
-                  ))}
-                </div>
+
+            {/* Bench / Inventory Grid */}
+            <div className="mt-6">
+              <h2 className="text-xs font-bold text-slate-500 mb-3 uppercase tracking-widest border-l-2 border-slate-700 pl-2">ベンチヒーロー</h2>
+              <div className="grid grid-cols-2 gap-3">
+                 {gameState.heroes.slice(3).map((hero, idx) => {
+                   const actualIndex = idx + 3;
+                   return (
+                    <HeroCard 
+                      key={hero.id} 
+                      hero={hero} 
+                      index={actualIndex}
+                      compact 
+                      isDragging={draggingIndex === actualIndex}
+                      onDragStart={onDragStart}
+                      onDrop={onDrop}
+                    />
+                  );
+                 })}
               </div>
-            )}
+              {gameState.heroes.length <= 3 && (
+                <p className="text-center text-slate-600 text-xs py-8 bg-slate-900/20 rounded-xl border border-dashed border-slate-800">
+                  控えのヒーローはいません
+                </p>
+              )}
+            </div>
           </div>
         );
 
