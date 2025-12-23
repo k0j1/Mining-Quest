@@ -147,8 +147,8 @@ const HeroCard: React.FC<HeroCardProps> = ({
         </div>
       </div>
 
-      {/* Equipment Slots - Scaled down for 3-col */}
-      <div className="absolute -bottom-1 -right-1 flex gap-0.5 z-40">
+      {/* Equipment Slots - Scaled UP significantly for mobile tap targets */}
+      <div className="absolute -bottom-2 -right-1 flex gap-0.5 z-40">
         {[0, 1, 2].map(i => (
           <button 
             key={i} 
@@ -156,10 +156,10 @@ const HeroCard: React.FC<HeroCardProps> = ({
               e.stopPropagation();
               if (onEquipClick) onEquipClick(hero.id, i);
             }}
-            className={`w-5 h-5 sm:w-7 sm:h-7 rounded-md sm:rounded-lg border flex items-center justify-center shadow-lg transition-all duration-300 ${
+            className={`w-9 h-9 sm:w-10 sm:h-10 rounded-lg border flex items-center justify-center shadow-lg transition-all duration-300 ${
               hero.equipmentIds[i] 
-                ? 'bg-indigo-600 border-indigo-300 text-[8px] sm:text-xs' 
-                : 'bg-slate-900/90 border-slate-700/50 border-dashed text-[8px] sm:text-xs text-slate-500 backdrop-blur-sm'
+                ? 'bg-indigo-600 border-indigo-300 text-sm sm:text-base' 
+                : 'bg-slate-900/90 border-slate-700/50 border-dashed text-xs sm:text-sm text-slate-500 backdrop-blur-sm'
             } active:scale-90`}
           >
             {/* Show Equipment Type Icon always, opaque if empty, bright if equipped */}

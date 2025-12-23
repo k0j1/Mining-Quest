@@ -324,7 +324,9 @@ const App: React.FC = () => {
         return (
           <div className="p-4 h-full overflow-y-auto pb-24">
             <h1 className="text-xl font-orbitron font-bold text-indigo-300 mb-1">パーティ編成</h1>
-            <p className="text-[10px] text-slate-500 mb-6">タップして入れ替え対象を選択してください</p>
+            <p className="text-[10px] text-yellow-400 mb-6 bg-slate-900/60 p-2 rounded border border-yellow-500/20 inline-block">
+              ※ ヒーローと装備スロットタップで入れ替えできます
+            </p>
             
             <div className="grid grid-cols-3 gap-2 sm:gap-6 mb-8">
               {gameState.heroes.slice(0, 3).map((hero, idx) => (
@@ -346,7 +348,7 @@ const App: React.FC = () => {
               ))}
             </div>
 
-            <div className="mt-8">
+            <div className="mt-8 mb-8">
               <h2 className="text-[10px] font-bold text-slate-500 mb-3 uppercase tracking-widest flex items-center">
                 <span className="w-1 h-3 bg-slate-700 mr-2 rounded-full"></span>
                 リザーブ・メンバー
@@ -367,6 +369,38 @@ const App: React.FC = () => {
                  })}
               </div>
             </div>
+
+            <div className="mb-8">
+              <h2 className="text-[10px] font-bold text-slate-500 mb-3 uppercase tracking-widest flex items-center">
+                 <span className="w-1 h-3 bg-indigo-500 mr-2 rounded-full"></span>
+                 所持装備一覧
+              </h2>
+              <div className="grid grid-cols-2 gap-2">
+                {gameState.equipment.length > 0 ? (
+                  gameState.equipment.map(e => {
+                    const equippedHero = gameState.heroes.find(h => h.equipmentIds.includes(e.id));
+                    return (
+                      <div key={e.id} className="bg-slate-900/60 border border-slate-800 p-2 rounded-lg flex items-center space-x-2 relative overflow-hidden">
+                        <div className="text-xl">
+                          {e.type === 'Pickaxe' ? '⛏️' : e.type === 'Helmet' ? '🪖' : '👢'}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="text-[10px] font-bold truncate text-indigo-300">{e.name}</p>
+                          <p className="text-[9px] text-slate-500">Bonus: +{e.bonus}</p>
+                        </div>
+                        {equippedHero && (
+                          <div className="absolute top-0 right-0 bg-slate-700 text-[8px] px-1 rounded-bl text-slate-300">
+                             装備中
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })
+                ) : (
+                  <p className="col-span-2 text-slate-600 text-xs italic">所持している装備はありません</p>
+                )}
+              </div>
+            </div>
           </div>
         );
 
@@ -377,7 +411,7 @@ const App: React.FC = () => {
         const canAfford = gameState.tokens >= currentCost;
 
         return (
-          <div className="flex flex-col h-full bg-slate-950">
+          <div className="flex flex-col h-full">
              {/* Sticky Header */}
              <div className="p-6 bg-slate-900/80 border-b border-slate-800 sticky top-0 z-20 backdrop-blur-md flex-none">
                 <div className="flex justify-between items-center">
@@ -439,7 +473,7 @@ const App: React.FC = () => {
 
       case View.DEPART:
         return (
-          <div className="flex flex-col h-full bg-slate-950">
+          <div className="flex flex-col h-full">
              {/* Sticky Header */}
              <div className="p-6 bg-slate-900/80 border-b border-slate-800 sticky top-0 z-20 backdrop-blur-md flex-none">
                 <div className="flex justify-between items-center">
@@ -523,7 +557,7 @@ const App: React.FC = () => {
       
       case View.RECOVERY:
         return (
-          <div className="flex flex-col h-full bg-slate-950">
+          <div className="flex flex-col h-full">
              {/* Sticky Header */}
              <div className="p-6 bg-slate-900/80 border-b border-slate-800 sticky top-0 z-20 backdrop-blur-md flex-none">
                 <div className="flex justify-between items-center">

@@ -34,6 +34,9 @@ const Timer: React.FC<{ endTime: number }> = ({ endTime }) => {
 };
 
 const StatusBoard: React.FC<StatusBoardProps> = ({ state, actionButtonLabel, onAction, title, view }) => {
+  // Get Main Party (First 3 heroes)
+  const mainParty = state.heroes.slice(0, 3);
+
   return (
     <div className="flex flex-col h-full relative">
       {/* Scrollable Content Area */}
@@ -77,47 +80,27 @@ const StatusBoard: React.FC<StatusBoardProps> = ({ state, actionButtonLabel, onA
             </div>
           </div>
 
-          {/* Equipment Section */}
-          <div>
-            <h2 className="text-xs font-bold text-slate-500 mb-3 uppercase tracking-widest flex items-center">
-               <span className="w-1.5 h-4 bg-indigo-500 rounded-full mr-2"></span>
-               装備品
-            </h2>
-            <div className="grid grid-cols-2 gap-2">
-              {state.equipment.length > 0 ? (
-                state.equipment.map(e => (
-                  <div key={e.id} className="bg-slate-900/60 border border-slate-800 p-2 rounded-lg flex items-center space-x-2">
-                    <div className="text-lg">
-                      {e.type === 'Pickaxe' ? '⛏️' : e.type === 'Helmet' ? '🪖' : '👢'}
-                    </div>
-                    <div className="min-w-0">
-                      <p className="text-[10px] font-bold truncate text-indigo-300">{e.name}</p>
-                      <p className="text-[9px] text-slate-500">Bonus: +{e.bonus}</p>
-                    </div>
+          {/* Main Party Display for Home Screen */}
+          {view === View.HOME && (
+            <div>
+              <h2 className="text-xs font-bold text-slate-500 mb-3 uppercase tracking-widest flex items-center">
+                <span className="w-1.5 h-4 bg-indigo-500 rounded-full mr-2"></span>
+                現在の編成
+              </h2>
+              <div className="grid grid-cols-3 gap-2">
+                {mainParty.map((hero, index) => (
+                  <div key={hero.id} className="pointer-events-none">
+                     <HeroCard 
+                        hero={hero} 
+                        index={index} 
+                        isMainSlot // Keep consistent styling
+                        // Interactions disabled for home view summary
+                      />
                   </div>
-                ))
-              ) : (
-                <p className="col-span-2 text-slate-600 text-xs italic">所持している装備はありません</p>
-              )}
+                ))}
+              </div>
             </div>
-          </div>
-
-          {/* Idle Heroes Section */}
-          <div>
-            <h2 className="text-xs font-bold text-slate-500 mb-3 uppercase tracking-widest flex items-center">
-              <span className="w-1.5 h-4 bg-green-500 rounded-full mr-2"></span>
-              待機中のヒーロー ({state.heroes.length})
-            </h2>
-            <div className="space-y-2">
-              {state.heroes.length > 0 ? (
-                state.heroes.map((hero, index) => (
-                  <HeroCard key={hero.id} hero={hero} index={index} compact />
-                ))
-              ) : (
-                <p className="text-slate-600 text-xs italic">待機中のヒーローはいません</p>
-              )}
-            </div>
-          </div>
+          )}
         </div>
       </div>
 
