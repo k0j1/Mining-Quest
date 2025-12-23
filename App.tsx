@@ -1,625 +1,80 @@
 
-import React, { useState, useEffect } from 'react';
-import { View, Hero, Equipment, Quest, GameState, QuestRank } from './types';
-import { INITIAL_HEROES, INITIAL_EQUIPMENT, ICONS, QUEST_CONFIG } from './constants';
+import React, { useState } from 'react';
+import { View } from './types';
+import { ICONS } from './constants';
 import StatusBoard from './components/StatusBoard';
-import HeroCard from './components/HeroCard';
 import MiningBackground from './components/MiningBackground';
-import GachaEffect from './components/GachaEffect';
-import EquipmentSelector from './components/EquipmentSelector';
-import { generateGachaItem } from './services/geminiService';
+import ResultModal from './components/ResultModal';
+import { playClick, playConfirm } from './utils/sound';
+import { useGameLogic } from './hooks/useGameLogic';
+
+// Views
+import PartyView from './components/views/PartyView';
+import DepartView from './components/views/DepartView';
+import RecoveryView from './components/views/RecoveryView';
+import GachaView from './components/views/GachaView';
 
 const App: React.FC = () => {
   const [currentView, setCurrentView] = useState<View>(View.HOME);
-  const [gameState, setGameState] = useState<GameState>({
-    tokens: 25000, // Doubled from 12500
-    heroes: INITIAL_HEROES,
-    equipment: INITIAL_EQUIPMENT,
-    activeQuests: []
-  });
-  const [gachaTab, setGachaTab] = useState<'Hero' | 'Equipment'>('Hero');
-  const [gachaResult, setGachaResult] = useState<{ type: 'Hero' | 'Equipment'; data: any } | null>(null);
-  const [isGachaRolling, setIsGachaRolling] = useState(false);
-  
-  // New selection state for swapping heroes
-  const [selectedHeroIndex, setSelectedHeroIndex] = useState<number | null>(null);
-  
-  // Equipment selection state
-  const [equippingState, setEquippingState] = useState<{ heroId: string, slotIndex: number } | null>(null);
+  const { gameState, ui, actions } = useGameLogic();
 
-  const getEquipmentEffect = (hero: Hero, type: 'Pickaxe' | 'Helmet' | 'Boots'): number => {
-    // Slot Map: 0:Pickaxe, 1:Helmet, 2:Boots
-    let slotIndex = -1;
-    if (type === 'Pickaxe') slotIndex = 0;
-    if (type === 'Helmet') slotIndex = 1;
-    if (type === 'Boots') slotIndex = 2;
-
-    const equipId = hero.equipmentIds[slotIndex];
-    if (!equipId) return 0;
-    
-    const equip = gameState.equipment.find(e => e.id === equipId);
-    return equip ? equip.bonus : 0;
-  };
-
-  const handleDepart = (rank: QuestRank) => {
-    const config = QUEST_CONFIG[rank];
-    const mainHeroes = gameState.heroes.slice(0, 3);
-
-    // 1. Check Tokens
-    if (gameState.tokens < config.burnCost) {
-      alert(`トークンが足りません！ (必要: ${config.burnCost} $CHH)`);
-      return;
-    }
-
-    // 2. Check General Health
-    if (mainHeroes.some(h => h.hp <= 0)) {
-      alert("HPが0のヒーローが編成に含まれています。回復してください。");
-      return;
-    }
-
-    // 3. Check Rank E Specific Requirement
-    if (rank === 'E' && config.minHpReq) {
-      if (mainHeroes.some(h => h.hp < config.minHpReq!)) {
-        alert(`ランクEのクエストに出発するには、メイン編成全員のHPが${config.minHpReq}以上必要です。`);
-        return;
-      }
-    }
-
-    // 4. Calculate Duration Reduction (Boots)
-    const totalBootsBonus = mainHeroes.reduce((acc, hero) => acc + getEquipmentEffect(hero, 'Boots'), 0);
-    const reductionMultiplier = Math.max(0.1, 1 - (totalBootsBonus / 100));
-    const actualDuration = Math.floor(config.duration * reductionMultiplier);
-
-    // 5. Create Quest
-    const newQuest: Quest = {
-      id: Math.random().toString(),
-      name: config.name,
-      rank: rank,
-      duration: config.duration,
-      actualDuration: actualDuration,
-      endTime: Date.now() + actualDuration * 1000,
-      reward: Math.floor((config.minReward + config.maxReward) / 2),
-      status: 'active'
-    };
-
-    setGameState(prev => ({
-      ...prev,
-      tokens: prev.tokens - config.burnCost,
-      activeQuests: [...prev.activeQuests, newQuest]
-    }));
-
-    const durationMsg = reductionMultiplier < 1 
-      ? `(装備効果で ${(config.duration/60).toFixed(0)}分 → ${(actualDuration/60).toFixed(1)}分 に短縮！)` 
-      : ``;
-    alert(`${config.name}へ出発しました！\n所要時間: ${(actualDuration/60).toFixed(1)}分 ${durationMsg}`);
-    setCurrentView(View.HOME);
-  };
-
-  const handleReturn = () => {
-    const now = Date.now();
-    const completed = gameState.activeQuests.filter(q => q.endTime <= now);
-    
-    if (completed.length === 0) {
-      alert("まだ完了したクエストはありません。タイマーの終了をお待ちください。");
-      return;
-    }
-
-    let totalReward = 0;
-    let report = "";
-    let deadHeroes: string[] = [];
-
-    // Process results
-    const newHeroes = [...gameState.heroes];
-    const mainPartyIndices = [0, 1, 2];
-
-    // Calculate Party Total Pickaxe Bonus
-    const partyPickaxeBonus = mainPartyIndices.reduce((acc, idx) => {
-       if (idx >= newHeroes.length) return acc;
-       return acc + getEquipmentEffect(newHeroes[idx], 'Pickaxe');
-    }, 0);
-
-    completed.forEach(quest => {
-      const config = QUEST_CONFIG[quest.rank];
-      
-      // Calculate Base Reward
-      const baseReward = Math.floor(Math.random() * (config.maxReward - config.minReward + 1)) + config.minReward;
-      
-      // Apply Pickaxe Bonus
-      const bonusReward = Math.floor(baseReward * (partyPickaxeBonus / 100));
-      const finalReward = baseReward + bonusReward;
-      
-      totalReward += finalReward;
-      
-      report += `【${quest.name} (Rank ${quest.rank})】\n`;
-      report += `💰 報酬: ${finalReward} $CHH (基本:${baseReward} + 装備:${bonusReward})\n`;
-
-      // Apply Damage / Death to Main Party
-      mainPartyIndices.forEach(idx => {
-        if (idx >= newHeroes.length) return;
-        const hero = newHeroes[idx];
-        
-        // Skip if already dead/removed in this loop
-        if (deadHeroes.includes(hero.id)) return;
-
-        // Death Check (Rank L only usually)
-        if (config.deathChance > 0 && Math.random() < config.deathChance) {
-           deadHeroes.push(hero.id);
-           report += `💀 悲報: ${hero.name} は帰らぬ犬となりました...\n`;
-        } else {
-           // Damage Calculation
-           const rawDmg = Math.floor(Math.random() * (config.maxDmg - config.minDmg + 1)) + config.minDmg;
-           
-           // Apply Trait + Helmet Damage Reduction
-           const helmetBonus = getEquipmentEffect(hero, 'Helmet');
-           const totalReduction = hero.damageReduction + helmetBonus;
-           
-           let finalDmg = rawDmg;
-           let reductionMsg = "";
-           
-           if (totalReduction > 0) {
-             const reduceAmount = Math.ceil(rawDmg * (totalReduction / 100));
-             finalDmg = Math.max(0, rawDmg - reduceAmount);
-             reductionMsg = `(軽減 -${reduceAmount}: 特性${hero.damageReduction}%+装備${helmetBonus}%)`;
-           }
-
-           const currentHp = hero.hp;
-           const newHp = Math.max(0, currentHp - finalDmg);
-           newHeroes[idx] = { ...hero, hp: newHp };
-           report += `💥 ${hero.name}: -${finalDmg} HP ${reductionMsg} (残: ${newHp})\n`;
-        }
-      });
-      report += "\n";
-    });
-
-    // Remove dead heroes completely
-    const survivors = newHeroes.filter(h => !deadHeroes.includes(h.id));
-
-    setGameState(prev => ({
-      ...prev,
-      tokens: prev.tokens + totalReward,
-      heroes: survivors,
-      activeQuests: prev.activeQuests.filter(q => q.endTime > now)
-    }));
-
-    alert(report);
-  };
-
-  const handlePotion = (heroId: string) => {
-    const COST = 200;
-    const RECOVER_AMOUNT = 10;
-    
-    if (gameState.tokens < COST) {
-      alert("トークンが足りません！");
-      return;
-    }
-
-    setGameState(prev => ({
-      ...prev,
-      tokens: prev.tokens - COST,
-      heroes: prev.heroes.map(h => {
-        if (h.id === heroId) {
-          const newHp = Math.min(h.maxHp, h.hp + RECOVER_AMOUNT);
-          return { ...h, hp: newHp };
-        }
-        return h;
-      })
-    }));
-  };
-
-  const handleElixir = (heroId: string) => {
-    const COST = 1200;
-    
-    if (gameState.tokens < COST) {
-      alert("トークンが足りません！");
-      return;
-    }
-
-    setGameState(prev => ({
-      ...prev,
-      tokens: prev.tokens - COST,
-      heroes: prev.heroes.map(h => {
-        if (h.id === heroId) {
-          return { ...h, hp: h.maxHp };
-        }
-        return h;
-      })
-    }));
-  };
-
-  const handleGacha = async () => {
-    // New Costs
-    const cost = gachaTab === 'Hero' ? 10000 : 6000;
-
-    if (gameState.tokens < cost) {
-      alert(`トークンが足りません！ (必要: ${cost.toLocaleString()} $CHH)`);
-      return;
-    }
-
-    setIsGachaRolling(true);
-    try {
-      const result = await generateGachaItem(gachaTab);
-      if (result) {
-        setGachaResult({ type: gachaTab, data: result });
-        
-        setGameState(prev => {
-          const nextState = { ...prev, tokens: prev.tokens - cost };
-          if (gachaTab === 'Hero') {
-            const newHero: Hero = {
-              id: Math.random().toString(),
-              name: result.name || "謎の動物",
-              species: result.species || "Other",
-              rarity: result.rarity || 'C', // Ensure it uses QuestRank
-              trait: result.trait || "なし",
-              damageReduction: result.damageReduction || 0,
-              level: 1,
-              hp: 100, // Fixed 100
-              maxHp: 100, // Fixed 100
-              imageUrl: `https://picsum.photos/seed/${Math.random()}/300/400`,
-              equipmentIds: ['', '', ''] // Init 3 empty slots
-            };
-            nextState.heroes = [...prev.heroes, newHero];
-          } else {
-            const newEquip: Equipment = {
-              id: Math.random().toString(),
-              name: result.name || "謎の装備",
-              type: result.type || 'Pickaxe',
-              bonus: result.bonus || 0,
-              rarity: result.rarity || 'C'
-            };
-            nextState.equipment = [...prev.equipment, newEquip];
-          }
-          return nextState;
-        });
-      }
-    } finally {
-      setIsGachaRolling(false);
-    }
-  };
-
-  const handleHeroClick = (index: number) => {
-    if (selectedHeroIndex === null) {
-      setSelectedHeroIndex(index);
-    } else if (selectedHeroIndex === index) {
-      setSelectedHeroIndex(null);
-    } else {
-      // Perform Swap
-      const newHeroes = [...gameState.heroes];
-      const temp = newHeroes[selectedHeroIndex];
-      newHeroes[selectedHeroIndex] = newHeroes[index];
-      newHeroes[index] = temp;
-      setGameState(prev => ({ ...prev, heroes: newHeroes }));
-      setSelectedHeroIndex(null);
-    }
-  };
-
-  const handleEquipClick = (heroId: string, slotIndex: number) => {
-    setEquippingState({ heroId, slotIndex });
-  };
-
-  const handleSelectEquipment = (equipmentId: string | null) => {
-    if (!equippingState) return;
-
-    setGameState(prev => ({
-      ...prev,
-      heroes: prev.heroes.map(hero => {
-        if (hero.id !== equippingState.heroId) return hero;
-        const newEquipIds = [...hero.equipmentIds];
-        
-        // Directly set slot (0, 1, or 2) corresponds to type constraint in Selector
-        if (equipmentId === null) {
-          newEquipIds[equippingState.slotIndex] = '';
-        } else {
-          newEquipIds[equippingState.slotIndex] = equipmentId;
-        }
-        return { ...hero, equipmentIds: newEquipIds };
-      })
-    }));
-
-    setEquippingState(null);
+  const handleNavClick = (view: View) => {
+    playClick();
+    setCurrentView(view);
   };
 
   const renderContent = () => {
     switch (currentView) {
       case View.PARTY:
         return (
-          <div className="p-4 h-full overflow-y-auto pb-24">
-            <h1 className="text-xl font-orbitron font-bold text-indigo-300 mb-1">パーティ編成</h1>
-            <p className="text-[10px] text-yellow-400 mb-6 bg-slate-900/60 p-2 rounded border border-yellow-500/20 inline-block">
-              ※ ヒーローと装備スロットタップで入れ替えできます
-            </p>
-            
-            <div className="grid grid-cols-3 gap-2 sm:gap-6 mb-8">
-              {gameState.heroes.slice(0, 3).map((hero, idx) => (
-                <div key={hero.id} className="relative">
-                  <div className="absolute -top-2 left-0 right-0 flex justify-center z-20">
-                    <span className="bg-indigo-600 text-[7px] font-black px-1.5 py-0.5 rounded-full shadow-lg border border-indigo-400 whitespace-nowrap">
-                      SLOT {idx + 1}
-                    </span>
-                  </div>
-                  <HeroCard 
-                    hero={hero} 
-                    index={idx}
-                    isSelected={selectedHeroIndex === idx}
-                    onClick={() => handleHeroClick(idx)}
-                    onEquipClick={handleEquipClick}
-                    isMainSlot
-                  />
-                </div>
-              ))}
-            </div>
-
-            <div className="mt-8 mb-8">
-              <h2 className="text-[10px] font-bold text-slate-500 mb-3 uppercase tracking-widest flex items-center">
-                <span className="w-1 h-3 bg-slate-700 mr-2 rounded-full"></span>
-                リザーブ・メンバー
-              </h2>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                 {gameState.heroes.slice(3).map((hero, idx) => {
-                   const actualIndex = idx + 3;
-                   return (
-                    <HeroCard 
-                      key={hero.id} 
-                      hero={hero} 
-                      index={actualIndex}
-                      compact 
-                      isSelected={selectedHeroIndex === actualIndex}
-                      onClick={() => handleHeroClick(actualIndex)}
-                    />
-                  );
-                 })}
-              </div>
-            </div>
-
-            <div className="mb-8">
-              <h2 className="text-[10px] font-bold text-slate-500 mb-3 uppercase tracking-widest flex items-center">
-                 <span className="w-1 h-3 bg-indigo-500 mr-2 rounded-full"></span>
-                 所持装備一覧
-              </h2>
-              <div className="grid grid-cols-2 gap-2">
-                {gameState.equipment.length > 0 ? (
-                  gameState.equipment.map(e => {
-                    const equippedHero = gameState.heroes.find(h => h.equipmentIds.includes(e.id));
-                    return (
-                      <div key={e.id} className="bg-slate-900/60 border border-slate-800 p-2 rounded-lg flex items-center space-x-2 relative overflow-hidden">
-                        <div className="text-xl">
-                          {e.type === 'Pickaxe' ? '⛏️' : e.type === 'Helmet' ? '🪖' : '👢'}
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <p className="text-[10px] font-bold truncate text-indigo-300">{e.name}</p>
-                          <p className="text-[9px] text-slate-500">Bonus: +{e.bonus}</p>
-                        </div>
-                        {equippedHero && (
-                          <div className="absolute top-0 right-0 bg-slate-700 text-[8px] px-1 rounded-bl text-slate-300">
-                             装備中
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })
-                ) : (
-                  <p className="col-span-2 text-slate-600 text-xs italic">所持している装備はありません</p>
-                )}
-              </div>
-            </div>
-          </div>
+          <PartyView 
+            gameState={gameState} 
+            onSwapHeroes={actions.swapHeroes}
+            onEquipItem={actions.equipItem}
+          />
         );
 
       case View.GACHA:
-        const heroCost = 10000;
-        const equipCost = 6000;
-        const currentCost = gachaTab === 'Hero' ? heroCost : equipCost;
-        const canAfford = gameState.tokens >= currentCost;
-
         return (
-          <div className="flex flex-col h-full">
-             {/* Sticky Header */}
-             <div className="p-6 bg-slate-900/80 border-b border-slate-800 sticky top-0 z-20 backdrop-blur-md flex-none">
-                <div className="flex justify-between items-center">
-                  <h1 className="text-xl font-orbitron font-bold text-indigo-300">採掘ガチャ</h1>
-                  <div className="flex items-center space-x-2 bg-slate-800 px-4 py-1.5 rounded-full border border-yellow-500/50 shadow-[0_0_15px_rgba(234,179,8,0.2)]">
-                    <span className="text-yellow-400 text-sm font-black">$CHH:</span>
-                    <span className="font-orbitron text-lg font-bold">{gameState.tokens.toLocaleString()}</span>
-                  </div>
-                </div>
-              </div>
-
-             <div className="flex-1 overflow-y-auto p-6 pb-24 flex flex-col items-center">
-                <div className="flex bg-slate-900 p-1.5 rounded-2xl w-full max-w-md mb-8 border border-slate-800">
-                  <button 
-                    className={`flex-1 py-3 rounded-xl font-bold transition-all ${gachaTab === 'Hero' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-500'}`}
-                    onClick={() => setGachaTab('Hero')}
-                  >
-                    ヒーロー
-                  </button>
-                  <button 
-                    className={`flex-1 py-3 rounded-xl font-bold transition-all ${gachaTab === 'Equipment' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-500'}`}
-                    onClick={() => setGachaTab('Equipment')}
-                  >
-                    装備品
-                  </button>
-                </div>
-                <div className="glass-panel p-10 rounded-[2.5rem] text-center space-y-8 max-w-md w-full border-t-8 border-t-yellow-500 shadow-2xl relative overflow-hidden">
-                  {isGachaRolling && (
-                    <div className="absolute inset-0 z-50 bg-slate-950/90 backdrop-blur-sm flex flex-col items-center justify-center p-6 space-y-4">
-                      <div className="w-16 h-16 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
-                      <p className="font-orbitron font-bold text-indigo-400 animate-pulse">CONNECTING...</p>
-                    </div>
-                  )}
-                  <div className="relative inline-block">
-                    <div className="text-7xl animate-bounce drop-shadow-[0_0_20px_rgba(234,179,8,0.5)]">🎁</div>
-                    <div className="absolute inset-0 animate-ping bg-yellow-500/20 rounded-full"></div>
-                  </div>
-                  <div>
-                    <h2 className="text-2xl font-bold mb-2">{gachaTab === 'Hero' ? '新しい相棒を呼ぶ' : '地下の遺物を探す'}</h2>
-                    <p className="text-slate-400 text-sm">
-                      コスト: <span className={`font-black text-lg ${canAfford ? 'text-yellow-400' : 'text-red-400'}`}>{currentCost.toLocaleString()} $CHH</span>
-                    </p>
-                  </div>
-                  <button 
-                    onClick={handleGacha}
-                    disabled={isGachaRolling || !canAfford}
-                    className={`w-full py-5 bg-gradient-to-b from-yellow-400 to-yellow-600 text-slate-950 rounded-2xl font-black text-xl shadow-xl shadow-yellow-900/20 transition-all ${
-                      (isGachaRolling || !canAfford)
-                        ? 'opacity-50 cursor-not-allowed grayscale' 
-                        : 'hover:brightness-110 active:scale-95'
-                    }`}
-                  >
-                    {isGachaRolling ? '通信中...' : !canAfford ? 'トークン不足' : 'ガチャを回す'}
-                  </button>
-                </div>
-             </div>
-          </div>
+          <GachaView 
+            gameState={gameState} 
+            onRollGacha={actions.rollGacha}
+            isGachaRolling={ui.isGachaRolling}
+            gachaResult={ui.gachaResult}
+            onCloseResult={() => { playClick(); ui.setGachaResult(null); }}
+          />
         );
 
       case View.DEPART:
         return (
-          <div className="flex flex-col h-full">
-             {/* Sticky Header */}
-             <div className="p-6 bg-slate-900/80 border-b border-slate-800 sticky top-0 z-20 backdrop-blur-md flex-none">
-                <div className="flex justify-between items-center">
-                  <h1 className="text-xl font-orbitron font-bold text-indigo-300">出発ゲート</h1>
-                  <div className="flex items-center space-x-2 bg-slate-800 px-4 py-1.5 rounded-full border border-yellow-500/50 shadow-[0_0_15px_rgba(234,179,8,0.2)]">
-                    <span className="text-yellow-400 text-sm font-black">$CHH:</span>
-                    <span className="font-orbitron text-lg font-bold">{gameState.tokens.toLocaleString()}</span>
-                  </div>
-                </div>
-              </div>
-
-             <div className="flex-1 overflow-y-auto p-4 space-y-4 pb-24">
-                <p className="text-xs text-slate-500 mb-2">難易度を選択してクエストに出発します</p>
-                {(Object.keys(QUEST_CONFIG) as QuestRank[]).map((rank) => {
-                  const config = QUEST_CONFIG[rank];
-                  const rankColors: Record<QuestRank, string> = {
-                    C: 'border-slate-600 bg-slate-900/50',
-                    UC: 'border-green-600 bg-green-900/20',
-                    R: 'border-blue-600 bg-blue-900/20',
-                    E: 'border-orange-600 bg-orange-900/20',
-                    L: 'border-purple-600 bg-purple-900/20'
-                  };
-                  const rankBadges: Record<QuestRank, string> = {
-                    C: 'bg-slate-600',
-                    UC: 'bg-green-600',
-                    R: 'bg-blue-600',
-                    E: 'bg-orange-600',
-                    L: 'bg-purple-600'
-                  };
-
-                  return (
-                    <button
-                      key={rank}
-                      onClick={() => handleDepart(rank)}
-                      className={`w-full text-left relative group overflow-hidden rounded-xl border-l-4 p-4 transition-all hover:translate-x-1 active:scale-95 ${rankColors[rank]}`}
-                    >
-                      <div className="flex justify-between items-start mb-2">
-                         <div className="flex items-center space-x-2">
-                           <span className={`text-xs font-black px-2 py-0.5 rounded text-white ${rankBadges[rank]}`}>{rank}</span>
-                           <h3 className="font-bold text-slate-200">{config.name}</h3>
-                         </div>
-                         <div className="text-right">
-                           <span className="block text-[10px] text-slate-400 font-mono">所要時間</span>
-                           <span className="font-orbitron font-bold text-indigo-300">{Math.floor(config.duration / 60)}m</span>
-                         </div>
-                      </div>
-
-                      <div className="grid grid-cols-2 gap-2 text-[10px] sm:text-xs">
-                         <div className="bg-slate-950/50 p-2 rounded">
-                           <p className="text-slate-500">報酬レンジ</p>
-                           <p className="text-yellow-400 font-bold">{config.minReward} - {config.maxReward} $CHH</p>
-                         </div>
-                         <div className="bg-slate-950/50 p-2 rounded">
-                           <p className="text-slate-500">出発コスト</p>
-                           <p className="text-white font-bold">{config.burnCost} $CHH</p>
-                         </div>
-                         <div className="bg-slate-950/50 p-2 rounded">
-                           <p className="text-slate-500">被ダメージ/人</p>
-                           <p className="text-red-400 font-bold">{config.minDmg} - {config.maxDmg}</p>
-                         </div>
-                         <div className="bg-slate-950/50 p-2 rounded relative overflow-hidden">
-                           <p className="text-slate-500">特記事項</p>
-                           {rank === 'L' ? (
-                             <p className="text-purple-400 font-black animate-pulse">☠️ 即死率 1.6%</p>
-                           ) : rank === 'E' ? (
-                             <p className="text-orange-400 font-bold">⚠️ HP71以上限定</p>
-                           ) : (
-                             <p className="text-slate-400">特になし</p>
-                           )}
-                         </div>
-                      </div>
-                    </button>
-                  );
-                })}
-             </div>
-          </div>
+          <DepartView 
+            gameState={gameState} 
+            onDepart={(rank) => {
+              const success = actions.depart(rank);
+              if (success) setCurrentView(View.HOME);
+              return success;
+            }} 
+          />
         );
 
       case View.RETURN:
-        return <StatusBoard state={gameState} view={View.RETURN} title="帰還ポッド" actionButtonLabel="報酬を回収して帰還" onAction={handleReturn} />;
+        return (
+          <StatusBoard 
+            state={gameState} 
+            view={View.RETURN} 
+            title="帰還ポッド" 
+            actionButtonLabel="報酬を回収して帰還" 
+            onAction={actions.returnFromQuest} 
+          />
+        );
       
       case View.RECOVERY:
         return (
-          <div className="flex flex-col h-full">
-             {/* Sticky Header */}
-             <div className="p-6 bg-slate-900/80 border-b border-slate-800 sticky top-0 z-20 backdrop-blur-md flex-none">
-                <div className="flex justify-between items-center">
-                  <h1 className="text-xl font-orbitron font-bold text-indigo-300">チワワ・エステ</h1>
-                  <div className="flex items-center space-x-2 bg-slate-800 px-4 py-1.5 rounded-full border border-yellow-500/50 shadow-[0_0_15px_rgba(234,179,8,0.2)]">
-                    <span className="text-yellow-400 text-sm font-black">$CHH:</span>
-                    <span className="font-orbitron text-lg font-bold">{gameState.tokens.toLocaleString()}</span>
-                  </div>
-                </div>
-              </div>
-
-             <div className="flex-1 overflow-y-auto p-4 space-y-3 pb-24">
-                <p className="text-xs text-slate-500 mb-2">ヒーローを選択して回復アイテムを使用します</p>
-                {gameState.heroes.map((hero) => {
-                  const hpPercent = (hero.hp / hero.maxHp) * 100;
-                  const isFull = hero.hp >= hero.maxHp;
-                  
-                  return (
-                    <div key={hero.id} className="glass-panel p-3 rounded-xl border border-slate-700 flex flex-col sm:flex-row gap-3 items-center">
-                       {/* Hero Info */}
-                       <div className="flex items-center gap-3 w-full sm:w-auto flex-1">
-                          <img src={hero.imageUrl} className="w-12 h-12 rounded-lg object-cover border border-slate-600" alt={hero.name} />
-                          <div className="flex-1 min-w-0">
-                             <div className="flex justify-between items-center">
-                                <h3 className="font-bold text-sm text-slate-200 truncate">{hero.name}</h3>
-                                <span className={`text-[10px] px-1.5 py-0.5 rounded font-black ${hero.hp < 30 ? 'bg-red-500/20 text-red-400' : 'bg-green-500/20 text-green-400'}`}>
-                                   HP {hero.hp}/{hero.maxHp}
-                                </span>
-                             </div>
-                             <div className="h-1.5 bg-slate-800 rounded-full mt-1 overflow-hidden">
-                                <div className={`h-full transition-all duration-500 ${hero.hp < 30 ? 'bg-red-500' : 'bg-green-500'}`} style={{ width: `${hpPercent}%` }}></div>
-                             </div>
-                          </div>
-                       </div>
-
-                       {/* Action Buttons */}
-                       <div className="flex gap-2 w-full sm:w-auto shrink-0">
-                          <button 
-                            onClick={() => handlePotion(hero.id)}
-                            disabled={isFull}
-                            className="flex-1 sm:flex-none flex flex-col items-center justify-center py-2 px-3 bg-slate-800 border border-slate-700 rounded-lg hover:bg-slate-700 active:scale-95 disabled:opacity-30 disabled:pointer-events-none transition-all"
-                          >
-                             <span className="text-lg">🩹</span>
-                             <span className="text-[9px] font-bold text-slate-400">傷薬 (+10)</span>
-                             <span className="text-[10px] font-orbitron text-yellow-500">200 $CHH</span>
-                          </button>
-                          
-                          <button 
-                             onClick={() => handleElixir(hero.id)}
-                             disabled={isFull}
-                             className="flex-1 sm:flex-none flex flex-col items-center justify-center py-2 px-3 bg-indigo-900/30 border border-indigo-500/30 rounded-lg hover:bg-indigo-900/50 active:scale-95 disabled:opacity-30 disabled:pointer-events-none transition-all shadow-[0_0_10px_rgba(99,102,241,0.1)]"
-                          >
-                             <span className="text-lg">🧪</span>
-                             <span className="text-[9px] font-bold text-indigo-300">特効薬 (MAX)</span>
-                             <span className="text-[10px] font-orbitron text-yellow-500">1,200 $CHH</span>
-                          </button>
-                       </div>
-                    </div>
-                  );
-                })}
-             </div>
-          </div>
+          <RecoveryView 
+            gameState={gameState} 
+            onPotion={actions.usePotion}
+            onElixir={actions.useElixir} 
+          />
         );
 
       case View.HOME:
@@ -648,15 +103,15 @@ const App: React.FC = () => {
       </main>
 
       {/* Overlays */}
-      {gachaResult && <GachaEffect result={gachaResult} onClose={() => setGachaResult(null)} />}
-      {equippingState && (
-        <EquipmentSelector 
-          hero={gameState.heroes.find(h => h.id === equippingState.heroId)!}
-          slotIndex={equippingState.slotIndex}
-          equipmentList={gameState.equipment}
-          allHeroes={gameState.heroes}
-          onSelect={handleSelectEquipment}
-          onClose={() => setEquippingState(null)}
+      {ui.returnResult && (
+        <ResultModal 
+          results={ui.returnResult.results}
+          totalTokens={ui.returnResult.totalTokens}
+          onClose={() => { 
+            playConfirm(); 
+            ui.setReturnResult(null); 
+            setCurrentView(View.HOME); 
+          }}
         />
       )}
 
@@ -665,7 +120,7 @@ const App: React.FC = () => {
         {navItems.map(({ view, label, icon: Icon }) => (
           <button
             key={view}
-            onClick={() => setCurrentView(view)}
+            onClick={() => handleNavClick(view)}
             className={`flex flex-col items-center justify-center transition-all duration-300 w-14 pb-1 ${
               currentView === view ? 'text-indigo-400 scale-110' : 'text-slate-500'
             }`}

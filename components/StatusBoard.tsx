@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { GameState, View } from '../types';
 import HeroCard from './HeroCard';
+import { playClick } from '../utils/sound';
 
 interface StatusBoardProps {
   state: GameState;
@@ -11,31 +12,61 @@ interface StatusBoardProps {
   view: View;
 }
 
-const Timer: React.FC<{ endTime: number }> = ({ endTime }) => {
-  const [timeLeft, setTimeLeft] = useState(Math.max(0, Math.floor((endTime - Date.now()) / 1000)));
+const QuestItem: React.FC<{ quest: any }> = ({ quest }) => {
+  const [timeLeft, setTimeLeft] = useState(Math.max(0, Math.floor((quest.endTime - Date.now()) / 1000)));
 
   useEffect(() => {
     const interval = setInterval(() => {
-      const remaining = Math.max(0, Math.floor((endTime - Date.now()) / 1000));
+      const remaining = Math.max(0, Math.floor((quest.endTime - Date.now()) / 1000));
       setTimeLeft(remaining);
       if (remaining <= 0) clearInterval(interval);
     }, 1000);
     return () => clearInterval(interval);
-  }, [endTime]);
+  }, [quest.endTime]);
 
+  const isCompleted = timeLeft <= 0;
+  
   const minutes = Math.floor(timeLeft / 60);
   const seconds = timeLeft % 60;
 
   return (
-    <span className="font-mono text-orange-400">
-      {minutes}:{seconds.toString().padStart(2, '0')}
-    </span>
+    <div 
+      className={`glass-panel p-4 rounded-xl border-l-4 flex justify-between items-center transition-all duration-500 ${
+        isCompleted 
+          ? 'border-green-500 bg-green-900/30 shadow-[0_0_15px_rgba(34,197,94,0.2)]' 
+          : 'border-orange-500 animate-pulse-slow'
+      }`}
+    >
+      <div>
+        <p className={`font-bold text-sm ${isCompleted ? 'text-green-300' : 'text-slate-200'}`}>
+          {quest.name}
+        </p>
+        <p className="text-[10px] text-slate-400">報酬: {quest.reward} $CHH</p>
+      </div>
+      <div className="text-right">
+        {isCompleted ? (
+          <div className="flex items-center space-x-1 text-green-400 font-bold animate-bounce">
+            <span className="text-lg">✓</span>
+            <span className="font-orbitron tracking-wider">COMPLETE</span>
+          </div>
+        ) : (
+          <span className="font-mono text-orange-400">
+            {minutes}:{seconds.toString().padStart(2, '0')}
+          </span>
+        )}
+      </div>
+    </div>
   );
 };
 
 const StatusBoard: React.FC<StatusBoardProps> = ({ state, actionButtonLabel, onAction, title, view }) => {
   // Get Main Party (First 3 heroes)
   const mainParty = state.heroes.slice(0, 3);
+
+  const handleAction = () => {
+    playClick();
+    if (onAction) onAction();
+  };
 
   return (
     <div className="flex flex-col h-full relative">
@@ -62,15 +93,7 @@ const StatusBoard: React.FC<StatusBoardProps> = ({ state, actionButtonLabel, onA
             <div className="space-y-2">
               {state.activeQuests.length > 0 ? (
                 state.activeQuests.map(q => (
-                  <div key={q.id} className="glass-panel p-4 rounded-xl border-l-4 border-orange-500 flex justify-between items-center animate-pulse-slow">
-                    <div>
-                      <p className="font-bold text-sm">{q.name}</p>
-                      <p className="text-[10px] text-slate-400">報酬: {q.reward} $CHH</p>
-                    </div>
-                    <div className="text-right">
-                      <Timer endTime={q.endTime} />
-                    </div>
-                  </div>
+                  <QuestItem key={q.id} quest={q} />
                 ))
               ) : (
                 <div className="bg-slate-900/40 border border-dashed border-slate-800 rounded-xl p-6 text-center">
@@ -108,7 +131,7 @@ const StatusBoard: React.FC<StatusBoardProps> = ({ state, actionButtonLabel, onA
       {actionButtonLabel && (
         <div className="p-6 pb-8 bg-gradient-to-t from-slate-950 via-slate-950 to-transparent sticky bottom-0 z-30">
           <button 
-            onClick={onAction}
+            onClick={handleAction}
             className="w-full py-4 bg-gradient-to-r from-indigo-600 via-indigo-500 to-purple-600 rounded-2xl font-black text-lg shadow-[0_10px_30px_rgba(79,70,229,0.4)] border border-white/10 hover:translate-y-[-2px] active:translate-y-[1px] transition-all"
           >
             {actionButtonLabel}

@@ -1,6 +1,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { Hero, Equipment } from '../types';
+import { playGachaReveal } from '../utils/sound';
 
 interface GachaEffectProps {
   result: { type: 'Hero' | 'Equipment'; data: any } | null;
@@ -12,7 +13,10 @@ const GachaEffect: React.FC<GachaEffectProps> = ({ result, onClose }) => {
 
   useEffect(() => {
     const t1 = setTimeout(() => setPhase('burst'), 1200);
-    const t2 = setTimeout(() => setPhase('reveal'), 1500);
+    const t2 = setTimeout(() => {
+      setPhase('reveal');
+      playGachaReveal(); // Play sound on reveal
+    }, 1500);
     return () => {
       clearTimeout(t1);
       clearTimeout(t2);

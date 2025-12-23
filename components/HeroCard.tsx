@@ -129,7 +129,8 @@ const HeroCard: React.FC<HeroCardProps> = ({
           </div>
         )}
 
-        <div className="absolute bottom-1.5 left-1.5 right-1.5 z-20">
+        {/* Hero Info - Moved UP to avoid overlap with large equipment slots */}
+        <div className="absolute bottom-11 left-1.5 right-1.5 z-20 bg-slate-950/30 p-1 rounded-lg backdrop-blur-[2px]">
           <h3 className="text-[7px] sm:text-[9px] font-orbitron font-bold text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)] truncate mb-0.5">
             {hero.name}
           </h3>
