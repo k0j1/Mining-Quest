@@ -1,6 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
-import { GameState, View } from '../types';
+import { GameState, View, QuestRank } from '../types';
+import { QUEST_CONFIG } from '../constants';
 import HeroCard from './HeroCard';
 import { playClick } from '../utils/sound';
 
@@ -29,6 +30,8 @@ const QuestItem: React.FC<{ quest: any }> = ({ quest }) => {
   const minutes = Math.floor(timeLeft / 60);
   const seconds = timeLeft % 60;
 
+  const config = QUEST_CONFIG[quest.rank as QuestRank];
+
   return (
     <div 
       className={`glass-panel p-4 rounded-xl border-l-4 flex justify-between items-center transition-all duration-500 ${
@@ -38,10 +41,21 @@ const QuestItem: React.FC<{ quest: any }> = ({ quest }) => {
       }`}
     >
       <div>
-        <p className={`font-bold text-sm ${isCompleted ? 'text-green-300' : 'text-slate-200'}`}>
-          {quest.name}
+        <div className="flex items-center gap-2 mb-1">
+          <span className={`text-[10px] font-black px-1.5 rounded text-white ${
+            quest.rank === 'C' ? 'bg-slate-600' :
+            quest.rank === 'UC' ? 'bg-green-600' :
+            quest.rank === 'R' ? 'bg-blue-600' :
+            quest.rank === 'E' ? 'bg-orange-600' :
+            'bg-purple-600'
+          }`}>{quest.rank}</span>
+          <p className={`font-bold text-sm ${isCompleted ? 'text-green-300' : 'text-slate-200'}`}>
+            {quest.name}
+          </p>
+        </div>
+        <p className="text-[10px] text-slate-400">
+          報酬レンジ: <span className="text-yellow-400 font-bold">{config.minReward} - {config.maxReward}</span> $CHH
         </p>
-        <p className="text-[10px] text-slate-400">報酬: {quest.reward} $CHH</p>
       </div>
       <div className="text-right">
         {isCompleted ? (
