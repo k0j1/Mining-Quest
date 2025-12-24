@@ -5,7 +5,7 @@ import { ICONS } from './constants';
 import StatusBoard from './components/StatusBoard';
 import MiningBackground from './components/MiningBackground';
 import ResultModal from './components/ResultModal';
-import { playClick, playConfirm } from './utils/sound';
+import { playClick, playConfirm, toggleBGM } from './utils/sound';
 import { useGameLogic } from './hooks/useGameLogic';
 
 // Views
@@ -16,11 +16,19 @@ import GachaView from './components/views/GachaView';
 
 const App: React.FC = () => {
   const [currentView, setCurrentView] = useState<View>(View.HOME);
+  const [isBgmOn, setIsBgmOn] = useState(false);
   const { gameState, ui, actions } = useGameLogic();
 
   const handleNavClick = (view: View) => {
     playClick();
     setCurrentView(view);
+  };
+
+  const handleToggleBgm = () => {
+    const newState = !isBgmOn;
+    setIsBgmOn(newState);
+    toggleBGM(newState);
+    if (!isBgmOn) playConfirm(); // Sound confirmation when turning ON
   };
 
   const renderContent = () => {
@@ -94,6 +102,25 @@ const App: React.FC = () => {
 
   return (
     <div className="fixed inset-0 flex flex-col max-w-4xl mx-auto overflow-hidden bg-slate-950 border-x border-slate-800">
+      {/* Sound Toggle Button (Fixed on top right) */}
+      <button 
+        onClick={handleToggleBgm}
+        className="fixed top-3 right-3 z-[110] p-2 bg-slate-900/50 backdrop-blur-md border border-white/10 rounded-full hover:bg-slate-800 active:scale-95 transition-all"
+        aria-label="Toggle BGM"
+      >
+        {isBgmOn ? (
+          <div className="flex space-x-0.5 items-end h-4 w-4 justify-center">
+            <div className="w-1 bg-green-400 rounded-t animate-[bounce_1s_infinite]"></div>
+            <div className="w-1 bg-green-400 rounded-t animate-[bounce_1.2s_infinite]"></div>
+            <div className="w-1 bg-green-400 rounded-t animate-[bounce_0.8s_infinite]"></div>
+          </div>
+        ) : (
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4 text-slate-500">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M17.25 9.75 19.5 12m0 0 2.25 2.25M19.5 12l2.25-2.25M19.5 12l-2.25 2.25m-10.5-6 4.72-4.72a.75.75 0 0 1 1.28.53v15.88a.75.75 0 0 1-1.28.53l-4.72-4.72H4.51c-.88 0-1.704-.507-1.938-1.354A9.009 9.009 0 0 1 2.25 12c0-.83.112-1.633.322-2.396C2.806 8.756 3.63 8.25 4.51 8.25H6.75Z" />
+          </svg>
+        )}
+      </button>
+
       {/* Main Area: Scrollable */}
       <main className="flex-1 relative overflow-hidden">
         <MiningBackground />
