@@ -266,6 +266,15 @@ export const useGameLogic = () => {
   };
 
   const swapHeroes = (index1: number, index2: number) => {
+    // Logic Guard: Prevent swapping if main party is deployed
+    if (gameState.activeQuests.length > 0) {
+      if (index1 < 3 || index2 < 3) {
+        playError();
+        alert("クエスト進行中は主力メンバー(Slot 1-3)を入れ替えできません。");
+        return;
+      }
+    }
+
     playConfirm();
     const newHeroes = [...gameState.heroes];
     const temp = newHeroes[index1];
@@ -275,6 +284,16 @@ export const useGameLogic = () => {
   };
 
   const equipItem = (heroId: string, slotIndex: number, equipmentId: string | null) => {
+    // Logic Guard: Prevent equipping if main party is deployed
+    if (gameState.activeQuests.length > 0) {
+      const heroIndex = gameState.heroes.findIndex(h => h.id === heroId);
+      if (heroIndex >= 0 && heroIndex < 3) {
+        playError();
+        alert("クエスト進行中は主力メンバー(Slot 1-3)の装備を変更できません。");
+        return;
+      }
+    }
+
     playConfirm();
     setGameState(prev => ({
       ...prev,

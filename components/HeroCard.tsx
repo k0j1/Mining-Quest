@@ -7,6 +7,7 @@ interface HeroCardProps {
   index: number;
   compact?: boolean;
   isSelected?: boolean;
+  isLocked?: boolean;
   onClick?: () => void;
   onEquipClick?: (heroId: string, slotIndex: number) => void;
   isMainSlot?: boolean;
@@ -17,6 +18,7 @@ const HeroCard: React.FC<HeroCardProps> = ({
   index, 
   compact, 
   isSelected,
+  isLocked,
   onClick,
   onEquipClick,
   isMainSlot
@@ -47,15 +49,27 @@ const HeroCard: React.FC<HeroCardProps> = ({
   // Fixed slot types: 0=Pickaxe, 1=Helmet, 2=Boots
   const slotIcons = ['⛏️', '🪖', '👢'];
 
+  const handleClick = (e: React.MouseEvent) => {
+    if (isLocked) return;
+    if (onClick) onClick();
+  };
+
+  const handleEquipClick = (heroId: string, i: number) => {
+    if (isLocked) return;
+    if (onEquipClick) onEquipClick(heroId, i);
+  };
+
   if (compact) {
     return (
       <div 
-        onClick={onClick}
-        className={`flex items-center space-x-2 p-2 glass-panel rounded-lg transition-all cursor-pointer ${
+        onClick={handleClick}
+        className={`flex items-center space-x-2 p-2 glass-panel rounded-lg transition-all ${
+          isLocked ? 'opacity-50 grayscale cursor-not-allowed' : 'cursor-pointer active:scale-95'
+        } ${
           isSelected 
             ? 'border-indigo-400 bg-indigo-500/20 ring-2 ring-indigo-500 shadow-[0_0_15px_rgba(99,102,241,0.5)]' 
             : 'border-slate-800'
-        } active:scale-95`}
+        }`}
       >
         <div className="relative flex-shrink-0">
           <img src={hero.imageUrl} className="w-10 h-10 rounded-lg border border-indigo-400/30 object-cover" alt={hero.name} />
@@ -86,16 +100,23 @@ const HeroCard: React.FC<HeroCardProps> = ({
              <p className="text-[8px] text-green-400 mt-0.5">🛡️{hero.trait} (-{hero.damageReduction}%)</p>
           )}
         </div>
+        {isLocked && (
+          <div className="absolute inset-0 bg-slate-950/60 rounded-lg flex items-center justify-center z-50">
+            <span className="text-[8px] font-black text-white bg-slate-800 px-1 py-0.5 rounded border border-slate-600">DEPLOYED</span>
+          </div>
+        )}
       </div>
     );
   }
 
   return (
     <div 
-      onClick={onClick}
-      className={`relative group transition-all duration-300 cursor-pointer ${
+      onClick={handleClick}
+      className={`relative group transition-all duration-300 ${
+        isLocked ? 'cursor-not-allowed opacity-80' : 'cursor-pointer active:scale-95'
+      } ${
         isSelected ? 'scale-105 z-30' : 'scale-100 z-10'
-      } active:scale-95`}
+      }`}
     >
       {/* Selection Glow */}
       {isSelected && (
@@ -108,7 +129,7 @@ const HeroCard: React.FC<HeroCardProps> = ({
           ? 'border-indigo-400 shadow-[0_0_20px_rgba(129,140,248,0.8)]' 
           : `${rarityBorders[hero.rarity] || rarityBorders.C} glass-panel`
       }`}>
-        <img src={hero.imageUrl} className={`absolute inset-0 w-full h-full object-cover transition-transform duration-700 ${isSelected ? 'scale-110' : 'scale-100'}`} alt={hero.name} />
+        <img src={hero.imageUrl} className={`absolute inset-0 w-full h-full object-cover transition-transform duration-700 ${isSelected && !isLocked ? 'scale-110' : 'scale-100'} ${isLocked ? 'grayscale-[0.5]' : ''}`} alt={hero.name} />
         <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/20 to-transparent opacity-90"></div>
 
         <div className="absolute top-1 left-1 flex flex-col gap-0.5 items-start z-20">
@@ -146,22 +167,32 @@ const HeroCard: React.FC<HeroCardProps> = ({
             </div>
           </div>
         </div>
+
+        {/* LOCKED Overlay */}
+        {isLocked && (
+          <div className="absolute inset-0 bg-black/50 z-30 flex flex-col items-center justify-center backdrop-blur-[1px]">
+            <div className="bg-yellow-500/90 text-slate-900 font-black text-[10px] sm:text-xs px-2 py-1 rounded border-2 border-slate-900 shadow-xl transform -rotate-12 animate-pulse">
+              DEPLOYED
+            </div>
+          </div>
+        )}
       </div>
 
-      {/* Equipment Slots - Scaled UP significantly for mobile tap targets */}
+      {/* Equipment Slots */}
       <div className="absolute -bottom-2 -right-1 flex gap-0.5 z-40">
         {[0, 1, 2].map(i => (
           <button 
             key={i} 
             onClick={(e) => {
               e.stopPropagation();
-              if (onEquipClick) onEquipClick(hero.id, i);
+              handleEquipClick(hero.id, i);
             }}
+            disabled={isLocked}
             className={`w-9 h-9 sm:w-10 sm:h-10 rounded-lg border flex items-center justify-center shadow-lg transition-all duration-300 ${
               hero.equipmentIds[i] 
                 ? 'bg-indigo-600 border-indigo-300 text-sm sm:text-base' 
                 : 'bg-slate-900/90 border-slate-700/50 border-dashed text-xs sm:text-sm text-slate-500 backdrop-blur-sm'
-            } active:scale-90`}
+            } ${isLocked ? 'opacity-50 cursor-not-allowed' : 'active:scale-90'}`}
           >
             {/* Show Equipment Type Icon always, opaque if empty, bright if equipped */}
             <span className={hero.equipmentIds[i] ? 'opacity-100' : 'opacity-40 grayscale'}>
