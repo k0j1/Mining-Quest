@@ -5,7 +5,7 @@ import { ICONS } from './constants';
 import StatusBoard from './components/StatusBoard';
 import MiningBackground from './components/MiningBackground';
 import ResultModal from './components/ResultModal';
-import { playClick, playConfirm, toggleBGM } from './utils/sound';
+import { playClick, playConfirm, toggleSound } from './utils/sound';
 import { useGameLogic } from './hooks/useGameLogic';
 
 // Views
@@ -16,7 +16,7 @@ import GachaView from './components/views/GachaView';
 
 const App: React.FC = () => {
   const [currentView, setCurrentView] = useState<View>(View.HOME);
-  const [isBgmOn, setIsBgmOn] = useState(false);
+  const [isSoundOn, setIsSoundOn] = useState(false);
   const { gameState, ui, actions } = useGameLogic();
 
   const handleNavClick = (view: View) => {
@@ -24,11 +24,11 @@ const App: React.FC = () => {
     setCurrentView(view);
   };
 
-  const handleToggleBgm = () => {
-    const newState = !isBgmOn;
-    setIsBgmOn(newState);
-    toggleBGM(newState);
-    if (!isBgmOn) playConfirm(); // Sound confirmation when turning ON
+  const handleToggleSound = () => {
+    const newState = !isSoundOn;
+    setIsSoundOn(newState);
+    toggleSound(newState);
+    if (newState) playConfirm(); // Sound confirmation when turning ON
   };
 
   const renderContent = () => {
@@ -102,13 +102,13 @@ const App: React.FC = () => {
 
   return (
     <div className="fixed inset-0 flex flex-col max-w-4xl mx-auto overflow-hidden bg-slate-950 border-x border-slate-800">
-      {/* Sound Toggle Button (Fixed on top right) */}
+      {/* Sound Toggle Button (Moved to avoid overlap with sticky headers) */}
       <button 
-        onClick={handleToggleBgm}
-        className="fixed top-3 right-3 z-[110] p-2 bg-slate-900/50 backdrop-blur-md border border-white/10 rounded-full hover:bg-slate-800 active:scale-95 transition-all"
-        aria-label="Toggle BGM"
+        onClick={handleToggleSound}
+        className="fixed top-24 right-4 z-[50] p-2 bg-slate-900/50 backdrop-blur-md border border-white/10 rounded-full hover:bg-slate-800 active:scale-95 transition-all shadow-lg"
+        aria-label="Toggle Sound"
       >
-        {isBgmOn ? (
+        {isSoundOn ? (
           <div className="flex space-x-0.5 items-end h-4 w-4 justify-center">
             <div className="w-1 bg-green-400 rounded-t animate-[bounce_1s_infinite]"></div>
             <div className="w-1 bg-green-400 rounded-t animate-[bounce_1.2s_infinite]"></div>

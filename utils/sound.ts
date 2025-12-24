@@ -3,7 +3,7 @@
 
 let audioCtx: AudioContext | null = null;
 let bgmGainNode: GainNode | null = null;
-let isBgmEnabled = false;
+let isSoundEnabled = false; // Renamed from isBgmEnabled to isSoundEnabled to reflect global control
 let nextNoteTime = 0;
 let schedulerTimer: number | null = null;
 
@@ -109,7 +109,7 @@ function playNote(ctx: AudioContext, freq: number, type: OscillatorType, startTi
 }
 
 function scheduler() {
-  if (!isBgmEnabled || !audioCtx) return;
+  if (!isSoundEnabled || !audioCtx) return;
 
   // Schedule Melody
   while (melodyNextTime < audioCtx.currentTime + SCHEDULE_AHEAD_TIME) {
@@ -132,12 +132,14 @@ function scheduler() {
   schedulerTimer = window.setTimeout(scheduler, LOOKAHEAD);
 }
 
-export const toggleBGM = (enabled: boolean) => {
+// Renamed to toggleSound to indicate global sound control
+export const toggleSound = (enabled: boolean) => {
   const ctx = initAudio();
-  isBgmEnabled = enabled;
+  isSoundEnabled = enabled;
 
   if (enabled) {
     if (bgmGainNode) {
+      bgmGainNode.gain.cancelScheduledValues(ctx.currentTime);
       bgmGainNode.gain.linearRampToValueAtTime(0.15, ctx.currentTime + 1);
     }
     
@@ -150,8 +152,9 @@ export const toggleBGM = (enabled: boolean) => {
       scheduler();
     }
   } else {
-    // Fade out
+    // Fade out BGM
     if (bgmGainNode) {
+      bgmGainNode.gain.cancelScheduledValues(ctx.currentTime);
       bgmGainNode.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.5);
     }
     if (schedulerTimer) {
@@ -164,6 +167,8 @@ export const toggleBGM = (enabled: boolean) => {
 // --- SFX Logic ---
 
 const playTone = (freq: number, type: OscillatorType, duration: number, startTime: number = 0, vol: number = 0.1) => {
+  if (!isSoundEnabled) return; // Mute check
+
   const ctx = initAudio();
   const osc = ctx.createOscillator();
   const gain = ctx.createGain();
@@ -182,7 +187,8 @@ const playTone = (freq: number, type: OscillatorType, duration: number, startTim
 };
 
 export const playClick = () => {
-  // If BGM is supposed to be on but context was suspended (e.g. mobile), this wakes it up
+  if (!isSoundEnabled) return;
+  // If sound is enabled, ensure context is running
   initAudio(); 
   playTone(800, 'sine', 0.1, 0, 0.05);
 };
@@ -199,7 +205,9 @@ export const playDepart = () => {
 };
 
 export const playFanfare = () => {
+  // playTone has mute check, so we just call it
   const ctx = initAudio();
+  if (!isSoundEnabled) return;
   
   // Major Arpeggio
   const notes = [523.25, 659.25, 783.99, 1046.50]; // C E G C
@@ -217,6 +225,8 @@ export const playFanfare = () => {
 };
 
 export const playGachaReveal = () => {
+  if (!isSoundEnabled) return; // Mute check
+  
   const ctx = initAudio();
   const osc = ctx.createOscillator();
   const gain = ctx.createGain();
