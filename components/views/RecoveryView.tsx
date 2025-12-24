@@ -14,7 +14,7 @@ const RecoveryView: React.FC<RecoveryViewProps> = ({ gameState, onPotion, onElix
        {/* Sticky Header */}
        <div className="p-6 bg-slate-900/80 border-b border-slate-800 sticky top-0 z-20 backdrop-blur-md flex-none">
           <div className="flex justify-between items-center">
-            <h1 className="text-xl font-orbitron font-bold text-indigo-300">チワワ・エステ</h1>
+            <h1 className="text-xl font-orbitron font-bold text-indigo-300">ヒーローを回復</h1>
             <div className="flex items-center space-x-2 bg-slate-800 px-4 py-1.5 rounded-full border border-yellow-500/50 shadow-[0_0_15px_rgba(234,179,8,0.2)]">
               <span className="text-yellow-400 text-sm font-black">$CHH:</span>
               <span className="font-orbitron text-lg font-bold">{gameState.tokens.toLocaleString()}</span>
