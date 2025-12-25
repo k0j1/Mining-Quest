@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { GameState, View, QuestRank } from '../types';
 import { QUEST_CONFIG } from '../constants';
@@ -14,6 +13,7 @@ interface StatusBoardProps {
   view: View;
   isSoundOn: boolean;
   onToggleSound: () => void;
+  onDebugAddTokens?: () => void;
 }
 
 const QuestItem: React.FC<{ quest: any }> = ({ quest }) => {
@@ -76,7 +76,7 @@ const QuestItem: React.FC<{ quest: any }> = ({ quest }) => {
   );
 };
 
-const StatusBoard: React.FC<StatusBoardProps> = ({ state, actionButtonLabel, onAction, title, view, isSoundOn, onToggleSound }) => {
+const StatusBoard: React.FC<StatusBoardProps> = ({ state, actionButtonLabel, onAction, title, view, isSoundOn, onToggleSound, onDebugAddTokens }) => {
   const handleAction = () => {
     playClick();
     if (onAction) onAction();
@@ -89,6 +89,7 @@ const StatusBoard: React.FC<StatusBoardProps> = ({ state, actionButtonLabel, onA
         tokens={state.tokens} 
         isSoundOn={isSoundOn} 
         onToggleSound={onToggleSound} 
+        onDebugAddTokens={onDebugAddTokens}
       />
 
       {/* Scrollable Content Area */}

@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { GameState } from '../../types';
 import HeroCard from '../HeroCard';
@@ -14,6 +13,7 @@ interface PartyViewProps {
   onAssignHero: (slotIndex: number, heroId: string | null) => void;
   isSoundOn: boolean;
   onToggleSound: () => void;
+  onDebugAddTokens?: () => void;
 }
 
 const PartyView: React.FC<PartyViewProps> = ({ 
@@ -23,7 +23,8 @@ const PartyView: React.FC<PartyViewProps> = ({
   onUnlockParty,
   onAssignHero,
   isSoundOn,
-  onToggleSound
+  onToggleSound,
+  onDebugAddTokens
 }) => {
   const [selectedSlotIndex, setSelectedSlotIndex] = useState<number | null>(null);
   const [selectedHeroId, setSelectedHeroId] = useState<string | null>(null);
@@ -153,6 +154,7 @@ const PartyView: React.FC<PartyViewProps> = ({
           tokens={gameState.tokens} 
           isSoundOn={isSoundOn} 
           onToggleSound={onToggleSound}
+          onDebugAddTokens={onDebugAddTokens}
         >
           {/* Message Area */}
           <div className="px-4 mb-2">

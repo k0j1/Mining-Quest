@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { GameState } from '../../types';
 import Header from '../Header';
@@ -9,9 +8,10 @@ interface RecoveryViewProps {
   onElixir: (heroId: string) => void;
   isSoundOn: boolean;
   onToggleSound: () => void;
+  onDebugAddTokens?: () => void;
 }
 
-const RecoveryView: React.FC<RecoveryViewProps> = ({ gameState, onPotion, onElixir, isSoundOn, onToggleSound }) => {
+const RecoveryView: React.FC<RecoveryViewProps> = ({ gameState, onPotion, onElixir, isSoundOn, onToggleSound, onDebugAddTokens }) => {
   return (
     <div className="flex flex-col h-full">
        <Header 
@@ -19,6 +19,7 @@ const RecoveryView: React.FC<RecoveryViewProps> = ({ gameState, onPotion, onElix
          tokens={gameState.tokens} 
          isSoundOn={isSoundOn} 
          onToggleSound={onToggleSound} 
+         onDebugAddTokens={onDebugAddTokens}
        />
 
        <div className="flex-1 overflow-y-auto p-4 pb-24">

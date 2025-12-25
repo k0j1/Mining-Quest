@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { GameState } from '../../types';
 import GachaEffect from '../GachaEffect';
@@ -13,6 +12,7 @@ interface GachaViewProps {
   onCloseResult: () => void;
   isSoundOn: boolean;
   onToggleSound: () => void;
+  onDebugAddTokens?: () => void;
 }
 
 const GachaView: React.FC<GachaViewProps> = ({ 
@@ -22,7 +22,8 @@ const GachaView: React.FC<GachaViewProps> = ({
   gachaResult, 
   onCloseResult,
   isSoundOn,
-  onToggleSound
+  onToggleSound,
+  onDebugAddTokens
 }) => {
   const [gachaTab, setGachaTab] = useState<'Hero' | 'Equipment'>('Hero');
 
@@ -39,6 +40,7 @@ const GachaView: React.FC<GachaViewProps> = ({
            tokens={gameState.tokens} 
            isSoundOn={isSoundOn} 
            onToggleSound={onToggleSound} 
+           onDebugAddTokens={onDebugAddTokens}
          />
 
          <div className="flex-1 overflow-y-auto p-6 pb-24 flex flex-col items-center">

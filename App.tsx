@@ -33,7 +33,8 @@ const App: React.FC = () => {
   const renderContent = () => {
     const commonProps = {
       isSoundOn,
-      onToggleSound: handleToggleSound
+      onToggleSound: handleToggleSound,
+      onDebugAddTokens: actions.debugAddTokens
     };
 
     switch (currentView) {

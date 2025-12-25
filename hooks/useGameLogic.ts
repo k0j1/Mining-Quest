@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Hero, Equipment, Quest, GameState, QuestRank } from '../types';
 import { INITIAL_HEROES, INITIAL_EQUIPMENT, QUEST_CONFIG } from '../constants';
@@ -7,7 +6,7 @@ import { playClick, playConfirm, playDepart, playError } from '../utils/sound';
 
 export const useGameLogic = () => {
   const [gameState, setGameState] = useState<GameState>({
-    tokens: 25000, 
+    tokens: 50000, 
     heroes: INITIAL_HEROES,
     equipment: INITIAL_EQUIPMENT,
     activeQuests: [],
@@ -372,6 +371,11 @@ export const useGameLogic = () => {
     }));
   };
 
+  const debugAddTokens = () => {
+    setGameState(prev => ({ ...prev, tokens: prev.tokens + 10000 }));
+    playConfirm();
+  };
+
   return {
     gameState,
     ui: {
@@ -390,7 +394,8 @@ export const useGameLogic = () => {
       equipItem,
       switchParty,
       unlockParty,
-      assignHeroToParty
+      assignHeroToParty,
+      debugAddTokens
     }
   };
 };

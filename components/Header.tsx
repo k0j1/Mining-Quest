@@ -1,15 +1,37 @@
-
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 
 interface HeaderProps {
   title: string;
   tokens: number;
   isSoundOn: boolean;
   onToggleSound: () => void;
+  onDebugAddTokens?: () => void;
   children?: React.ReactNode;
 }
 
-const Header: React.FC<HeaderProps> = ({ title, tokens, isSoundOn, onToggleSound, children }) => {
+const Header: React.FC<HeaderProps> = ({ title, tokens, isSoundOn, onToggleSound, onDebugAddTokens, children }) => {
+  const [tapCount, setTapCount] = useState(0);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setTapCount(0);
+    }, 1000);
+    return () => clearTimeout(timer);
+  }, [tapCount]);
+
+  const handleTokenClick = () => {
+    if (!onDebugAddTokens) return;
+    
+    setTapCount(prev => {
+      const newCount = prev + 1;
+      if (newCount >= 5) {
+        onDebugAddTokens();
+        return 0;
+      }
+      return newCount;
+    });
+  };
+
   return (
     <div className="bg-slate-900/90 border-b border-slate-800 sticky top-0 z-20 backdrop-blur-md flex-none shadow-lg">
       <div className="px-4 py-3 flex justify-between items-center h-14">
@@ -30,7 +52,10 @@ const Header: React.FC<HeaderProps> = ({ title, tokens, isSoundOn, onToggleSound
                </svg>
             )}
           </button>
-          <div className="flex items-center space-x-2 bg-slate-800 px-3 py-1 rounded-full border border-yellow-500/50 shadow-[0_0_10px_rgba(234,179,8,0.2)]">
+          <div 
+            onClick={handleTokenClick}
+            className="flex items-center space-x-2 bg-slate-800 px-3 py-1 rounded-full border border-yellow-500/50 shadow-[0_0_10px_rgba(234,179,8,0.2)] select-none active:scale-95 transition-transform"
+          >
             <span className="text-yellow-400 text-xs font-black">$CHH:</span>
             <span className="font-orbitron text-sm font-bold text-white">{tokens.toLocaleString()}</span>
           </div>

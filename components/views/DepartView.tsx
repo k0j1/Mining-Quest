@@ -11,9 +11,10 @@ interface DepartViewProps {
   onSwitchParty: (index: number) => void;
   isSoundOn: boolean;
   onToggleSound: () => void;
+  onDebugAddTokens?: () => void;
 }
 
-const DepartView: React.FC<DepartViewProps> = ({ gameState, onDepart, onSwitchParty, isSoundOn, onToggleSound }) => {
+const DepartView: React.FC<DepartViewProps> = ({ gameState, onDepart, onSwitchParty, isSoundOn, onToggleSound, onDebugAddTokens }) => {
   const [selectedRank, setSelectedRank] = useState<QuestRank | null>(null);
 
   const handleSelect = (rank: QuestRank) => {
@@ -54,6 +55,7 @@ const DepartView: React.FC<DepartViewProps> = ({ gameState, onDepart, onSwitchPa
          tokens={gameState.tokens} 
          isSoundOn={isSoundOn} 
          onToggleSound={onToggleSound} 
+         onDebugAddTokens={onDebugAddTokens}
        />
 
        <div className="flex-1 overflow-y-auto p-4 space-y-4 pb-24">
