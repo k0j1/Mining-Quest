@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { GameState } from '../../types';
 import GachaEffect from '../GachaEffect';
 import { playClick } from '../../utils/sound';
+import Header from '../Header';
 
 interface GachaViewProps {
   gameState: GameState;
@@ -10,6 +11,8 @@ interface GachaViewProps {
   isGachaRolling: boolean;
   gachaResult: { type: 'Hero' | 'Equipment'; data: any } | null;
   onCloseResult: () => void;
+  isSoundOn: boolean;
+  onToggleSound: () => void;
 }
 
 const GachaView: React.FC<GachaViewProps> = ({ 
@@ -17,7 +20,9 @@ const GachaView: React.FC<GachaViewProps> = ({
   onRollGacha, 
   isGachaRolling, 
   gachaResult, 
-  onCloseResult 
+  onCloseResult,
+  isSoundOn,
+  onToggleSound
 }) => {
   const [gachaTab, setGachaTab] = useState<'Hero' | 'Equipment'>('Hero');
 
@@ -29,16 +34,12 @@ const GachaView: React.FC<GachaViewProps> = ({
   return (
     <>
       <div className="flex flex-col h-full">
-         {/* Sticky Header */}
-         <div className="p-6 bg-slate-900/80 border-b border-slate-800 sticky top-0 z-20 backdrop-blur-md flex-none">
-            <div className="flex justify-between items-center">
-              <h1 className="text-xl font-orbitron font-bold text-indigo-300">採掘ガチャ</h1>
-              <div className="flex items-center space-x-2 bg-slate-800 px-4 py-1.5 rounded-full border border-yellow-500/50 shadow-[0_0_15px_rgba(234,179,8,0.2)]">
-                <span className="text-yellow-400 text-sm font-black">$CHH:</span>
-                <span className="font-orbitron text-lg font-bold">{gameState.tokens.toLocaleString()}</span>
-              </div>
-            </div>
-          </div>
+         <Header 
+           title="採掘ガチャ" 
+           tokens={gameState.tokens} 
+           isSoundOn={isSoundOn} 
+           onToggleSound={onToggleSound} 
+         />
 
          <div className="flex-1 overflow-y-auto p-6 pb-24 flex flex-col items-center">
             <div className="flex bg-slate-900 p-1.5 rounded-2xl w-full max-w-md mb-8 border border-slate-800">

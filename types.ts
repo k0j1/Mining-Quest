@@ -43,6 +43,7 @@ export interface Quest {
   endTime: number; // timestamp
   reward: number; // Estimated or minimum reward for display, actual calc on return
   status: 'active' | 'completed';
+  heroIds: string[]; // IDs of heroes sent on this quest
 }
 
 export interface GameState {
@@ -50,4 +51,8 @@ export interface GameState {
   heroes: Hero[];
   equipment: Equipment[];
   activeQuests: Quest[];
+  // Party Management
+  activePartyIndex: number; // 0, 1, 2
+  unlockedParties: boolean[]; // [true, false, false]
+  partyPresets: (string | null)[][]; // 3 arrays of 3 slots. string=heroId, null=empty
 }

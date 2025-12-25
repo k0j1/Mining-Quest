@@ -1,16 +1,19 @@
-
 import React, { useState } from 'react';
 import { GameState, QuestRank } from '../../types';
 import { QUEST_CONFIG } from '../../constants';
 import HeroCard from '../HeroCard';
 import { playClick } from '../../utils/sound';
+import Header from '../Header';
 
 interface DepartViewProps {
   gameState: GameState;
   onDepart: (rank: QuestRank) => boolean;
+  onSwitchParty: (index: number) => void;
+  isSoundOn: boolean;
+  onToggleSound: () => void;
 }
 
-const DepartView: React.FC<DepartViewProps> = ({ gameState, onDepart }) => {
+const DepartView: React.FC<DepartViewProps> = ({ gameState, onDepart, onSwitchParty, isSoundOn, onToggleSound }) => {
   const [selectedRank, setSelectedRank] = useState<QuestRank | null>(null);
 
   const handleSelect = (rank: QuestRank) => {
@@ -25,8 +28,6 @@ const DepartView: React.FC<DepartViewProps> = ({ gameState, onDepart }) => {
 
   const handleConfirm = () => {
     if (selectedRank) {
-      // onDepart returns true if success. Parent component handles view change.
-      // If false (error), we close modal so user can fix issue.
       const success = onDepart(selectedRank);
       if (!success) {
         setSelectedRank(null);
@@ -34,20 +35,26 @@ const DepartView: React.FC<DepartViewProps> = ({ gameState, onDepart }) => {
     }
   };
 
-  const mainParty = gameState.heroes.slice(0, 3);
+  // Get heroes from current active preset
+  const activePresetIds = gameState.partyPresets[gameState.activePartyIndex];
+  const mainParty = activePresetIds
+    .map(id => gameState.heroes.find(h => h.id === id))
+    .filter((h): h is any => !!h);
+
+  // Pad with nulls for display if party is not full
+  const displayParty = [...mainParty];
+  while (displayParty.length < 3) {
+      displayParty.push(null as any);
+  }
 
   return (
     <div className="flex flex-col h-full relative">
-       {/* Sticky Header */}
-       <div className="p-6 bg-slate-900/80 border-b border-slate-800 sticky top-0 z-20 backdrop-blur-md flex-none">
-          <div className="flex justify-between items-center">
-            <h1 className="text-xl font-orbitron font-bold text-indigo-300">出発ゲート</h1>
-            <div className="flex items-center space-x-2 bg-slate-800 px-4 py-1.5 rounded-full border border-yellow-500/50 shadow-[0_0_15px_rgba(234,179,8,0.2)]">
-              <span className="text-yellow-400 text-sm font-black">$CHH:</span>
-              <span className="font-orbitron text-lg font-bold">{gameState.tokens.toLocaleString()}</span>
-            </div>
-          </div>
-        </div>
+       <Header 
+         title="出発ゲート" 
+         tokens={gameState.tokens} 
+         isSoundOn={isSoundOn} 
+         onToggleSound={onToggleSound} 
+       />
 
        <div className="flex-1 overflow-y-auto p-4 space-y-4 pb-24">
           <p className="text-xs text-slate-500 mb-2">難易度を選択してクエストに出発します</p>
@@ -129,20 +136,64 @@ const DepartView: React.FC<DepartViewProps> = ({ gameState, onDepart }) => {
                </div>
 
                <div className="mb-6">
-                 <p className="text-xs font-bold text-slate-500 mb-3 uppercase tracking-widest text-center">
-                   現在の編成
-                 </p>
-                 <div className="grid grid-cols-3 gap-2">
-                   {mainParty.map((hero, index) => (
-                     <div key={hero.id} className="pointer-events-none transform scale-95">
-                        <HeroCard 
-                           hero={hero} 
-                           index={index} 
-                           isMainSlot 
-                         />
-                     </div>
-                   ))}
+                 <div className="flex justify-between items-end mb-3">
+                   <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">
+                     SELECT PARTY
+                   </p>
                  </div>
+                 
+                 {/* Party Selection Tabs */}
+                 <div className="flex gap-2 mb-4">
+                    {[0, 1, 2].map(idx => {
+                      const isUnlocked = gameState.unlockedParties[idx];
+                      const isActive = gameState.activePartyIndex === idx;
+                      return (
+                        <button
+                          key={idx}
+                          onClick={() => {
+                            if (isUnlocked) {
+                                playClick();
+                                onSwitchParty(idx);
+                            }
+                          }}
+                          className={`flex-1 py-2 rounded-lg font-bold text-[10px] uppercase tracking-wider transition-all border ${
+                            isActive 
+                              ? 'bg-indigo-600 text-white border-indigo-400 shadow-md scale-105'
+                              : isUnlocked 
+                                ? 'bg-slate-800 text-slate-400 border-slate-700 hover:bg-slate-700'
+                                : 'bg-slate-900 text-slate-600 border-slate-800 cursor-not-allowed opacity-50'
+                          }`}
+                        >
+                          {isUnlocked ? `Party ${idx + 1}` : '🔒'}
+                        </button>
+                      );
+                    })}
+                 </div>
+
+                 {mainParty.length === 0 ? (
+                    <div className="text-center p-4 border border-dashed border-red-500/50 bg-red-900/10 rounded-xl">
+                      <p className="text-red-400 font-bold">メンバーがいません！</p>
+                      <p className="text-xs text-red-300">編成画面でヒーローを設定してください</p>
+                    </div>
+                 ) : (
+                  <div className="grid grid-cols-3 gap-2">
+                    {displayParty.map((hero, index) => (
+                      <div key={index} className="pointer-events-none transform scale-95 relative">
+                          {hero ? (
+                            <HeroCard 
+                              hero={hero} 
+                              index={index} 
+                              isMainSlot 
+                            />
+                          ) : (
+                             <div className="w-full aspect-square bg-slate-900 rounded-xl border border-slate-800 flex items-center justify-center">
+                               <span className="text-slate-600 text-xs">EMPTY</span>
+                             </div>
+                          )}
+                      </div>
+                    ))}
+                  </div>
+                 )}
                  {mainParty.some(h => h.hp <= 0) && (
                    <p className="text-red-400 text-xs text-center mt-3 font-bold animate-pulse">
                      ⚠️ HPが0のヒーローがいます！出発できません。
@@ -164,7 +215,10 @@ const DepartView: React.FC<DepartViewProps> = ({ gameState, onDepart }) => {
                </button>
                <button 
                  onClick={handleConfirm}
-                 className="flex-1 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl font-bold shadow-lg hover:brightness-110 transition-all"
+                 disabled={mainParty.length === 0}
+                 className={`flex-1 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl font-bold shadow-lg transition-all ${
+                    mainParty.length === 0 ? 'opacity-50 grayscale cursor-not-allowed' : 'hover:brightness-110'
+                 }`}
                >
                  出発する！
                </button>
