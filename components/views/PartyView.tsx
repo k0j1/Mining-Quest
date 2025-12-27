@@ -224,28 +224,29 @@ const PartyView: React.FC<PartyViewProps> = ({
           </div>
         </Header>
 
-        <div className="flex-1 overflow-y-auto px-4 pb-24 pt-4">
+        <div className="flex-1 overflow-y-auto px-4 pb-24 pt-8">
           
           {/* Main Slots */}
-          <div className="grid grid-cols-3 gap-3 mb-8">
+          <div className="grid grid-cols-3 gap-3 mb-12">
             {[0, 1, 2].map(slotIdx => {
               const heroId = currentPreset[slotIdx];
-              const hero = heroId ? gameState.heroes.find(h => h.id === heroId) : null;
+              // Fix: Resolved 'id' error by removing redundant and broken lookup logic
+              const h = heroId ? gameState.heroes.find(heroObj => heroObj.id === heroId) : null;
               const isSelected = selectedSlotIndex === slotIdx;
 
               return (
-                <div key={slotIdx} className="relative group">
-                  {/* Slot Label */}
-                  <div className="absolute -top-2 left-0 right-0 flex justify-center z-20">
-                      <span className={`text-[7px] font-black px-1.5 py-0.5 rounded-full shadow-lg border whitespace-nowrap ${
+                <div key={slotIdx} className="relative group mb-4">
+                  {/* Slot Label - Improved placement to avoid overlap */}
+                  <div className="absolute -top-4 left-0 right-0 flex justify-center z-20">
+                      <span className={`text-[8px] font-black px-1.5 py-0.5 rounded shadow-lg border whitespace-nowrap ${
                         isSelected ? 'bg-indigo-500 text-white border-white' : 'bg-slate-700 text-slate-400 border-slate-600'
                       }`}>SLOT {slotIdx + 1}</span>
                   </div>
 
-                  {hero ? (
+                  {h ? (
                     <div className="relative">
                       <HeroCard 
-                        hero={hero} 
+                        hero={h} 
                         index={slotIdx}
                         isSelected={isSelected}
                         isLocked={isPartyLocked} 
@@ -266,7 +267,7 @@ const PartyView: React.FC<PartyViewProps> = ({
                     // Empty Slot Placeholder
                     <button 
                       onClick={() => handleSlotClick(slotIdx)}
-                      className={`w-full aspect-square rounded-xl border-2 border-dashed flex flex-col items-center justify-center transition-all ${
+                      className={`w-full aspect-[4/5] rounded-xl border-2 border-dashed flex flex-col items-center justify-center transition-all ${
                           isSelected 
                             ? 'border-indigo-400 bg-indigo-500/10 shadow-[0_0_10px_rgba(99,102,241,0.3)] scale-105' 
                             : selectedHeroId 
@@ -275,7 +276,7 @@ const PartyView: React.FC<PartyViewProps> = ({
                       }`}
                     >
                         <span className="text-2xl opacity-30">➕</span>
-                        <span className="text-[9px] text-slate-500 mt-1">EMPTY</span>
+                        <span className="text-[9px] text-slate-500 mt-1 uppercase font-black">Vacant</span>
                     </button>
                   )}
                 </div>
@@ -284,12 +285,12 @@ const PartyView: React.FC<PartyViewProps> = ({
           </div>
 
           {/* Reserve List */}
-          <div className="mt-4">
-            <h2 className="text-[10px] font-bold text-slate-500 mb-3 uppercase tracking-widest flex items-center">
+          <div className="mt-8">
+            <h2 className="text-[10px] font-bold text-slate-500 mb-4 uppercase tracking-widest flex items-center">
               <span className="w-1 h-3 bg-slate-700 mr-2 rounded-full"></span>
               待機中のヒーロー
             </h2>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-2 gap-3 pb-8">
                 {gameState.heroes
                   .filter(h => !allAssignedHeroIds.includes(h.id)) // Filter out heroes equipped in ANY party
                   .map((hero, idx) => {
@@ -315,43 +316,10 @@ const PartyView: React.FC<PartyViewProps> = ({
                   );
                 })}
                 {gameState.heroes.length === allAssignedHeroIds.length && (
-                  <p className="col-span-2 text-center text-slate-600 text-xs py-4">
+                  <p className="col-span-2 text-center text-slate-600 text-xs py-8">
                     すべてのヒーローが配置されています
                   </p>
                 )}
-            </div>
-          </div>
-
-          {/* Equipment List (Read Only / Inventory View) */}
-          <div className="mt-8 mb-8">
-            <h2 className="text-[10px] font-bold text-slate-500 mb-3 uppercase tracking-widest flex items-center">
-               <span className="w-1 h-3 bg-indigo-500 mr-2 rounded-full"></span>
-               所持装備一覧
-            </h2>
-            <div className="grid grid-cols-2 gap-2">
-              {gameState.equipment.length > 0 ? (
-                gameState.equipment.map(e => {
-                  const equippedHero = gameState.heroes.find(h => h.equipmentIds.includes(e.id));
-                  return (
-                    <div key={e.id} className="bg-slate-900/60 border border-slate-800 p-2 rounded-lg flex items-center space-x-2 relative overflow-hidden">
-                      <div className="text-xl">
-                        {e.type === 'Pickaxe' ? '⛏️' : e.type === 'Helmet' ? '🪖' : '👢'}
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <p className="text-[10px] font-bold truncate text-indigo-300">{e.name}</p>
-                        <p className="text-[9px] text-slate-500">Bonus: +{e.bonus}</p>
-                      </div>
-                      {equippedHero && (
-                        <div className="absolute top-0 right-0 bg-slate-700 text-[8px] px-1 rounded-bl text-slate-300">
-                           {equippedHero.name.slice(0,4)}..
-                        </div>
-                      )}
-                    </div>
-                  );
-                })
-              ) : (
-                <p className="col-span-2 text-slate-600 text-xs italic">所持している装備はありません</p>
-              )}
             </div>
           </div>
         </div>

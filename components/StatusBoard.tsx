@@ -144,8 +144,8 @@ const StatusBoard: React.FC<StatusBoardProps> = ({
 
           {/* Party Presets - Home View */}
           {view === View.HOME && (
-            <div className="pb-10">
-              <div className="flex justify-between items-center mb-6 px-1">
+            <div className="pb-16 pt-4">
+              <div className="flex justify-between items-center mb-8 px-1">
                 <h2 className="text-[10px] font-black text-indigo-400/60 uppercase tracking-[0.4em] flex items-center">
                   <span className="w-1 h-3 bg-indigo-500 rounded-full mr-3 shadow-[0_0_8px_#6366f1]"></span>
                   Deployed Teams
@@ -153,7 +153,7 @@ const StatusBoard: React.FC<StatusBoardProps> = ({
                 <div className="h-px flex-1 mx-4 bg-white/5"></div>
               </div>
               
-              <div className="space-y-8">
+              <div className="space-y-12">
                 {state.unlockedParties.map((isUnlocked, partyIndex) => {
                   if (!isUnlocked) return null;
                   const presetIds = state.partyPresets[partyIndex];
@@ -162,12 +162,12 @@ const StatusBoard: React.FC<StatusBoardProps> = ({
                   const isQuesting = partyHeroes.some(h => state.activeQuests.some(q => q.heroIds.includes(h.id)));
 
                   return (
-                    <div key={partyIndex} className={`relative p-6 rounded-[2rem] border transition-all duration-500 ${
+                    <div key={partyIndex} className={`relative p-5 rounded-[2rem] border transition-all duration-500 ${
                       isActive 
                         ? 'bg-indigo-900/10 border-indigo-500/40 shadow-[0_0_40px_rgba(99,102,241,0.1)]' 
                         : 'bg-black/40 border-white/5'
                     }`}>
-                      <div className="flex justify-between items-center mb-6">
+                      <div className="flex flex-wrap justify-between items-center mb-5 gap-2">
                         <div className="flex flex-col">
                           <h3 className={`text-xs font-black font-orbitron tracking-widest uppercase ${isActive ? 'text-indigo-400' : 'text-slate-500'}`}>
                             Unit-0{partyIndex + 1}
@@ -185,7 +185,7 @@ const StatusBoard: React.FC<StatusBoardProps> = ({
                         {Array.from({ length: 3 }).map((_, i) => {
                           const hero = partyHeroes[i];
                           return (
-                            <div key={i}>
+                            <div key={i} className="mb-2">
                               {hero ? (
                                 <HeroCard hero={hero} index={i} isMainSlot isLocked={state.activeQuests.some(q => q.heroIds.includes(hero.id))} />
                               ) : (

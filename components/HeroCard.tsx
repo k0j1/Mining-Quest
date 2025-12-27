@@ -166,8 +166,8 @@ const HeroCard: React.FC<HeroCardProps> = ({
         )}
       </div>
 
-      {/* Equipment Slots - Floating Dock Style */}
-      <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 flex gap-1 z-40 bg-black/80 backdrop-blur-xl p-1 rounded-xl border border-white/10 shadow-2xl">
+      {/* Equipment Slots - Moved to bottom-right as per request */}
+      <div className="absolute -bottom-2 -right-1 flex gap-0.5 z-40 bg-black/90 backdrop-blur-xl p-0.5 rounded-lg border border-white/10 shadow-2xl">
         {[0, 1, 2].map(i => (
           <button 
             key={i} 
@@ -176,13 +176,13 @@ const HeroCard: React.FC<HeroCardProps> = ({
               onEquipClick && onEquipClick(hero.id, i);
             }}
             disabled={isLocked}
-            className={`w-9 h-9 rounded-lg border flex items-center justify-center transition-all duration-300 ${
+            className={`w-7 h-7 rounded border flex items-center justify-center transition-all duration-300 ${
               hero.equipmentIds[i] 
-                ? 'bg-amber-500 border-amber-300 shadow-[0_0_10px_rgba(251,191,36,0.4)] text-black' 
+                ? 'bg-amber-500 border-amber-300 shadow-[0_0_8px_rgba(251,191,36,0.4)] text-black' 
                 : 'bg-white/5 border-white/10 border-dashed text-slate-500'
             } ${isLocked ? 'opacity-30' : 'hover:scale-110 active:scale-90'}`}
           >
-            <span className={hero.equipmentIds[i] ? 'opacity-100 scale-110' : 'opacity-30 grayscale'}>
+            <span className={`text-[12px] ${hero.equipmentIds[i] ? 'opacity-100 scale-110' : 'opacity-30 grayscale'}`}>
                {slotIcons[i]}
             </span>
           </button>
