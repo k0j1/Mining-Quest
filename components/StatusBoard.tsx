@@ -107,6 +107,17 @@ const StatusBoard: React.FC<StatusBoardProps> = ({ state, actionButtonLabel, onA
           </div>
         )}
 
+        {/* Banner for RESULT (RETURN) */}
+        {view === View.RETURN && (
+          <div className="px-4 pt-4">
+            <img 
+              src="https://miningquest.k0j1.v2002.coreserver.jp/images/B_Result.png" 
+              alt="Result Banner" 
+              className="w-full h-auto rounded-2xl shadow-lg border border-white/10"
+            />
+          </div>
+        )}
+
         <div className="p-6 space-y-8">
           {/* Active Quests Section */}
           <div>

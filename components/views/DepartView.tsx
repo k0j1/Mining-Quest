@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { GameState, QuestRank } from '../../types';
 import { QUEST_CONFIG } from '../../constants';
@@ -59,6 +60,16 @@ const DepartView: React.FC<DepartViewProps> = ({ gameState, onDepart, onSwitchPa
        />
 
        <div className="flex-1 overflow-y-auto p-4 space-y-4 pb-24">
+          
+          {/* Banner for QUEST */}
+          <div className="mb-2">
+            <img 
+              src="https://miningquest.k0j1.v2002.coreserver.jp/images/B_Quest.png" 
+              alt="Quest Banner" 
+              className="w-full h-auto rounded-2xl shadow-lg border border-white/10"
+            />
+          </div>
+
           <p className="text-xs text-slate-500 mb-2">難易度を選択してクエストに出発します</p>
           {(Object.keys(QUEST_CONFIG) as QuestRank[]).map((rank) => {
             const config = QUEST_CONFIG[rank];
