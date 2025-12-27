@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Hero, Equipment, Quest, GameState, QuestRank } from '../types';
 import { INITIAL_HEROES, INITIAL_EQUIPMENT, QUEST_CONFIG } from '../constants';
@@ -35,17 +34,31 @@ export const useGameLogic = () => {
   useEffect(() => {
     const initFarcaster = async () => {
       try {
+        // 先にreadyを呼び出し、完了を待つ
+        await sdk.actions.ready();
+        
+        // ready後にコンテキストを取得
         const context = await sdk.context;
+        console.log("Farcaster Context Loaded:", context);
+
         if (context?.user) {
-          setFarcasterUser(context.user);
-          const user = context.user as any;
-          const ethAddress = user.verifiedAddresses?.ethAddresses?.[0] || user.custodyAddress;
+          // pfpUrl または pfp_url の両方を考慮
+          // Casting to any to handle potential missing property errors in different SDK versions
+          const user = {
+            ...context.user,
+            pfpUrl: (context.user as any).pfpUrl || (context.user as any).pfp_url
+          };
+          
+          setFarcasterUser(user);
+          
+          // Fix for line 54: use casting to any to access properties not strictly defined in the basic user type
+          const ethAddress = (user as any).verifiedAddresses?.ethAddresses?.[0] || (user as any).custodyAddress;
           if (ethAddress) {
             fetchBalance(ethAddress);
           }
         }
       } catch (e) {
-        console.error("Farcaster Context Error", e);
+        console.error("Farcaster SDK Initialization Error:", e);
       }
     };
     initFarcaster();
