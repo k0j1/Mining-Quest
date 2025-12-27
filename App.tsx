@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View } from './types';
 import StatusBoard from './components/StatusBoard';
 import MiningBackground from './components/MiningBackground';
@@ -7,6 +7,7 @@ import ResultModal from './components/ResultModal';
 import BottomNav from './components/BottomNav';
 import { playClick, playConfirm, toggleSound } from './utils/sound';
 import { useGameLogic } from './hooks/useGameLogic';
+import sdk from '@farcaster/frame-sdk';
 
 // Views
 import PartyView from './components/views/PartyView';
@@ -18,6 +19,11 @@ const App: React.FC = () => {
   const [currentView, setCurrentView] = useState<View>(View.HOME);
   const [isSoundOn, setIsSoundOn] = useState(false);
   const { gameState, ui, actions } = useGameLogic();
+
+  useEffect(() => {
+    // Farcaster SDK init
+    sdk.actions.ready();
+  }, []);
 
   const handleNavClick = (view: View) => {
     playClick();

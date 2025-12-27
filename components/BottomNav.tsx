@@ -24,31 +24,31 @@ const NAV_ITEMS: NavItem[] = [
   },
   { 
     view: View.PARTY, 
-    label: 'TEAMS', 
+    label: '編成', 
     icon: ICONS.PARTY, 
     imageUrl: 'https://miningquest.k0j1.v2002.coreserver.jp/images/Formation.png' 
   },
   { 
     view: View.DEPART, 
-    label: 'QUEST', 
+    label: '出発', 
     icon: ICONS.DEPART, 
     imageUrl: 'https://miningquest.k0j1.v2002.coreserver.jp/images/Quest.png' 
   },
   { 
     view: View.RETURN, 
-    label: 'RESULT', 
+    label: '帰還', 
     icon: ICONS.RETURN, 
     imageUrl: 'https://miningquest.k0j1.v2002.coreserver.jp/images/Results.png' 
   },
   { 
     view: View.GACHA, 
-    label: 'GACHA', 
+    label: 'ガチャ', 
     icon: ICONS.GACHA, 
     imageUrl: 'https://miningquest.k0j1.v2002.coreserver.jp/images/Gacha.png' 
   },
   { 
     view: View.RECOVERY, 
-    label: 'RECOVERY', 
+    label: '回復', 
     icon: ICONS.RECOVERY, 
     imageUrl: 'https://miningquest.k0j1.v2002.coreserver.jp/images/Recovery.png' 
   },

@@ -1,4 +1,6 @@
+
 import React, { useState, useEffect } from 'react';
+import sdk from '@farcaster/frame-sdk';
 
 interface HeaderProps {
   title: string;
@@ -9,8 +11,57 @@ interface HeaderProps {
   children?: React.ReactNode;
 }
 
+const CHH_CONTRACT_ADDRESS = '0xb0525542E3D818460546332e76E511562dFf9B07';
+const BASE_RPC_URL = 'https://mainnet.base.org';
+
 const Header: React.FC<HeaderProps> = ({ title, tokens, isSoundOn, onToggleSound, onDebugAddTokens, children }) => {
   const [tapCount, setTapCount] = useState(0);
+  const [farcasterUser, setFarcasterUser] = useState<any>(null);
+  const [onChainBalance, setOnChainBalance] = useState<string | null>(null);
+
+  useEffect(() => {
+    const initFarcaster = async () => {
+      try {
+        const context = await sdk.context;
+        if (context?.user) {
+          setFarcasterUser(context.user);
+          const address = (context.user as any).address || (context.user as any).custodyAddress;
+          if (address) {
+            fetchBalance(address);
+          }
+        }
+      } catch (e) {
+        console.error("Farcaster SDK error", e);
+      }
+    };
+    initFarcaster();
+  }, []);
+
+  const fetchBalance = async (address: string) => {
+    try {
+      const response = await fetch(BASE_RPC_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          jsonrpc: '2.0',
+          id: 1,
+          method: 'eth_call',
+          params: [{
+            to: CHH_CONTRACT_ADDRESS,
+            data: '0x70a08231' + address.replace('0x', '').padStart(64, '0')
+          }, 'latest']
+        })
+      });
+      const result = await response.json();
+      if (result.result) {
+        const balanceBigInt = BigInt(result.result);
+        const formatted = (Number(balanceBigInt) / 1e18).toLocaleString(undefined, { maximumFractionDigits: 2 });
+        setOnChainBalance(formatted);
+      }
+    } catch (e) {
+      console.error("Balance fetch error", e);
+    }
+  };
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -20,6 +71,12 @@ const Header: React.FC<HeaderProps> = ({ title, tokens, isSoundOn, onToggleSound
   }, [tapCount]);
 
   const handleTokenClick = () => {
+    // Farcaster接続時はデバッグ機能を無効化
+    if (farcasterUser) {
+      console.log("Farcaster connected: Debug feature disabled.");
+      return;
+    }
+    
     if (!onDebugAddTokens) return;
     
     setTapCount(prev => {
@@ -52,13 +109,31 @@ const Header: React.FC<HeaderProps> = ({ title, tokens, isSoundOn, onToggleSound
                </svg>
             )}
           </button>
-          <div 
-            onClick={handleTokenClick}
-            className="flex items-center space-x-2 bg-slate-800 px-3 py-1 rounded-full border border-yellow-500/50 shadow-[0_0_10px_rgba(234,179,8,0.2)] select-none active:scale-95 transition-transform"
-          >
-            <span className="text-yellow-400 text-xs font-black">$CHH:</span>
-            <span className="font-orbitron text-sm font-bold text-white">{tokens.toLocaleString()}</span>
-          </div>
+          
+          {farcasterUser ? (
+            /* Farcaster接続時：アイコンとオンチェーン残高を表示（デバッグ機能は無効） */
+            <div className="flex items-center space-x-2 bg-slate-800 px-3 py-1 rounded-full border border-indigo-500/50 shadow-[0_0_10px_rgba(99,102,241,0.2)] select-none">
+              {farcasterUser.pfpUrl && (
+                <img src={farcasterUser.pfpUrl} alt="User" className="w-5 h-5 rounded-full border border-white/20" />
+              )}
+              <div className="flex flex-col items-start leading-none">
+                <span className="text-[8px] text-indigo-300 font-black uppercase tracking-tighter">On-chain</span>
+                <span className="font-orbitron text-[10px] font-bold text-white">{onChainBalance || '...'} <span className="text-[8px]">$CHH</span></span>
+              </div>
+            </div>
+          ) : (
+            /* 未接続時：ゲーム内トークンを通常表示（5クリックでデバッグ機能有効） */
+            <div 
+              onClick={handleTokenClick}
+              className="flex items-center gap-2 bg-slate-800/80 px-3 py-1.5 rounded-full border border-slate-700 active:scale-95 transition-transform cursor-pointer"
+            >
+              <span className="text-yellow-500 text-sm">🪙</span>
+              <div className="flex items-baseline gap-1">
+                <span className="font-orbitron text-sm font-bold text-yellow-500">{tokens.toLocaleString()}</span>
+                <span className="text-[8px] font-black text-yellow-600">$CHH</span>
+              </div>
+            </div>
+          )}
         </div>
       </div>
       {children}
