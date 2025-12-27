@@ -44,11 +44,13 @@ const Header: React.FC<HeaderProps> = ({
   }, [tapCount]);
 
   const handleTokenClick = () => {
+    // Farcaster接続時はアカウントモーダルを開く
     if (farcasterUser && onAccountClick) {
       onAccountClick();
       return;
     }
     
+    // 未接続時はデバッグ用タップカウント
     if (!onDebugAddTokens) return;
     
     setTapCount(prev => {
@@ -61,16 +63,20 @@ const Header: React.FC<HeaderProps> = ({
     });
   };
 
-  // Fix: Ensure onChainBalance is a number before passing to formatCompactNumber
+  // 表示する数値の決定
   const displayTokens = farcasterUser 
-    ? (typeof onChainBalance === 'number' ? formatCompactNumber(onChainBalance) : '---')
+    ? (onChainBalance !== null ? formatCompactNumber(onChainBalance) : '...')
     : formatCompactNumber(tokens);
 
   return (
     <div className="bg-slate-900/90 border-b border-slate-800 sticky top-0 z-20 backdrop-blur-md flex-none shadow-lg pt-[env(safe-area-inset-top)]">
       <div className="px-4 py-3 flex justify-between items-center h-14">
-        <h1 className="text-lg font-orbitron font-bold text-indigo-300 tracking-wide truncate mr-2">{title}</h1>
+        <h1 className="text-lg font-orbitron font-bold text-indigo-300 tracking-wide truncate mr-2">
+          {title}
+        </h1>
+        
         <div className="flex items-center gap-2 flex-shrink-0">
+          {/* サウンド設定ボタン */}
           <button 
             onClick={onToggleSound}
             className="w-8 h-8 flex items-center justify-center bg-slate-800/80 hover:bg-slate-700 rounded-full border border-slate-600 text-slate-400 transition-all active:scale-95"
@@ -87,18 +93,39 @@ const Header: React.FC<HeaderProps> = ({
             )}
           </button>
           
+          {/* トークン/アカウント表示エリア */}
           <div 
             onClick={handleTokenClick}
-            className="flex items-center gap-2 bg-slate-800/80 px-3 py-1.5 rounded-full border border-slate-700 active:scale-95 transition-transform cursor-pointer h-9 flex-shrink-0"
+            className={`flex items-center gap-2 px-3 py-1.5 rounded-full border active:scale-95 transition-all cursor-pointer h-9 flex-shrink-0 ${
+              farcasterUser 
+                ? 'bg-indigo-900/40 border-indigo-500/50 shadow-[0_0_10px_rgba(79,70,229,0.2)]' 
+                : 'bg-slate-800/80 border-slate-700 shadow-inner'
+            }`}
           >
             {farcasterUser && farcasterUser.pfpUrl ? (
-              <img src={farcasterUser.pfpUrl} alt="User" className="w-5 h-5 rounded-full border border-white/20" />
+              <div className="relative">
+                <img 
+                  src={farcasterUser.pfpUrl} 
+                  alt="User" 
+                  className="w-5 h-5 rounded-full border border-indigo-400 shadow-sm object-cover" 
+                />
+                <div className="absolute -inset-1 bg-indigo-500/20 blur-sm rounded-full -z-10 animate-pulse"></div>
+              </div>
             ) : (
-              <span className="text-yellow-500 text-sm">🪙</span>
+              <span className="text-yellow-500 text-sm drop-shadow-sm">🪙</span>
             )}
+            
             <div className="flex items-baseline gap-1">
-              <span className="font-orbitron text-sm font-bold text-yellow-500 leading-none">{displayTokens}</span>
-              <span className="text-[8px] font-black text-yellow-600 leading-none">$CHH</span>
+              <span className={`font-orbitron text-sm font-bold leading-none ${
+                farcasterUser ? 'text-indigo-200' : 'text-yellow-500'
+              }`}>
+                {displayTokens}
+              </span>
+              <span className={`text-[8px] font-black leading-none ${
+                farcasterUser ? 'text-indigo-400' : 'text-yellow-600'
+              }`}>
+                $CHH
+              </span>
             </div>
           </div>
         </div>
