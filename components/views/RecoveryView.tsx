@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { GameState } from '../../types';
 import Header from '../Header';
@@ -9,9 +10,22 @@ interface RecoveryViewProps {
   isSoundOn: boolean;
   onToggleSound: () => void;
   onDebugAddTokens?: () => void;
+  farcasterUser?: any;
+  onChainBalance?: number | null;
+  onAccountClick?: () => void;
 }
 
-const RecoveryView: React.FC<RecoveryViewProps> = ({ gameState, onPotion, onElixir, isSoundOn, onToggleSound, onDebugAddTokens }) => {
+const RecoveryView: React.FC<RecoveryViewProps> = ({ 
+  gameState, 
+  onPotion, 
+  onElixir, 
+  isSoundOn, 
+  onToggleSound, 
+  onDebugAddTokens,
+  farcasterUser,
+  onChainBalance,
+  onAccountClick
+}) => {
   return (
     <div className="flex flex-col h-full">
        <Header 
@@ -20,6 +34,9 @@ const RecoveryView: React.FC<RecoveryViewProps> = ({ gameState, onPotion, onElix
          isSoundOn={isSoundOn} 
          onToggleSound={onToggleSound} 
          onDebugAddTokens={onDebugAddTokens}
+         farcasterUser={farcasterUser}
+         onChainBalance={onChainBalance}
+         onAccountClick={onAccountClick}
        />
 
        <div className="flex-1 overflow-y-auto p-4 pb-24">

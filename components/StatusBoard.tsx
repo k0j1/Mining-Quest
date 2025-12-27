@@ -15,6 +15,9 @@ interface StatusBoardProps {
   isSoundOn: boolean;
   onToggleSound: () => void;
   onDebugAddTokens?: () => void;
+  farcasterUser?: any;
+  onChainBalance?: number | null;
+  onAccountClick?: () => void;
 }
 
 const QuestItem: React.FC<{ quest: any }> = ({ quest }) => {
@@ -77,7 +80,19 @@ const QuestItem: React.FC<{ quest: any }> = ({ quest }) => {
   );
 };
 
-const StatusBoard: React.FC<StatusBoardProps> = ({ state, actionButtonLabel, onAction, title, view, isSoundOn, onToggleSound, onDebugAddTokens }) => {
+const StatusBoard: React.FC<StatusBoardProps> = ({ 
+  state, 
+  actionButtonLabel, 
+  onAction, 
+  title, 
+  view, 
+  isSoundOn, 
+  onToggleSound, 
+  onDebugAddTokens,
+  farcasterUser,
+  onChainBalance,
+  onAccountClick
+}) => {
   const handleAction = () => {
     playClick();
     if (onAction) onAction();
@@ -91,6 +106,9 @@ const StatusBoard: React.FC<StatusBoardProps> = ({ state, actionButtonLabel, onA
         isSoundOn={isSoundOn} 
         onToggleSound={onToggleSound} 
         onDebugAddTokens={onDebugAddTokens}
+        farcasterUser={farcasterUser}
+        onChainBalance={onChainBalance}
+        onAccountClick={onAccountClick}
       />
 
       {/* Scrollable Content Area */}

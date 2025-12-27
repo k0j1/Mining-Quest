@@ -13,9 +13,22 @@ interface DepartViewProps {
   isSoundOn: boolean;
   onToggleSound: () => void;
   onDebugAddTokens?: () => void;
+  farcasterUser?: any;
+  onChainBalance?: number | null;
+  onAccountClick?: () => void;
 }
 
-const DepartView: React.FC<DepartViewProps> = ({ gameState, onDepart, onSwitchParty, isSoundOn, onToggleSound, onDebugAddTokens }) => {
+const DepartView: React.FC<DepartViewProps> = ({ 
+  gameState, 
+  onDepart, 
+  onSwitchParty, 
+  isSoundOn, 
+  onToggleSound, 
+  onDebugAddTokens,
+  farcasterUser,
+  onChainBalance,
+  onAccountClick
+}) => {
   const [selectedRank, setSelectedRank] = useState<QuestRank | null>(null);
 
   const handleSelect = (rank: QuestRank) => {
@@ -57,6 +70,9 @@ const DepartView: React.FC<DepartViewProps> = ({ gameState, onDepart, onSwitchPa
          isSoundOn={isSoundOn} 
          onToggleSound={onToggleSound} 
          onDebugAddTokens={onDebugAddTokens}
+         farcasterUser={farcasterUser}
+         onChainBalance={onChainBalance}
+         onAccountClick={onAccountClick}
        />
 
        <div className="flex-1 overflow-y-auto p-4 space-y-4 pb-24">

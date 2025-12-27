@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { GameState } from '../../types';
 import GachaEffect from '../GachaEffect';
@@ -13,6 +14,9 @@ interface GachaViewProps {
   isSoundOn: boolean;
   onToggleSound: () => void;
   onDebugAddTokens?: () => void;
+  farcasterUser?: any;
+  onChainBalance?: number | null;
+  onAccountClick?: () => void;
 }
 
 const GachaView: React.FC<GachaViewProps> = ({ 
@@ -23,7 +27,10 @@ const GachaView: React.FC<GachaViewProps> = ({
   onCloseResult,
   isSoundOn,
   onToggleSound,
-  onDebugAddTokens
+  onDebugAddTokens,
+  farcasterUser,
+  onChainBalance,
+  onAccountClick
 }) => {
   const [gachaTab, setGachaTab] = useState<'Hero' | 'Equipment'>('Hero');
 
@@ -41,6 +48,9 @@ const GachaView: React.FC<GachaViewProps> = ({
            isSoundOn={isSoundOn} 
            onToggleSound={onToggleSound} 
            onDebugAddTokens={onDebugAddTokens}
+           farcasterUser={farcasterUser}
+           onChainBalance={onChainBalance}
+           onAccountClick={onAccountClick}
          />
 
          <div className="flex-1 overflow-y-auto p-6 pb-24 flex flex-col items-center">

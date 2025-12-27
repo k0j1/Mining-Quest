@@ -15,6 +15,9 @@ interface PartyViewProps {
   isSoundOn: boolean;
   onToggleSound: () => void;
   onDebugAddTokens?: () => void;
+  farcasterUser?: any;
+  onChainBalance?: number | null;
+  onAccountClick?: () => void;
 }
 
 const PartyView: React.FC<PartyViewProps> = ({ 
@@ -25,7 +28,10 @@ const PartyView: React.FC<PartyViewProps> = ({
   onAssignHero,
   isSoundOn,
   onToggleSound,
-  onDebugAddTokens
+  onDebugAddTokens,
+  farcasterUser,
+  onChainBalance,
+  onAccountClick
 }) => {
   const [selectedSlotIndex, setSelectedSlotIndex] = useState<number | null>(null);
   const [selectedHeroId, setSelectedHeroId] = useState<string | null>(null);
@@ -156,6 +162,9 @@ const PartyView: React.FC<PartyViewProps> = ({
           isSoundOn={isSoundOn} 
           onToggleSound={onToggleSound}
           onDebugAddTokens={onDebugAddTokens}
+          farcasterUser={farcasterUser}
+          onChainBalance={onChainBalance}
+          onAccountClick={onAccountClick}
         >
           {/* Banner for TEAM - Moved here to be above tabs */}
           <div className="px-4 pb-3">
