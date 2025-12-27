@@ -61,8 +61,9 @@ const Header: React.FC<HeaderProps> = ({
     });
   };
 
+  // Fix: Ensure onChainBalance is a number before passing to formatCompactNumber
   const displayTokens = farcasterUser 
-    ? (onChainBalance !== null ? formatCompactNumber(onChainBalance) : '---')
+    ? (typeof onChainBalance === 'number' ? formatCompactNumber(onChainBalance) : '---')
     : formatCompactNumber(tokens);
 
   return (
