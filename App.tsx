@@ -99,7 +99,7 @@ const App: React.FC = () => {
           <StatusBoard 
             state={gameState} 
             view={View.RETURN} 
-            title="帰還ポッド" 
+            title="報酬を回収" 
             actionButtonLabel="報酬を回収して帰還" 
             onAction={actions.returnFromQuest}
             {...commonProps}

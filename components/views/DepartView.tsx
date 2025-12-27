@@ -52,7 +52,7 @@ const DepartView: React.FC<DepartViewProps> = ({ gameState, onDepart, onSwitchPa
   return (
     <div className="flex flex-col h-full relative">
        <Header 
-         title="出発ゲート" 
+         title="クエスト" 
          tokens={gameState.tokens} 
          isSoundOn={isSoundOn} 
          onToggleSound={onToggleSound} 
