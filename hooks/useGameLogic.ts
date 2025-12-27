@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Hero, Equipment, Quest, GameState, QuestRank } from '../types';
 import { INITIAL_HEROES, INITIAL_EQUIPMENT, QUEST_CONFIG } from '../constants';
@@ -39,22 +40,38 @@ export const useGameLogic = () => {
         
         // ready後にコンテキストを取得
         const context = await sdk.context;
-        console.log("Farcaster Context Loaded:", context);
+        console.log("Farcaster Context Raw:", context);
 
         if (context?.user) {
-          // pfpUrl または pfp_url の両方を考慮
-          // Casting to any to handle potential missing property errors in different SDK versions
+          const u = context.user as any;
+          
+          // PFPのURL取得
+          const pfpUrl = u.pfpUrl || u.pfp_url || "";
+          
+          // ウォレットアドレス取得の優先順位: 
+          // 1. 検証済みアドレス配列の1番目 
+          // 2. カストディアドレス (Hub等)
+          // 3. トップレベルのaddressプロパティ (一部SDKバージョン)
+          const ethAddress = 
+            u.verifiedAddresses?.ethAddresses?.[0] || 
+            u.custodyAddress || 
+            u.address;
+
+          console.log("Farcaster User Found:", u.username);
+          console.log("Extracted ETH Address:", ethAddress);
+
           const user = {
-            ...context.user,
-            pfpUrl: (context.user as any).pfpUrl || (context.user as any).pfp_url
+            ...u,
+            pfpUrl,
+            address: ethAddress
           };
           
           setFarcasterUser(user);
           
-          // Fix for line 54: use casting to any to access properties not strictly defined in the basic user type
-          const ethAddress = (user as any).verifiedAddresses?.ethAddresses?.[0] || (user as any).custodyAddress;
           if (ethAddress) {
             fetchBalance(ethAddress);
+          } else {
+            console.warn("No valid ETH address found for user:", u.username);
           }
         }
       } catch (e) {
@@ -65,6 +82,7 @@ export const useGameLogic = () => {
   }, []);
 
   const fetchBalance = async (address: string) => {
+    console.log("Fetching balance for address:", address);
     try {
       const response = await fetch(BASE_RPC_URL, {
         method: 'POST',
@@ -75,18 +93,23 @@ export const useGameLogic = () => {
           method: 'eth_call',
           params: [{
             to: CHH_CONTRACT_ADDRESS,
-            data: '0x70a08231' + address.replace('0x', '').padStart(64, '0')
+            // standard balanceOf(address) selector: 0x70a08231
+            data: '0x70a08231' + address.replace('0x', '').toLowerCase().padStart(64, '0')
           }, 'latest']
         })
       });
       const result = await response.json();
-      if (result.result) {
+      if (result.result && result.result !== '0x') {
         const balanceBigInt = BigInt(result.result);
         const numericBalance = Number(balanceBigInt) / 1e18;
+        console.log("CHH Balance Found:", numericBalance);
         setOnChainBalanceRaw(numericBalance);
+      } else {
+        console.log("CHH Balance is 0 or result empty");
+        setOnChainBalanceRaw(0);
       }
     } catch (e) {
-      console.error("Balance fetch error", e);
+      console.error("Balance fetch error:", e);
     }
   };
 
