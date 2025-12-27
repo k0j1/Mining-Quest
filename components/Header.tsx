@@ -64,8 +64,9 @@ const Header: React.FC<HeaderProps> = ({
   };
 
   // 表示する数値の決定
+  // onChainBalanceがnumber型であることを明示的にチェックして型エラーを回避
   const displayTokens = farcasterUser 
-    ? (onChainBalance !== null ? formatCompactNumber(onChainBalance) : '...')
+    ? (typeof onChainBalance === 'number' ? formatCompactNumber(onChainBalance) : '...')
     : formatCompactNumber(tokens);
 
   return (
