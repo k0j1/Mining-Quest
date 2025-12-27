@@ -96,6 +96,17 @@ const StatusBoard: React.FC<StatusBoardProps> = ({ state, actionButtonLabel, onA
       {/* Scrollable Content Area */}
       <div className="flex-1 overflow-y-auto pb-4">
         
+        {/* Banner for HOME */}
+        {view === View.HOME && (
+          <div className="px-4 pt-4">
+            <img 
+              src="https://miningquest.k0j1.v2002.coreserver.jp/images/B_Home.png" 
+              alt="Home Banner" 
+              className="w-full h-auto rounded-2xl shadow-lg border border-white/10"
+            />
+          </div>
+        )}
+
         <div className="p-6 space-y-8">
           {/* Active Quests Section */}
           <div>

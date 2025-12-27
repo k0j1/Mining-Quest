@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { GameState } from '../../types';
 import HeroCard from '../HeroCard';
@@ -116,7 +117,7 @@ const PartyView: React.FC<PartyViewProps> = ({
       return;
     }
 
-    // Case B: No slot selected -> Toggle hero selection
+    // Case B: No hero selected -> Toggle hero selection
     if (selectedHeroId === heroId) {
       setSelectedHeroId(null);
     } else {
@@ -156,6 +157,15 @@ const PartyView: React.FC<PartyViewProps> = ({
           onToggleSound={onToggleSound}
           onDebugAddTokens={onDebugAddTokens}
         >
+          {/* Banner for TEAM - Moved here to be above tabs */}
+          <div className="px-4 pb-3">
+            <img 
+              src="https://miningquest.k0j1.v2002.coreserver.jp/images/B_Team.png" 
+              alt="Team Banner" 
+              className="w-full h-auto rounded-xl shadow-md border border-white/10"
+            />
+          </div>
+
           {/* Message Area */}
           <div className="px-4 mb-2">
             {isPartyLocked ? (
