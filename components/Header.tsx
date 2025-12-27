@@ -1,6 +1,5 @@
 
 import React, { useState, useEffect } from 'react';
-import { sdk } from '@farcaster/frame-sdk';
 
 interface HeaderProps {
   title: string;
@@ -8,78 +7,34 @@ interface HeaderProps {
   isSoundOn: boolean;
   onToggleSound: () => void;
   onDebugAddTokens?: () => void;
+  farcasterUser?: any;
+  onChainBalance?: number | null;
+  onAccountClick?: () => void;
   children?: React.ReactNode;
 }
-
-const CHH_CONTRACT_ADDRESS = '0xb0525542E3D818460546332e76E511562dFf9B07';
-const BASE_RPC_URL = 'https://mainnet.base.org';
 
 const formatCompactNumber = (num: number): string => {
   if (num >= 1000000) {
     return (num / 1000000).toFixed(1).replace(/\.0$/, '') + 'M';
   }
-  // 10,000以上の場合は K で省略表示
   if (num >= 10000) {
     return (num / 1000).toFixed(1).replace(/\.0$/, '') + 'K';
   }
-  // 10,000未満は全桁表示
   return num.toLocaleString();
 };
 
-const Header: React.FC<HeaderProps> = ({ title, tokens, isSoundOn, onToggleSound, onDebugAddTokens, children }) => {
+const Header: React.FC<HeaderProps> = ({ 
+  title, 
+  tokens, 
+  isSoundOn, 
+  onToggleSound, 
+  onDebugAddTokens, 
+  farcasterUser, 
+  onChainBalance, 
+  onAccountClick,
+  children 
+}) => {
   const [tapCount, setTapCount] = useState(0);
-  const [farcasterUser, setFarcasterUser] = useState<any>(null);
-  const [onChainBalanceRaw, setOnChainBalanceRaw] = useState<number | null>(null);
-
-  useEffect(() => {
-    const initFarcaster = async () => {
-      try {
-        const context = await sdk.context;
-        if (context?.user) {
-          setFarcasterUser(context.user);
-          
-          // Farcaster v2コンテキストから優先的に使用するアドレスを決定
-          // verifiedAddresses.ethAddresses があればそれを使用、なければ custodyAddress
-          const user = context.user as any;
-          const ethAddress = user.verifiedAddresses?.ethAddresses?.[0] || user.custodyAddress;
-          
-          if (ethAddress) {
-            fetchBalance(ethAddress);
-          }
-        }
-      } catch (e) {
-        console.error("Farcaster SDK Context error", e);
-      }
-    };
-    initFarcaster();
-  }, []);
-
-  const fetchBalance = async (address: string) => {
-    try {
-      // Base RPCを使用してコントラクトのbalanceOfを呼び出す
-      const response = await fetch(BASE_RPC_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          jsonrpc: '2.0',
-          id: 1,
-          method: 'eth_call',
-          params: [{
-            to: CHH_CONTRACT_ADDRESS,
-            data: '0x70a08231' + address.replace('0x', '').padStart(64, '0')
-          }, 'latest']
-        })
-      });
-      const result = await response.json();
-      if (result.result) {
-        const balanceBigInt = BigInt(result.result);
-        const numericBalance = Number(balanceBigInt) / 1e18;
-        setOnChainBalanceRaw(numericBalance);
-      }
-    } catch (e) {
-      console.error("Balance fetch error", e);
-    }
-  };
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -89,8 +44,8 @@ const Header: React.FC<HeaderProps> = ({ title, tokens, isSoundOn, onToggleSound
   }, [tapCount]);
 
   const handleTokenClick = () => {
-    // Farcaster接続時はデバッグ機能を無効化
-    if (farcasterUser) {
+    if (farcasterUser && onAccountClick) {
+      onAccountClick();
       return;
     }
     
@@ -107,7 +62,7 @@ const Header: React.FC<HeaderProps> = ({ title, tokens, isSoundOn, onToggleSound
   };
 
   const displayTokens = farcasterUser 
-    ? (onChainBalanceRaw !== null ? formatCompactNumber(onChainBalanceRaw) : '---')
+    ? (onChainBalance !== null ? formatCompactNumber(onChainBalance) : '---')
     : formatCompactNumber(tokens);
 
   return (

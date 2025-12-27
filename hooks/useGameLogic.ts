@@ -1,8 +1,13 @@
-import { useState } from 'react';
+
+import { useState, useEffect } from 'react';
 import { Hero, Equipment, Quest, GameState, QuestRank } from '../types';
 import { INITIAL_HEROES, INITIAL_EQUIPMENT, QUEST_CONFIG } from '../constants';
 import { generateGachaItem } from '../services/geminiService';
 import { playClick, playConfirm, playDepart, playError } from '../utils/sound';
+import { sdk } from '@farcaster/frame-sdk';
+
+const CHH_CONTRACT_ADDRESS = '0xb0525542E3D818460546332e76E511562dFf9B07';
+const BASE_RPC_URL = 'https://mainnet.base.org';
 
 export const useGameLogic = () => {
   const [gameState, setGameState] = useState<GameState>({
@@ -12,7 +17,6 @@ export const useGameLogic = () => {
     activeQuests: [],
     activePartyIndex: 0,
     unlockedParties: [true, false, false],
-    // Initial Party 1 has first 3 heroes. Party 2/3 are empty.
     partyPresets: [
       [INITIAL_HEROES[0].id, INITIAL_HEROES[1].id, INITIAL_HEROES[2].id],
       [null, null, null],
@@ -23,32 +27,63 @@ export const useGameLogic = () => {
   const [gachaResult, setGachaResult] = useState<{ type: 'Hero' | 'Equipment'; data: any } | null>(null);
   const [isGachaRolling, setIsGachaRolling] = useState(false);
   const [returnResult, setReturnResult] = useState<{ results: any[], totalTokens: number } | null>(null);
+  
+  // Farcaster State
+  const [farcasterUser, setFarcasterUser] = useState<any>(null);
+  const [onChainBalanceRaw, setOnChainBalanceRaw] = useState<number | null>(null);
 
-  // Helper to get actual hero objects for the current active party
-  const getActivePartyHeroes = (): Hero[] => {
-    const currentPreset = gameState.partyPresets[gameState.activePartyIndex];
-    return currentPreset
-      .map(id => gameState.heroes.find(h => h.id === id))
-      .filter((h): h is Hero => !!h);
-  };
+  useEffect(() => {
+    const initFarcaster = async () => {
+      try {
+        const context = await sdk.context;
+        if (context?.user) {
+          setFarcasterUser(context.user);
+          const user = context.user as any;
+          const ethAddress = user.verifiedAddresses?.ethAddresses?.[0] || user.custodyAddress;
+          if (ethAddress) {
+            fetchBalance(ethAddress);
+          }
+        }
+      } catch (e) {
+        console.error("Farcaster Context Error", e);
+      }
+    };
+    initFarcaster();
+  }, []);
 
-  const getEquipmentEffect = (hero: Hero, type: 'Pickaxe' | 'Helmet' | 'Boots'): number => {
-    let slotIndex = -1;
-    if (type === 'Pickaxe') slotIndex = 0;
-    if (type === 'Helmet') slotIndex = 1;
-    if (type === 'Boots') slotIndex = 2;
-
-    const equipId = hero.equipmentIds[slotIndex];
-    if (!equipId) return 0;
-    
-    const equip = gameState.equipment.find(e => e.id === equipId);
-    return equip ? equip.bonus : 0;
+  const fetchBalance = async (address: string) => {
+    try {
+      const response = await fetch(BASE_RPC_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          jsonrpc: '2.0',
+          id: 1,
+          method: 'eth_call',
+          params: [{
+            to: CHH_CONTRACT_ADDRESS,
+            data: '0x70a08231' + address.replace('0x', '').padStart(64, '0')
+          }, 'latest']
+        })
+      });
+      const result = await response.json();
+      if (result.result) {
+        const balanceBigInt = BigInt(result.result);
+        const numericBalance = Number(balanceBigInt) / 1e18;
+        setOnChainBalanceRaw(numericBalance);
+      }
+    } catch (e) {
+      console.error("Balance fetch error", e);
+    }
   };
 
   const depart = (rank: QuestRank) => {
     playClick();
     const config = QUEST_CONFIG[rank];
-    const partyHeroes = getActivePartyHeroes();
+    const currentPreset = gameState.partyPresets[gameState.activePartyIndex];
+    const partyHeroes = currentPreset
+      .map(id => gameState.heroes.find(h => h.id === id))
+      .filter((h): h is Hero => !!h);
 
     if (partyHeroes.length === 0) {
       playError();
@@ -68,15 +103,12 @@ export const useGameLogic = () => {
       return false;
     }
 
-    if (rank === 'E' && config.minHpReq) {
-      if (partyHeroes.some(h => h.hp < config.minHpReq!)) {
-        playError();
-        alert(`ランクEのクエストに出発するには、編成全員のHPが${config.minHpReq}以上必要です。`);
-        return false;
-      }
-    }
-
-    const totalBootsBonus = partyHeroes.reduce((acc, hero) => acc + getEquipmentEffect(hero, 'Boots'), 0);
+    const totalBootsBonus = partyHeroes.reduce((acc, hero) => {
+      const equipId = hero.equipmentIds[2];
+      const equip = gameState.equipment.find(e => e.id === equipId);
+      return acc + (equip ? equip.bonus : 0);
+    }, 0);
+    
     const reductionMultiplier = Math.max(0.1, 1 - (totalBootsBonus / 100));
     const actualDuration = Math.floor(config.duration * reductionMultiplier);
 
@@ -99,10 +131,6 @@ export const useGameLogic = () => {
     }));
 
     playDepart();
-    const durationMsg = reductionMultiplier < 1 
-      ? `(装備効果で ${(config.duration/60).toFixed(0)}分 → ${(actualDuration/60).toFixed(1)}分 に短縮！)` 
-      : ``;
-    alert(`${config.name}へ出発しました！\n所要時間: ${(actualDuration/60).toFixed(1)}分 ${durationMsg}`);
     return true;
   };
 
@@ -112,64 +140,56 @@ export const useGameLogic = () => {
     
     if (completed.length === 0) {
       playError();
-      alert("まだ完了したクエストはありません。タイマーの終了をお待ちください。");
+      alert("まだ完了したクエストはありません。");
       return false;
     }
 
     let totalReward = 0;
     const resultList: any[] = [];
-    let deadHeroes: string[] = [];
     const newHeroes = [...gameState.heroes];
+    let deadHeroIds: string[] = [];
 
     completed.forEach(quest => {
       const config = QUEST_CONFIG[quest.rank];
       const logs: string[] = [];
-      
-      // Calculate bonus based on the heroes who actually went
       const questHeroes = quest.heroIds
         .map(id => newHeroes.find(h => h.id === id))
         .filter((h): h is Hero => !!h);
 
       const partyPickaxeBonus = questHeroes.reduce((acc, h) => {
-         return acc + getEquipmentEffect(h, 'Pickaxe');
+        const equip = gameState.equipment.find(e => e.id === h.equipmentIds[0]);
+        return acc + (equip ? equip.bonus : 0);
       }, 0);
 
       const baseReward = Math.floor(Math.random() * (config.maxReward - config.minReward + 1)) + config.minReward;
       const bonusReward = Math.floor(baseReward * (partyPickaxeBonus / 100));
       const finalReward = baseReward + bonusReward;
-      
       totalReward += finalReward;
 
       questHeroes.forEach(hero => {
-        // Find current index in the main hero array
         const idx = newHeroes.findIndex(h => h.id === hero.id);
         if (idx === -1) return;
-        if (deadHeroes.includes(hero.id)) return;
 
         if (config.deathChance > 0 && Math.random() < config.deathChance) {
-           deadHeroes.push(hero.id);
-           logs.push(`💀 悲報: ${hero.name} は帰らぬ犬となりました...`);
+          deadHeroIds.push(hero.id);
+          logs.push(`💀 悲報: ${hero.name} は帰らぬ犬となりました...`);
         } else {
-           const rawDmg = Math.floor(Math.random() * (config.maxDmg - config.minDmg + 1)) + config.minDmg;
-           const helmetBonus = getEquipmentEffect(hero, 'Helmet');
-           const totalReduction = hero.damageReduction + helmetBonus;
-           
-           let finalDmg = rawDmg;
-           let reductionMsg = "";
-           
-           if (totalReduction > 0) {
-             const reduceAmount = Math.ceil(rawDmg * (totalReduction / 100));
-             finalDmg = Math.max(0, rawDmg - reduceAmount);
-             reductionMsg = `(軽減 -${reduceAmount})`;
-           }
+          const rawDmg = Math.floor(Math.random() * (config.maxDmg - config.minDmg + 1)) + config.minDmg;
+          const helmetEquip = gameState.equipment.find(e => e.id === hero.equipmentIds[1]);
+          const helmetBonus = helmetEquip ? helmetEquip.bonus : 0;
+          const totalReduction = hero.damageReduction + helmetBonus;
+          
+          let finalDmg = rawDmg;
+          if (totalReduction > 0) {
+            finalDmg = Math.max(0, rawDmg - Math.ceil(rawDmg * (totalReduction / 100)));
+          }
 
-           const currentHp = hero.hp;
-           const newHp = Math.max(0, currentHp - finalDmg);
-           newHeroes[idx] = { ...hero, hp: newHp };
-           logs.push(`💥 ${hero.name}: -${finalDmg} HP ${reductionMsg} (残: ${newHp})`);
+          const newHp = Math.max(0, hero.hp - finalDmg);
+          newHeroes[idx] = { ...hero, hp: newHp };
+          logs.push(`💥 ${hero.name}: -${finalDmg} HP (残: ${newHp})`);
         }
       });
-      
+
       resultList.push({
         questName: quest.name,
         rank: quest.rank,
@@ -180,222 +200,153 @@ export const useGameLogic = () => {
       });
     });
 
-    // Remove dead heroes from everything
-    const survivors = newHeroes.filter(h => !deadHeroes.includes(h.id));
-    
-    // Clean up presets to remove dead heroes
-    const newPresets = gameState.partyPresets.map(preset => 
-      preset.map(id => (id && deadHeroes.includes(id)) ? null : id)
-    );
-
     setGameState(prev => ({
       ...prev,
       tokens: prev.tokens + totalReward,
-      heroes: survivors,
+      heroes: newHeroes.filter(h => !deadHeroIds.includes(h.id)),
       activeQuests: prev.activeQuests.filter(q => q.endTime > now),
-      partyPresets: newPresets
+      partyPresets: prev.partyPresets.map(p => p.map(id => (id && deadHeroIds.includes(id)) ? null : id))
     }));
 
-    setReturnResult({
-      results: resultList,
-      totalTokens: totalReward
-    });
+    setReturnResult({ results: resultList, totalTokens: totalReward });
     return true;
-  };
-
-  const usePotion = (heroId: string) => {
-    const COST = 200;
-    const RECOVER_AMOUNT = 10;
-    
-    if (gameState.tokens < COST) {
-      playError();
-      alert("トークンが足りません！");
-      return;
-    }
-
-    playConfirm();
-    setGameState(prev => ({
-      ...prev,
-      tokens: prev.tokens - COST,
-      heroes: prev.heroes.map(h => {
-        if (h.id === heroId) {
-          const newHp = Math.min(h.maxHp, h.hp + RECOVER_AMOUNT);
-          return { ...h, hp: newHp };
-        }
-        return h;
-      })
-    }));
-  };
-
-  const useElixir = (heroId: string) => {
-    const COST = 1200;
-    
-    if (gameState.tokens < COST) {
-      playError();
-      alert("トークンが足りません！");
-      return;
-    }
-
-    playConfirm();
-    setGameState(prev => ({
-      ...prev,
-      tokens: prev.tokens - COST,
-      heroes: prev.heroes.map(h => {
-        if (h.id === heroId) {
-          return { ...h, hp: h.maxHp };
-        }
-        return h;
-      })
-    }));
   };
 
   const rollGacha = async (tab: 'Hero' | 'Equipment') => {
     const cost = tab === 'Hero' ? 10000 : 6000;
     if (gameState.tokens < cost) {
       playError();
-      alert(`トークンが足りません！ (必要: ${cost.toLocaleString()} $CHH)`);
       return;
     }
-
     playConfirm();
     setIsGachaRolling(true);
     try {
       const result = await generateGachaItem(tab);
-      if (result) {
-        setGachaResult({ type: tab, data: result });
-        
-        setGameState(prev => {
-          const nextState = { ...prev, tokens: prev.tokens - cost };
-          if (tab === 'Hero') {
-            const newHero: Hero = {
-              id: Math.random().toString(),
-              name: result.name || "謎の動物",
-              species: result.species || "Other",
-              rarity: result.rarity || 'C',
-              trait: result.trait || "なし",
-              damageReduction: result.damageReduction || 0,
-              level: 1,
-              hp: 100,
-              maxHp: 100,
-              imageUrl: `https://picsum.photos/seed/${Math.random()}/300/400`,
-              equipmentIds: ['', '', '']
-            };
-            nextState.heroes = [...prev.heroes, newHero];
-          } else {
-            const newEquip: Equipment = {
-              id: Math.random().toString(),
-              name: result.name || "謎の装備",
-              type: result.type || 'Pickaxe',
-              bonus: result.bonus || 0,
-              rarity: result.rarity || 'C'
-            };
-            nextState.equipment = [...prev.equipment, newEquip];
-          }
-          return nextState;
-        });
-      }
+      setGachaResult({ type: tab, data: result });
+      setGameState(prev => {
+        const next = { ...prev, tokens: prev.tokens - cost };
+        if (tab === 'Hero') {
+          next.heroes = [...prev.heroes, {
+            id: Math.random().toString(),
+            name: result.name,
+            species: result.species,
+            rarity: result.rarity,
+            trait: result.trait,
+            damageReduction: result.damageReduction,
+            level: 1, hp: 100, maxHp: 100,
+            imageUrl: `https://picsum.photos/seed/${Math.random()}/300/400`,
+            equipmentIds: ['', '', '']
+          }];
+        } else {
+          next.equipment = [...prev.equipment, {
+            id: Math.random().toString(),
+            name: result.name,
+            type: result.type,
+            bonus: result.bonus,
+            rarity: result.rarity
+          }];
+        }
+        return next;
+      });
     } finally {
       setIsGachaRolling(false);
     }
   };
 
-  // --- Party Management Actions ---
+  const equipItem = (heroId: string, slotIndex: number, equipmentId: string | null) => {
+    playConfirm();
+    setGameState(prev => ({
+      ...prev,
+      heroes: prev.heroes.map(h => h.id === heroId ? {
+        ...h,
+        equipmentIds: h.equipmentIds.map((eid, idx) => idx === slotIndex ? (equipmentId || '') : eid)
+      } : h)
+    }));
+  };
 
   const switchParty = (index: number) => {
-    if (index < 0 || index > 2) return;
-    if (!gameState.unlockedParties[index]) {
-       playError();
-       return;
-    }
     playClick();
     setGameState(prev => ({ ...prev, activePartyIndex: index }));
   };
 
   const unlockParty = (index: number) => {
-    const COST = 10000;
-    if (gameState.tokens < COST) {
-      playError();
-      alert(`トークンが足りません (必要: ${COST.toLocaleString()} $CHH)`);
-      return;
-    }
+    const cost = 10000;
+    if (gameState.tokens < cost) return;
     playConfirm();
     setGameState(prev => {
       const newUnlocked = [...prev.unlockedParties];
       newUnlocked[index] = true;
-      return {
-        ...prev,
-        tokens: prev.tokens - COST,
-        unlockedParties: newUnlocked,
-        activePartyIndex: index // Auto switch to new party
-      };
+      return { ...prev, tokens: prev.tokens - cost, unlockedParties: newUnlocked, activePartyIndex: index };
     });
   };
 
   const assignHeroToParty = (slotIndex: number, heroId: string | null) => {
-    const currentPreset = [...gameState.partyPresets];
-    const activeParty = [...currentPreset[gameState.activePartyIndex]];
-    
-    // Check if hero is already in another slot of this party, if so, remove them from there
-    if (heroId) {
-      const existingIndex = activeParty.indexOf(heroId);
-      if (existingIndex !== -1 && existingIndex !== slotIndex) {
-        activeParty[existingIndex] = null;
+    playConfirm();
+    setGameState(prev => {
+      const newPresets = [...prev.partyPresets];
+      const activeParty = [...newPresets[prev.activePartyIndex]];
+      if (heroId) {
+        const existingIdx = activeParty.indexOf(heroId);
+        if (existingIdx !== -1) activeParty[existingIdx] = null;
       }
+      activeParty[slotIndex] = heroId;
+      newPresets[prev.activePartyIndex] = activeParty;
+      return { ...prev, partyPresets: newPresets };
+    });
+  };
+
+  // Recover 10 HP for 200 tokens
+  const usePotion = (heroId: string) => {
+    const cost = 200;
+    if (gameState.tokens < cost) {
+      playError();
+      return;
     }
-
-    activeParty[slotIndex] = heroId;
-    currentPreset[gameState.activePartyIndex] = activeParty;
+    const hero = gameState.heroes.find(h => h.id === heroId);
+    if (!hero || hero.hp >= hero.maxHp) return;
 
     playConfirm();
     setGameState(prev => ({
       ...prev,
-      partyPresets: currentPreset
+      tokens: prev.tokens - cost,
+      heroes: prev.heroes.map(h => h.id === heroId ? { ...h, hp: Math.min(h.maxHp, h.hp + 10) } : h)
     }));
   };
 
-  const equipItem = (heroId: string, slotIndex: number, equipmentId: string | null) => {
-    // Check logic guard in view mostly, but here we just update state
+  // Recover to Max HP for 1200 tokens
+  const useElixir = (heroId: string) => {
+    const cost = 1200;
+    if (gameState.tokens < cost) {
+      playError();
+      return;
+    }
+    const hero = gameState.heroes.find(h => h.id === heroId);
+    if (!hero || hero.hp >= hero.maxHp) return;
+
     playConfirm();
     setGameState(prev => ({
       ...prev,
-      heroes: prev.heroes.map(hero => {
-        if (hero.id !== heroId) return hero;
-        const newEquipIds = [...hero.equipmentIds];
-        if (equipmentId === null) {
-          newEquipIds[slotIndex] = '';
-        } else {
-          newEquipIds[slotIndex] = equipmentId;
-        }
-        return { ...hero, equipmentIds: newEquipIds };
-      })
+      tokens: prev.tokens - cost,
+      heroes: prev.heroes.map(h => h.id === heroId ? { ...h, hp: h.maxHp } : h)
     }));
-  };
-
-  const debugAddTokens = () => {
-    setGameState(prev => ({ ...prev, tokens: prev.tokens + 10000 }));
-    playConfirm();
   };
 
   return {
     gameState,
-    ui: {
-      gachaResult,
-      setGachaResult,
-      isGachaRolling,
-      returnResult,
-      setReturnResult
-    },
-    actions: {
-      depart,
-      returnFromQuest,
+    farcasterUser,
+    onChainBalanceRaw,
+    ui: { gachaResult, setGachaResult, isGachaRolling, returnResult, setReturnResult },
+    actions: { 
+      depart, 
+      returnFromQuest, 
+      rollGacha, 
+      equipItem, 
+      switchParty, 
+      unlockParty, 
+      assignHeroToParty, 
       usePotion,
       useElixir,
-      rollGacha,
-      equipItem,
-      switchParty,
-      unlockParty,
-      assignHeroToParty,
-      debugAddTokens
+      debugAddTokens: () => setGameState(p => ({ ...p, tokens: p.tokens + 10000 })) 
     }
   };
 };

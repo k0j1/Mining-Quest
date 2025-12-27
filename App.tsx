@@ -4,6 +4,7 @@ import { View } from './types';
 import StatusBoard from './components/StatusBoard';
 import MiningBackground from './components/MiningBackground';
 import ResultModal from './components/ResultModal';
+import AccountModal from './components/AccountModal';
 import BottomNav from './components/BottomNav';
 import { playClick, playConfirm, toggleSound } from './utils/sound';
 import { useGameLogic } from './hooks/useGameLogic';
@@ -18,13 +19,12 @@ import GachaView from './components/views/GachaView';
 const App: React.FC = () => {
   const [currentView, setCurrentView] = useState<View>(View.HOME);
   const [isSoundOn, setIsSoundOn] = useState(false);
-  const { gameState, ui, actions } = useGameLogic();
+  const [showAccountModal, setShowAccountModal] = useState(false);
+  const { gameState, farcasterUser, onChainBalanceRaw, ui, actions } = useGameLogic();
 
   useEffect(() => {
-    // Farcaster SDK ready signal: This is critical for the app to show up in the Farcaster client.
     const init = async () => {
       try {
-        console.log("Farcaster SDK: Signaling ready...");
         await sdk.actions.ready();
       } catch (e) {
         console.error("Farcaster SDK ready error", e);
@@ -42,16 +42,19 @@ const App: React.FC = () => {
     const newState = !isSoundOn;
     setIsSoundOn(newState);
     toggleSound(newState);
-    if (newState) playConfirm(); // Sound confirmation when turning ON
+    if (newState) playConfirm();
+  };
+
+  const commonProps = {
+    isSoundOn,
+    onToggleSound: handleToggleSound,
+    onDebugAddTokens: actions.debugAddTokens,
+    farcasterUser,
+    onChainBalance: onChainBalanceRaw,
+    onAccountClick: () => { playClick(); setShowAccountModal(true); }
   };
 
   const renderContent = () => {
-    const commonProps = {
-      isSoundOn,
-      onToggleSound: handleToggleSound,
-      onDebugAddTokens: actions.debugAddTokens
-    };
-
     switch (currentView) {
       case View.PARTY:
         return (
@@ -121,8 +124,6 @@ const App: React.FC = () => {
 
   return (
     <div className="fixed inset-0 flex flex-col max-w-4xl mx-auto overflow-hidden bg-slate-950 border-x border-slate-800">
-      
-      {/* Main Area: Scrollable */}
       <main className="flex-1 relative overflow-hidden">
         <MiningBackground />
         <div className="relative z-10 h-full">
@@ -130,7 +131,6 @@ const App: React.FC = () => {
         </div>
       </main>
 
-      {/* Overlays */}
       {ui.returnResult && (
         <ResultModal 
           results={ui.returnResult.results}
@@ -143,13 +143,19 @@ const App: React.FC = () => {
         />
       )}
 
-      {/* Sticky Bottom Nav */}
+      {showAccountModal && (
+        <AccountModal 
+          user={farcasterUser}
+          balance={onChainBalanceRaw}
+          onClose={() => setShowAccountModal(false)}
+        />
+      )}
+
       <BottomNav 
         currentView={currentView} 
         onNavClick={handleNavClick} 
       />
 
-      {/* Decorative top bar */}
       <div className="fixed top-0 left-0 w-full h-0.5 bg-gradient-to-r from-indigo-500 via-purple-500 to-indigo-500 z-[100]"></div>
     </div>
   );
