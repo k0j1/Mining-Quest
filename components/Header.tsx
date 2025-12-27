@@ -14,10 +14,19 @@ interface HeaderProps {
 const CHH_CONTRACT_ADDRESS = '0xb0525542E3D818460546332e76E511562dFf9B07';
 const BASE_RPC_URL = 'https://mainnet.base.org';
 
+const formatCompactNumber = (num: number): string => {
+  // 1,000,000以上の場合は 'M' で省略表示
+  if (num >= 1000000) {
+    return (num / 1000000).toFixed(1).replace(/\.0$/, '') + 'M';
+  }
+  // 1,000,000未満（余裕がある場合）はカンマ区切りの全桁表示
+  return num.toLocaleString();
+};
+
 const Header: React.FC<HeaderProps> = ({ title, tokens, isSoundOn, onToggleSound, onDebugAddTokens, children }) => {
   const [tapCount, setTapCount] = useState(0);
   const [farcasterUser, setFarcasterUser] = useState<any>(null);
-  const [onChainBalance, setOnChainBalance] = useState<string | null>(null);
+  const [onChainBalanceRaw, setOnChainBalanceRaw] = useState<number | null>(null);
 
   useEffect(() => {
     const initFarcaster = async () => {
@@ -55,8 +64,8 @@ const Header: React.FC<HeaderProps> = ({ title, tokens, isSoundOn, onToggleSound
       const result = await response.json();
       if (result.result) {
         const balanceBigInt = BigInt(result.result);
-        const formatted = (Number(balanceBigInt) / 1e18).toLocaleString(undefined, { maximumFractionDigits: 2 });
-        setOnChainBalance(formatted);
+        const numericBalance = Number(balanceBigInt) / 1e18;
+        setOnChainBalanceRaw(numericBalance);
       }
     } catch (e) {
       console.error("Balance fetch error", e);
@@ -89,6 +98,10 @@ const Header: React.FC<HeaderProps> = ({ title, tokens, isSoundOn, onToggleSound
     });
   };
 
+  const displayTokens = farcasterUser 
+    ? (onChainBalanceRaw !== null ? formatCompactNumber(onChainBalanceRaw) : '...')
+    : formatCompactNumber(tokens);
+
   return (
     <div className="bg-slate-900/90 border-b border-slate-800 sticky top-0 z-20 backdrop-blur-md flex-none shadow-lg pt-[env(safe-area-inset-top)]">
       <div className="px-4 py-3 flex justify-between items-center h-14">
@@ -110,30 +123,20 @@ const Header: React.FC<HeaderProps> = ({ title, tokens, isSoundOn, onToggleSound
             )}
           </button>
           
-          {farcasterUser ? (
-            /* Farcaster接続時：アイコンとオンチェーン残高を表示（デバッグ機能は無効） */
-            <div className="flex items-center space-x-2 bg-slate-800 px-3 py-1 rounded-full border border-indigo-500/50 shadow-[0_0_10px_rgba(99,102,241,0.2)] select-none">
-              {farcasterUser.pfpUrl && (
-                <img src={farcasterUser.pfpUrl} alt="User" className="w-5 h-5 rounded-full border border-white/20" />
-              )}
-              <div className="flex flex-col items-start leading-none">
-                <span className="text-[8px] text-indigo-300 font-black uppercase tracking-tighter">On-chain</span>
-                <span className="font-orbitron text-[10px] font-bold text-white">{onChainBalance || '...'} <span className="text-[8px]">$CHH</span></span>
-              </div>
-            </div>
-          ) : (
-            /* 未接続時：ゲーム内トークンを通常表示（5クリックでデバッグ機能有効） */
-            <div 
-              onClick={handleTokenClick}
-              className="flex items-center gap-2 bg-slate-800/80 px-3 py-1.5 rounded-full border border-slate-700 active:scale-95 transition-transform cursor-pointer"
-            >
+          <div 
+            onClick={handleTokenClick}
+            className="flex items-center gap-2 bg-slate-800/80 px-3 py-1.5 rounded-full border border-slate-700 active:scale-95 transition-transform cursor-pointer"
+          >
+            {farcasterUser && farcasterUser.pfpUrl ? (
+              <img src={farcasterUser.pfpUrl} alt="User" className="w-5 h-5 rounded-full border border-white/20" />
+            ) : (
               <span className="text-yellow-500 text-sm">🪙</span>
-              <div className="flex items-baseline gap-1">
-                <span className="font-orbitron text-sm font-bold text-yellow-500">{tokens.toLocaleString()}</span>
-                <span className="text-[8px] font-black text-yellow-600">$CHH</span>
-              </div>
+            )}
+            <div className="flex items-baseline gap-1">
+              <span className="font-orbitron text-sm font-bold text-yellow-500">{displayTokens}</span>
+              <span className="text-[8px] font-black text-yellow-600">$CHH</span>
             </div>
-          )}
+          </div>
         </div>
       </div>
       {children}
