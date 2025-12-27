@@ -1,11 +1,11 @@
 
 export enum View {
   HOME = 'HOME',
-  PARTY = '編成',
-  DEPART = '出発',
-  RETURN = '帰還',
-  GACHA = 'ガチャ',
-  RECOVERY = '回復'
+  PARTY = 'TEAM',
+  DEPART = 'QUEST',
+  RETURN = 'RESULT',
+  GACHA = 'GACHA',
+  RECOVERY = 'RECOVERY'
 }
 
 export type QuestRank = 'C' | 'UC' | 'R' | 'E' | 'L';
