@@ -10,8 +10,13 @@
     <meta name="fc:frame" content='{"version":"next","imageUrl":"https://miningquest.k0j1.v2002.coreserver.jp/images/splash.png","button":{"title":"採掘開始","action":{"type":"launch_frame","name":"Mining Quest","url":"https://mining-quest.vercel.app/","splashImageUrl":"https://miningquest.k0j1.v2002.coreserver.jp/images/splash.png","splashBackgroundColor":"#020617"}}}' />
 
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Noto+Sans+JP:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Noto+Sans+JP:wght@400;700&display=swap" rel="stylesheet">
     <style>
+        :root {
+            --brand-amber: #fbbf24;
+            --brand-indigo: #6366f1;
+            --panel-bg: rgba(7, 10, 25, 0.8);
+        }
         html, body {
             height: 100%;
             width: 100%;
@@ -19,7 +24,7 @@
             padding: 0;
             overflow: hidden;
             position: fixed;
-            background-color: #020617;
+            background-color: #02040a;
         }
         #root {
             height: 100%;
@@ -27,18 +32,44 @@
         }
         body {
             font-family: 'Noto Sans JP', sans-serif;
-            color: #f8fafc;
-            /* Farcaster Mini App セーフエリア対応 */
+            color: #e2e8f0;
             padding-left: env(safe-area-inset-left);
             padding-right: env(safe-area-inset-right);
+            -webkit-tap-highlight-color: transparent;
         }
         .font-orbitron {
             font-family: 'Orbitron', sans-serif;
         }
         .glass-panel {
-            background: rgba(30, 41, 59, 0.7);
-            backdrop-filter: blur(8px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: var(--panel-bg);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.8);
+        }
+        .amber-glow {
+            box-shadow: 0 0 15px rgba(251, 191, 36, 0.3);
+        }
+        .indigo-glow {
+            box-shadow: 0 0 20px rgba(99, 102, 241, 0.2);
+        }
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 4px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(0,0,0,0.2);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(99, 102, 241, 0.3);
+            border-radius: 10px;
+        }
+        /* Cinematic Vignette */
+        .vignette-overlay {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            background: radial-gradient(circle at center, transparent 30%, rgba(0,0,0,0.4) 100%);
+            z-index: 50;
         }
     </style>
 <script type="importmap">
@@ -56,6 +87,7 @@
 </script>
 </head>
 <body>
+    <div class="vignette-overlay"></div>
     <div id="root"></div>
     <script type="module" src="/index.tsx"></script>
 </body>

@@ -44,15 +44,11 @@ const Header: React.FC<HeaderProps> = ({
   }, [tapCount]);
 
   const handleTokenClick = () => {
-    // Farcaster接続時はアカウントモーダルを開く
     if (farcasterUser && onAccountClick) {
       onAccountClick();
       return;
     }
-    
-    // 未接続時はデバッグ用タップカウント
     if (!onDebugAddTokens) return;
-    
     setTapCount(prev => {
       const newCount = prev + 1;
       if (newCount >= 5) {
@@ -63,70 +59,61 @@ const Header: React.FC<HeaderProps> = ({
     });
   };
 
-  // 表示する数値の決定
-  // onChainBalanceがnumber型であることを明示的にチェックして型エラーを回避
   const displayTokens = farcasterUser 
     ? (typeof onChainBalance === 'number' ? formatCompactNumber(onChainBalance) : '...')
     : formatCompactNumber(tokens);
 
   return (
-    <div className="bg-slate-900/90 border-b border-slate-800 sticky top-0 z-20 backdrop-blur-md flex-none shadow-lg pt-[env(safe-area-inset-top)]">
-      <div className="px-4 py-3 flex justify-between items-center h-14">
-        <h1 className="text-lg font-orbitron font-bold text-indigo-300 tracking-wide truncate mr-2">
-          {title}
-        </h1>
+    <div className="sticky top-0 z-[60] pt-[env(safe-area-inset-top)] bg-black/60 backdrop-blur-2xl border-b border-white/5 shadow-2xl">
+      <div className="px-5 py-4 flex justify-between items-center h-16">
+        <div className="flex flex-col">
+          <h1 className="text-sm font-orbitron font-black text-amber-400 tracking-[0.2em] uppercase drop-shadow-lg">
+            {title}
+          </h1>
+          <div className="h-0.5 w-8 bg-amber-500/50 rounded-full mt-1"></div>
+        </div>
         
-        <div className="flex items-center gap-2 flex-shrink-0">
-          {/* サウンド設定ボタン */}
+        <div className="flex items-center gap-3">
           <button 
             onClick={onToggleSound}
-            className="w-8 h-8 flex items-center justify-center bg-slate-800/80 hover:bg-slate-700 rounded-full border border-slate-600 text-slate-400 transition-all active:scale-95"
-            aria-label="Toggle Sound"
+            className="w-10 h-10 flex items-center justify-center bg-white/5 hover:bg-white/10 rounded-xl border border-white/10 text-white transition-all active:scale-90"
           >
             {isSoundOn ? (
-               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4 text-green-400">
+               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5 text-amber-400">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M19.114 5.636a9 9 0 0 1 0 12.728M16.463 8.288a5.25 5.25 0 0 1 0 7.424M6.75 8.25l4.72-4.72a.75.75 0 0 1 1.28.53v15.88a.75.75 0 0 1-1.28.53l-4.72-4.72H4.51c-.88 0-1.704-.507-1.938-1.354A9.009 9.009 0 0 1 2.25 12c0-.83.112-1.633.322-2.396C2.806 8.756 3.63 8.25 4.51 8.25H6.75Z" />
                </svg>
             ) : (
-               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4 text-slate-500">
+               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5 text-slate-500">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M17.25 9.75 19.5 12m0 0 2.25 2.25M19.5 12l2.25-2.25M19.5 12l-2.25 2.25m-10.5-6 4.72-4.72a.75.75 0 0 1 1.28.53v15.88a.75.75 0 0 1-1.28.53l-4.72-4.72H4.51c-.88 0-1.704-.507-1.938-1.354A9.009 9.009 0 0 1 2.25 12c0-.83.112-1.633.322-2.396C2.806 8.756 3.63 8.25 4.51 8.25H6.75Z" />
                </svg>
             )}
           </button>
           
-          {/* トークン/アカウント表示エリア */}
           <div 
             onClick={handleTokenClick}
-            className={`flex items-center gap-2 px-3 py-1.5 rounded-full border active:scale-95 transition-all cursor-pointer h-9 flex-shrink-0 ${
+            className={`flex items-center gap-2 px-4 h-10 rounded-xl border transition-all cursor-pointer shadow-xl ${
               farcasterUser 
-                ? 'bg-indigo-900/40 border-indigo-500/50 shadow-[0_0_10px_rgba(79,70,229,0.2)]' 
-                : 'bg-slate-800/80 border-slate-700 shadow-inner'
+                ? 'bg-indigo-950/40 border-indigo-400/30' 
+                : 'bg-black/40 border-amber-500/30'
             }`}
           >
-            {farcasterUser && farcasterUser.pfpUrl ? (
-              <div className="relative">
-                <img 
-                  src={farcasterUser.pfpUrl} 
-                  alt="User" 
-                  className="w-5 h-5 rounded-full border border-indigo-400 shadow-sm object-cover" 
-                />
-                <div className="absolute -inset-1 bg-indigo-500/20 blur-sm rounded-full -z-10 animate-pulse"></div>
-              </div>
+            {farcasterUser?.pfpUrl ? (
+              <img 
+                src={farcasterUser.pfpUrl} 
+                alt="User" 
+                className="w-6 h-6 rounded-full border border-indigo-400 object-cover" 
+              />
             ) : (
-              <span className="text-yellow-500 text-sm drop-shadow-sm">🪙</span>
+              <span className="text-amber-400 text-sm">🪙</span>
             )}
             
-            <div className="flex items-baseline gap-1">
-              <span className={`font-orbitron text-sm font-bold leading-none ${
-                farcasterUser ? 'text-indigo-200' : 'text-yellow-500'
+            <div className="flex items-center gap-1">
+              <span className={`font-orbitron text-sm font-black ${
+                farcasterUser ? 'text-indigo-200' : 'text-amber-400'
               }`}>
                 {displayTokens}
               </span>
-              <span className={`text-[8px] font-black leading-none ${
-                farcasterUser ? 'text-indigo-400' : 'text-yellow-600'
-              }`}>
-                $CHH
-              </span>
+              <span className="text-[7px] font-black text-white/50 uppercase tracking-tighter">$CHH</span>
             </div>
           </div>
         </div>
