@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import sdk from '@farcaster/frame-sdk';
+import { sdk } from '@farcaster/frame-sdk';
 
 interface HeaderProps {
   title: string;
@@ -90,7 +90,7 @@ const Header: React.FC<HeaderProps> = ({ title, tokens, isSoundOn, onToggleSound
   };
 
   return (
-    <div className="bg-slate-900/90 border-b border-slate-800 sticky top-0 z-20 backdrop-blur-md flex-none shadow-lg">
+    <div className="bg-slate-900/90 border-b border-slate-800 sticky top-0 z-20 backdrop-blur-md flex-none shadow-lg pt-[env(safe-area-inset-top)]">
       <div className="px-4 py-3 flex justify-between items-center h-14">
         <h1 className="text-lg font-orbitron font-bold text-indigo-300 tracking-wide truncate mr-2">{title}</h1>
         <div className="flex items-center gap-2 flex-shrink-0">

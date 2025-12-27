@@ -3,8 +3,12 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
     <title>Mining Quest</title>
+    
+    <!-- Farcaster Frame v2 Metadata -->
+    <meta property="fc:frame" content='{"version":"next","imageUrl":"https://picsum.photos/seed/miningquest/600/315","button":{"title":"採掘開始","action":{"type":"launch_frame","name":"Mining Quest","url":"https://mining-quest.vercel.app/","splashImageUrl":"https://picsum.photos/seed/mqsplash/200/200","splashBackgroundColor":"#020617"}}}' />
+
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Noto+Sans+JP:wght@400;700&display=swap" rel="stylesheet">
     <style>
@@ -14,7 +18,7 @@
             margin: 0;
             padding: 0;
             overflow: hidden;
-            position: fixed; /* 防止 mobile safari 的橡皮筋効果 */
+            position: fixed;
             background-color: #020617;
         }
         #root {
@@ -24,6 +28,9 @@
         body {
             font-family: 'Noto Sans JP', sans-serif;
             color: #f8fafc;
+            /* Farcaster Mini App セーフエリア対応 */
+            padding-left: env(safe-area-inset-left);
+            padding-right: env(safe-area-inset-right);
         }
         .font-orbitron {
             font-family: 'Orbitron', sans-serif;

@@ -7,7 +7,7 @@ import ResultModal from './components/ResultModal';
 import BottomNav from './components/BottomNav';
 import { playClick, playConfirm, toggleSound } from './utils/sound';
 import { useGameLogic } from './hooks/useGameLogic';
-import sdk from '@farcaster/frame-sdk';
+import { sdk } from '@farcaster/frame-sdk';
 
 // Views
 import PartyView from './components/views/PartyView';
