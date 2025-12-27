@@ -15,11 +15,14 @@ const CHH_CONTRACT_ADDRESS = '0xb0525542E3D818460546332e76E511562dFf9B07';
 const BASE_RPC_URL = 'https://mainnet.base.org';
 
 const formatCompactNumber = (num: number): string => {
-  // 1,000,000以上の場合は 'M' で省略表示
   if (num >= 1000000) {
     return (num / 1000000).toFixed(1).replace(/\.0$/, '') + 'M';
   }
-  // 1,000,000未満（余裕がある場合）はカンマ区切りの全桁表示
+  // 10,000以上の場合は K で省略表示（表示崩れ防止のため）
+  if (num >= 10000) {
+    return (num / 1000).toFixed(1).replace(/\.0$/, '') + 'K';
+  }
+  // 10,000未満は全桁表示
   return num.toLocaleString();
 };
 
@@ -82,7 +85,6 @@ const Header: React.FC<HeaderProps> = ({ title, tokens, isSoundOn, onToggleSound
   const handleTokenClick = () => {
     // Farcaster接続時はデバッグ機能を無効化
     if (farcasterUser) {
-      console.log("Farcaster connected: Debug feature disabled.");
       return;
     }
     
@@ -99,7 +101,7 @@ const Header: React.FC<HeaderProps> = ({ title, tokens, isSoundOn, onToggleSound
   };
 
   const displayTokens = farcasterUser 
-    ? (onChainBalanceRaw !== null ? formatCompactNumber(onChainBalanceRaw) : '...')
+    ? (onChainBalanceRaw !== null ? formatCompactNumber(onChainBalanceRaw) : '---')
     : formatCompactNumber(tokens);
 
   return (
@@ -125,7 +127,7 @@ const Header: React.FC<HeaderProps> = ({ title, tokens, isSoundOn, onToggleSound
           
           <div 
             onClick={handleTokenClick}
-            className="flex items-center gap-2 bg-slate-800/80 px-3 py-1.5 rounded-full border border-slate-700 active:scale-95 transition-transform cursor-pointer"
+            className="flex items-center gap-2 bg-slate-800/80 px-3 py-1.5 rounded-full border border-slate-700 active:scale-95 transition-transform cursor-pointer h-9 flex-shrink-0"
           >
             {farcasterUser && farcasterUser.pfpUrl ? (
               <img src={farcasterUser.pfpUrl} alt="User" className="w-5 h-5 rounded-full border border-white/20" />
@@ -133,8 +135,8 @@ const Header: React.FC<HeaderProps> = ({ title, tokens, isSoundOn, onToggleSound
               <span className="text-yellow-500 text-sm">🪙</span>
             )}
             <div className="flex items-baseline gap-1">
-              <span className="font-orbitron text-sm font-bold text-yellow-500">{displayTokens}</span>
-              <span className="text-[8px] font-black text-yellow-600">$CHH</span>
+              <span className="font-orbitron text-sm font-bold text-yellow-500 leading-none">{displayTokens}</span>
+              <span className="text-[8px] font-black text-yellow-600 leading-none">$CHH</span>
             </div>
           </div>
         </div>
