@@ -21,8 +21,16 @@ const App: React.FC = () => {
   const { gameState, ui, actions } = useGameLogic();
 
   useEffect(() => {
-    // Farcaster SDK init
-    sdk.actions.ready();
+    // Farcaster SDK init: Signal that the app is ready and interactive
+    // This removes the splash screen.
+    const init = async () => {
+      try {
+        await sdk.actions.ready();
+      } catch (e) {
+        console.error("Farcaster SDK ready error", e);
+      }
+    };
+    init();
   }, []);
 
   const handleNavClick = (view: View) => {
