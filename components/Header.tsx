@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { sdk } from '@farcaster/frame-sdk';
 
@@ -37,27 +38,17 @@ const Header: React.FC<HeaderProps> = ({ title, tokens, isSoundOn, onToggleSound
         if (context?.user) {
           setFarcasterUser(context.user);
           
-          // Wallet接続をリクエストして正確なアドレスを取得
-          // https://miniapps.farcaster.xyz/docs/sdk/wallet を参照
-          try {
-            // FIX: Property 'eth_requestAccounts' does not exist on sdk.wallet.
-            // Using the EIP-1193 provider's request method as per Frame SDK v2 documentation.
-            const accounts = await sdk.wallet.ethProvider.request({ method: 'eth_requestAccounts' }) as string[];
-            if (accounts && accounts.length > 0) {
-              fetchBalance(accounts[0]);
-            } else {
-              // アカウント取得に失敗した場合は context のアドレスをフォールバックとして使用
-              const fallbackAddr = (context.user as any).custodyAddress;
-              if (fallbackAddr) fetchBalance(fallbackAddr);
-            }
-          } catch (walletErr) {
-            console.error("Wallet request failed", walletErr);
-            const fallbackAddr = (context.user as any).custodyAddress;
-            if (fallbackAddr) fetchBalance(fallbackAddr);
+          // Farcaster v2コンテキストから優先的に使用するアドレスを決定
+          // verifiedAddresses.ethAddresses があればそれを使用、なければ custodyAddress
+          const user = context.user as any;
+          const ethAddress = user.verifiedAddresses?.ethAddresses?.[0] || user.custodyAddress;
+          
+          if (ethAddress) {
+            fetchBalance(ethAddress);
           }
         }
       } catch (e) {
-        console.error("Farcaster SDK error", e);
+        console.error("Farcaster SDK Context error", e);
       }
     };
     initFarcaster();

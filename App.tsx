@@ -21,10 +21,10 @@ const App: React.FC = () => {
   const { gameState, ui, actions } = useGameLogic();
 
   useEffect(() => {
-    // Farcaster SDK init: Signal that the app is ready and interactive
-    // This removes the splash screen.
+    // Farcaster SDK ready signal: This is critical for the app to show up in the Farcaster client.
     const init = async () => {
       try {
+        console.log("Farcaster SDK: Signaling ready...");
         await sdk.actions.ready();
       } catch (e) {
         console.error("Farcaster SDK ready error", e);
