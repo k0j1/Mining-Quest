@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { sdk } from '@farcaster/frame-sdk';
 
@@ -18,7 +17,7 @@ const formatCompactNumber = (num: number): string => {
   if (num >= 1000000) {
     return (num / 1000000).toFixed(1).replace(/\.0$/, '') + 'M';
   }
-  // 10,000以上の場合は K で省略表示（表示崩れ防止のため）
+  // 10,000以上の場合は K で省略表示
   if (num >= 10000) {
     return (num / 1000).toFixed(1).replace(/\.0$/, '') + 'K';
   }
@@ -37,9 +36,24 @@ const Header: React.FC<HeaderProps> = ({ title, tokens, isSoundOn, onToggleSound
         const context = await sdk.context;
         if (context?.user) {
           setFarcasterUser(context.user);
-          const address = (context.user as any).address || (context.user as any).custodyAddress;
-          if (address) {
-            fetchBalance(address);
+          
+          // Wallet接続をリクエストして正確なアドレスを取得
+          // https://miniapps.farcaster.xyz/docs/sdk/wallet を参照
+          try {
+            // FIX: Property 'eth_requestAccounts' does not exist on sdk.wallet.
+            // Using the EIP-1193 provider's request method as per Frame SDK v2 documentation.
+            const accounts = await sdk.wallet.ethProvider.request({ method: 'eth_requestAccounts' }) as string[];
+            if (accounts && accounts.length > 0) {
+              fetchBalance(accounts[0]);
+            } else {
+              // アカウント取得に失敗した場合は context のアドレスをフォールバックとして使用
+              const fallbackAddr = (context.user as any).custodyAddress;
+              if (fallbackAddr) fetchBalance(fallbackAddr);
+            }
+          } catch (walletErr) {
+            console.error("Wallet request failed", walletErr);
+            const fallbackAddr = (context.user as any).custodyAddress;
+            if (fallbackAddr) fetchBalance(fallbackAddr);
           }
         }
       } catch (e) {
@@ -51,6 +65,7 @@ const Header: React.FC<HeaderProps> = ({ title, tokens, isSoundOn, onToggleSound
 
   const fetchBalance = async (address: string) => {
     try {
+      // Base RPCを使用してコントラクトのbalanceOfを呼び出す
       const response = await fetch(BASE_RPC_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
