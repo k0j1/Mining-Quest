@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { GameState, View, QuestRank } from '../types';
 import { QUEST_CONFIG } from '../constants';
@@ -118,12 +119,12 @@ const StatusBoard: React.FC<StatusBoardProps> = ({ state, actionButtonLabel, onA
           {/* All Unlocked Parties Display for Home Screen */}
           {view === View.HOME && (
             <div>
-               <div className="flex justify-between items-end mb-4">
-                 <h2 className="text-xs font-bold text-slate-500 uppercase tracking-widest flex items-center">
+               <div className="flex justify-between items-center mb-4">
+                 <h2 className="text-xs font-bold text-slate-500 uppercase tracking-widest flex items-center shrink-0">
                    <span className="w-1.5 h-4 bg-indigo-500 rounded-full mr-2"></span>
                    編成済みパーティ一覧
                  </h2>
-                 <span className="text-[10px] text-slate-600 bg-slate-900 px-2 py-0.5 rounded border border-slate-800">
+                 <span className="text-[9px] text-indigo-300 bg-indigo-500/20 px-2 py-1 rounded-md border border-indigo-500/40 shadow-[0_0_10px_rgba(99,102,241,0.1)] font-bold">
                     編成画面で変更可能
                  </span>
               </div>
