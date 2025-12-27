@@ -15,7 +15,9 @@
         :root {
             --brand-amber: #fbbf24;
             --brand-indigo: #6366f1;
-            --panel-bg: rgba(7, 10, 25, 0.8);
+            --panel-bg: rgba(15, 23, 42, 0.75);
+            --bg-base: #020617;
+            --text-main: #f8fafc;
         }
         html, body {
             height: 100%;
@@ -24,7 +26,7 @@
             padding: 0;
             overflow: hidden;
             position: fixed;
-            background-color: #02040a;
+            background-color: var(--bg-base);
         }
         #root {
             height: 100%;
@@ -32,7 +34,7 @@
         }
         body {
             font-family: 'Noto Sans JP', sans-serif;
-            color: #e2e8f0;
+            color: var(--text-main);
             padding-left: env(safe-area-inset-left);
             padding-right: env(safe-area-inset-right);
             -webkit-tap-highlight-color: transparent;
@@ -42,34 +44,29 @@
         }
         .glass-panel {
             background: var(--panel-bg);
-            backdrop-filter: blur(16px);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(24px) saturate(180%);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            box-shadow: 0 15px 35px -5px rgba(0, 0, 0, 0.7);
         }
-        .amber-glow {
-            box-shadow: 0 0 15px rgba(251, 191, 36, 0.3);
-        }
-        .indigo-glow {
-            box-shadow: 0 0 20px rgba(99, 102, 241, 0.2);
+        /* Cinematic Vignette matching Banner style */
+        .vignette-overlay {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            background: radial-gradient(circle at center, transparent 30%, rgba(0,0,0,0.85) 100%);
+            z-index: 50;
         }
         /* Custom Scrollbar */
         ::-webkit-scrollbar {
             width: 4px;
         }
         ::-webkit-scrollbar-track {
-            background: rgba(0,0,0,0.2);
+            background: rgba(255,255,255,0.02);
         }
         ::-webkit-scrollbar-thumb {
-            background: rgba(99, 102, 241, 0.3);
+            background: var(--brand-indigo);
             border-radius: 10px;
-        }
-        /* Cinematic Vignette */
-        .vignette-overlay {
-            position: fixed;
-            inset: 0;
-            pointer-events: none;
-            background: radial-gradient(circle at center, transparent 30%, rgba(0,0,0,0.4) 100%);
-            z-index: 50;
+            box-shadow: 0 0 10px var(--brand-indigo);
         }
     </style>
 <script type="importmap">

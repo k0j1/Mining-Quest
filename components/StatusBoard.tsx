@@ -42,12 +42,12 @@ const QuestItem: React.FC<{ quest: any }> = ({ quest }) => {
   };
 
   return (
-    <div className={`relative p-5 glass-panel rounded-2xl overflow-hidden transition-all duration-500 border border-white/5 ${
-      isCompleted ? 'bg-emerald-500/5 ring-1 ring-emerald-500/30' : 'bg-amber-500/5 ring-1 ring-amber-500/20'
+    <div className={`relative p-5 glass-panel rounded-3xl overflow-hidden transition-all duration-500 border border-white/5 ${
+      isCompleted ? 'bg-emerald-500/10 ring-1 ring-emerald-500/30' : 'bg-amber-500/5'
     }`}>
-      {/* Scanning Line Animation */}
+      {/* Amber Scanning Line */}
       {!isCompleted && (
-        <div className="absolute top-0 left-0 w-full h-[1px] bg-amber-500/50 blur-[1px] shadow-[0_0_10px_#fbbf24] animate-scan-line"></div>
+        <div className="absolute top-0 left-0 w-full h-[1px] bg-amber-500/50 shadow-[0_0_15px_#fbbf24] animate-scan-line"></div>
       )}
 
       <div className="flex justify-between items-center relative z-10">
@@ -65,15 +65,15 @@ const QuestItem: React.FC<{ quest: any }> = ({ quest }) => {
           {isCompleted ? (
             <div className="flex flex-col items-end">
               <span className="text-[8px] font-black text-emerald-400 uppercase tracking-widest mb-1">Status</span>
-              <div className="flex items-center gap-1 text-emerald-400 font-black font-orbitron text-sm animate-pulse">
+              <div className="flex items-center gap-1.5 text-emerald-400 font-black font-orbitron text-[10px] px-3 py-1 bg-emerald-500/20 rounded-full border border-emerald-500/30 animate-pulse">
                 <span>✓</span>
                 <span>COMPLETE</span>
               </div>
             </div>
           ) : (
             <div className="flex flex-col items-end">
-              <span className="text-[8px] font-black text-amber-500/60 uppercase tracking-widest mb-1">Time Remaining</span>
-              <div className="font-orbitron font-black text-lg text-amber-500 tabular-nums">
+              <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest mb-1">Live Feed</span>
+              <div className="font-orbitron font-black text-lg text-amber-500 drop-shadow-[0_0_10px_rgba(251,191,36,0.4)] tabular-nums">
                 {minutes}:{seconds.toString().padStart(2, '0')}
               </div>
             </div>
@@ -104,56 +104,56 @@ const StatusBoard: React.FC<StatusBoardProps> = ({
         farcasterUser={farcasterUser} onChainBalance={onChainBalance} onAccountClick={onAccountClick}
       />
 
-      <div className="flex-1 overflow-y-auto pb-4 custom-scrollbar">
-        {/* Banner with high-end shadow */}
-        <div className="px-5 pt-5 mb-8">
+      <div className="flex-1 overflow-y-auto pb-6 custom-scrollbar">
+        {/* Banner matching the requested style */}
+        <div className="px-5 pt-5 mb-10">
           <div className="relative group">
-            <div className="absolute -inset-1 bg-amber-500/20 blur-xl opacity-30 group-hover:opacity-50 transition-opacity rounded-3xl"></div>
+            <div className="absolute -inset-1 bg-amber-500/20 blur-3xl opacity-30 group-hover:opacity-60 transition-opacity rounded-[3rem]"></div>
             <img 
               src={view === View.RETURN ? "https://miningquest.k0j1.v2002.coreserver.jp/images/B_Result.png" : "https://miningquest.k0j1.v2002.coreserver.jp/images/B_Home.png"} 
               alt="Banner" 
-              className="w-full h-auto rounded-[2rem] shadow-2xl border border-white/10 relative z-10"
+              className="w-full h-auto rounded-[2.5rem] shadow-2xl border border-white/10 relative z-10"
             />
           </div>
         </div>
 
-        <div className="px-6 space-y-10">
+        <div className="px-6 space-y-14">
           {/* Active Quests */}
           <div>
-            <div className="flex items-center justify-between mb-4 px-1">
-              <h2 className="text-[10px] font-black text-amber-500/60 uppercase tracking-[0.4em] flex items-center">
-                <span className="w-1 h-3 bg-amber-500 rounded-full mr-3 shadow-[0_0_8px_#fbbf24]"></span>
-                Ongoing Missions
+            <div className="flex items-center justify-between mb-6 px-1">
+              <h2 className="text-[10px] font-black text-amber-400 uppercase tracking-[0.4em] flex items-center">
+                <span className="w-1.5 h-4 bg-amber-500 rounded-full mr-3 shadow-[0_0_10px_#fbbf24]"></span>
+                Ongoing Quests
               </h2>
               {state.activeQuests.length > 0 && (
-                <span className="text-[8px] font-black text-amber-500 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20 animate-pulse">
-                  SYSTEM ACTIVE
+                <span className="text-[8px] font-black text-amber-400 bg-amber-500/10 px-3 py-1 rounded-full border border-amber-500/20 animate-pulse">
+                  TRACKING
                 </span>
               )}
             </div>
-            <div className="space-y-3">
+            <div className="space-y-4">
               {state.activeQuests.length > 0 ? (
                 state.activeQuests.map(q => <QuestItem key={q.id} quest={q} />)
               ) : (
-                <div className="bg-white/[0.02] border border-dashed border-white/10 rounded-2xl p-10 text-center">
-                  <p className="text-slate-600 text-[10px] uppercase font-bold tracking-widest">No Active Operations</p>
+                <div className="bg-black/40 border border-dashed border-white/5 rounded-3xl p-12 text-center shadow-inner">
+                  <p className="text-slate-600 text-[10px] uppercase font-bold tracking-[0.3em]">Standby in Base</p>
                 </div>
               )}
             </div>
           </div>
 
-          {/* Party Presets - Home View */}
+          {/* Party Presets - Synced with TEAM view */}
           {view === View.HOME && (
-            <div className="pb-16 pt-4">
-              <div className="flex justify-between items-center mb-8 px-1">
-                <h2 className="text-[10px] font-black text-indigo-400/60 uppercase tracking-[0.4em] flex items-center">
-                  <span className="w-1 h-3 bg-indigo-500 rounded-full mr-3 shadow-[0_0_8px_#6366f1]"></span>
-                  Deployed Teams
+            <div className="pb-16">
+              <div className="flex justify-between items-center mb-10 px-1">
+                <h2 className="text-[10px] font-black text-indigo-400 uppercase tracking-[0.4em] flex items-center">
+                  <span className="w-1.5 h-4 bg-indigo-500 rounded-full mr-3 shadow-[0_0_10px_#6366f1]"></span>
+                  Tactical Teams
                 </h2>
-                <div className="h-px flex-1 mx-4 bg-white/5"></div>
+                <div className="h-px flex-1 mx-6 bg-white/5"></div>
               </div>
               
-              <div className="space-y-12">
+              <div className="space-y-20">
                 {state.unlockedParties.map((isUnlocked, partyIndex) => {
                   if (!isUnlocked) return null;
                   const presetIds = state.partyPresets[partyIndex];
@@ -162,35 +162,45 @@ const StatusBoard: React.FC<StatusBoardProps> = ({
                   const isQuesting = partyHeroes.some(h => state.activeQuests.some(q => q.heroIds.includes(h.id)));
 
                   return (
-                    <div key={partyIndex} className={`relative p-5 rounded-[2rem] border transition-all duration-500 ${
+                    <div key={partyIndex} className={`relative p-8 pt-12 rounded-[2.5rem] border transition-all duration-500 ${
                       isActive 
-                        ? 'bg-indigo-900/10 border-indigo-500/40 shadow-[0_0_40px_rgba(99,102,241,0.1)]' 
-                        : 'bg-black/40 border-white/5'
+                        ? 'bg-indigo-950/10 border-indigo-500/30 shadow-[0_0_50px_rgba(99,102,241,0.1)]' 
+                        : 'bg-black/40 border-white/5 opacity-80'
                     }`}>
-                      <div className="flex flex-wrap justify-between items-center mb-5 gap-2">
-                        <div className="flex flex-col">
-                          <h3 className={`text-xs font-black font-orbitron tracking-widest uppercase ${isActive ? 'text-indigo-400' : 'text-slate-500'}`}>
-                            Unit-0{partyIndex + 1}
-                          </h3>
+                      {/* Unit Header Label */}
+                      <div className="absolute -top-5 left-8 flex items-center gap-4">
+                        <div className={`px-5 py-2 rounded-full border font-black font-orbitron text-[10px] tracking-[0.2em] shadow-2xl ${
+                            isActive ? 'bg-indigo-600 text-white border-indigo-400 shadow-[0_0_20px_rgba(99,102,241,0.5)]' : 'bg-slate-900 text-slate-500 border-white/10'
+                        }`}>
+                            PARTY 0{partyIndex + 1}
                         </div>
                         {isQuesting && (
-                          <div className="flex items-center gap-2 bg-amber-500/10 px-3 py-1 rounded-full border border-amber-500/20">
-                            <span className="w-1.5 h-1.5 bg-amber-500 rounded-full animate-ping"></span>
-                            <span className="text-[8px] text-amber-500 font-black tracking-widest uppercase">Mission Live</span>
+                          <div className="flex items-center gap-2 bg-emerald-500/10 px-3 py-1.5 rounded-full border border-emerald-500/20 shadow-lg">
+                            <span className="w-2 h-2 bg-emerald-500 rounded-full animate-ping"></span>
+                            <span className="text-[8px] text-emerald-400 font-black tracking-widest uppercase">Live Mission</span>
                           </div>
                         )}
                       </div>
 
-                      <div className="grid grid-cols-3 gap-3">
+                      {/* Heroes Grid with SLOT labels - Matches PartyView */}
+                      <div className="grid grid-cols-3 gap-5">
                         {Array.from({ length: 3 }).map((_, i) => {
                           const hero = partyHeroes[i];
+                          const isLocked = hero ? state.activeQuests.some(q => q.heroIds.includes(hero.id)) : false;
                           return (
-                            <div key={i} className="mb-2">
+                            <div key={i} className="relative group">
+                              <div className="absolute -top-5 left-0 right-0 flex justify-center z-20">
+                                  <span className={`text-[7px] font-black px-2 py-0.5 rounded-full shadow-lg border whitespace-nowrap transition-all ${
+                                    isActive ? 'bg-indigo-500/20 text-indigo-300 border-indigo-500/30 backdrop-blur-md' : 'bg-black/60 text-slate-600 border-white/5'
+                                  }`}>SLOT {i + 1}</span>
+                              </div>
+
                               {hero ? (
-                                <HeroCard hero={hero} index={i} isMainSlot isLocked={state.activeQuests.some(q => q.heroIds.includes(hero.id))} />
+                                <HeroCard hero={hero} index={i} isMainSlot isLocked={isLocked} />
                               ) : (
-                                <div className="w-full aspect-[4/5] bg-black/40 rounded-2xl border border-dashed border-white/10 flex items-center justify-center">
-                                  <span className="text-[8px] font-black text-slate-700 tracking-tighter uppercase">Vacant</span>
+                                <div className="w-full aspect-[4/5] bg-black/40 rounded-[1.5rem] border border-dashed border-white/10 flex flex-col items-center justify-center shadow-inner opacity-40">
+                                  <span className="text-[24px] mb-1 opacity-10">＋</span>
+                                  <span className="text-[8px] font-black text-slate-700 uppercase tracking-tighter">Empty</span>
                                 </div>
                               )}
                             </div>
@@ -207,10 +217,10 @@ const StatusBoard: React.FC<StatusBoardProps> = ({
       </div>
 
       {actionButtonLabel && (
-        <div className="p-6 pb-10 bg-gradient-to-t from-black via-black to-transparent sticky bottom-0 z-30">
+        <div className="p-6 pb-14 bg-gradient-to-t from-black via-black/90 to-transparent sticky bottom-0 z-[40]">
           <button 
             onClick={() => { playClick(); onAction?.(); }}
-            className="w-full py-5 bg-gradient-to-r from-amber-600 via-amber-400 to-amber-600 rounded-2xl font-black text-lg text-black shadow-[0_10px_40px_rgba(251,191,36,0.4)] border border-white/20 active:translate-y-1 transition-all uppercase tracking-widest font-orbitron"
+            className="w-full py-5 bg-gradient-to-r from-amber-700 via-amber-600 to-amber-700 hover:from-amber-600 hover:to-amber-500 rounded-3xl font-black text-lg text-black shadow-[0_10px_40px_rgba(251,191,36,0.4)] border border-amber-400/30 active:translate-y-1 transition-all uppercase tracking-[0.3em] font-orbitron"
           >
             {actionButtonLabel}
           </button>

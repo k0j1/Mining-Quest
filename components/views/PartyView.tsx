@@ -44,22 +44,18 @@ const PartyView: React.FC<PartyViewProps> = ({
   const activeQuestHeroIds = gameState.activeQuests.flatMap(q => q.heroIds);
   const isPartyLocked = currentPreset.some(id => id && activeQuestHeroIds.includes(id));
 
-  // Get ALL heroes assigned to ANY party to filter the list
   const allAssignedHeroIds = gameState.partyPresets.flat().filter((id): id is string => !!id);
-
-  // --- Handlers ---
 
   const handleTabClick = (idx: number) => {
     const isUnlocked = gameState.unlockedParties[idx];
     if (isUnlocked) {
       playClick();
       onSwitchParty(idx);
-      // Reset selections when switching tabs
       setSelectedSlotIndex(null);
       setSelectedHeroId(null);
     } else {
       playClick();
-      setUnlockingIndex(idx); // Open confirmation modal
+      setUnlockingIndex(idx);
     }
   };
 
@@ -76,27 +72,22 @@ const PartyView: React.FC<PartyViewProps> = ({
     }
     playClick();
     
-    // Case A: A hero is already selected from the list -> Place that hero into this slot
     if (selectedHeroId) {
-      // Check if this hero is questing (though list logic usually prevents selecting questing heroes)
       if (activeQuestHeroIds.includes(selectedHeroId)) {
         playError();
-        alert("このヒーローは現在クエスト中です");
         setSelectedHeroId(null);
         return;
       }
       onAssignHero(slotIdx, selectedHeroId);
-      setSelectedHeroId(null); // Clear hero selection
-      setSelectedSlotIndex(null); // Ensure slot is clear
+      setSelectedHeroId(null);
+      setSelectedSlotIndex(null);
       return;
     }
 
-    // Case B: No hero selected -> Toggle slot selection to wait for a hero pick
     if (selectedSlotIndex === slotIdx) {
       setSelectedSlotIndex(null);
     } else {
       setSelectedSlotIndex(slotIdx);
-      // If we select a slot, we shouldn't have a hero selected simultaneously in this simplified flow
       setSelectedHeroId(null);
     }
   };
@@ -109,26 +100,23 @@ const PartyView: React.FC<PartyViewProps> = ({
 
     if (activeQuestHeroIds.includes(heroId)) {
       playError();
-      alert("このヒーローは現在クエスト中です");
       return;
     }
 
     playClick();
 
-    // Case A: A slot is already selected -> Place this hero into that slot
     if (selectedSlotIndex !== null) {
       onAssignHero(selectedSlotIndex, heroId);
-      setSelectedSlotIndex(null); // Clear slot selection
+      setSelectedSlotIndex(null);
       setSelectedHeroId(null);
       return;
     }
 
-    // Case B: No hero selected -> Toggle hero selection
     if (selectedHeroId === heroId) {
       setSelectedHeroId(null);
     } else {
       setSelectedHeroId(heroId);
-      setSelectedSlotIndex(null); // Ensure slot is clear
+      setSelectedSlotIndex(null);
     }
   };
 
@@ -166,36 +154,23 @@ const PartyView: React.FC<PartyViewProps> = ({
           onChainBalance={onChainBalance}
           onAccountClick={onAccountClick}
         >
-          {/* Banner for TEAM - Moved here to be above tabs */}
-          <div className="px-4 pb-3">
+          <div className="px-5 pt-4 pb-3">
             <img 
               src="https://miningquest.k0j1.v2002.coreserver.jp/images/B_Team.png" 
               alt="Team Banner" 
-              className="w-full h-auto rounded-xl shadow-md border border-white/10"
+              className="w-full h-auto rounded-[2.5rem] shadow-2xl border border-white/10"
             />
           </div>
 
-          {/* Message Area */}
-          <div className="px-4 mb-2">
-            {isPartyLocked ? (
-              <p className="text-[10px] text-red-400 bg-red-900/30 py-1 px-2 rounded border border-red-500/20 text-center font-bold animate-pulse">
-                クエスト中のため変更不可
-              </p>
-            ) : (
-              <p className="text-[10px] text-indigo-300 bg-indigo-900/30 py-1 px-2 rounded border border-indigo-500/20 text-center transition-all">
-                 {selectedSlotIndex !== null ? (
-                   <span className="animate-pulse font-bold text-white">リストから配置するヒーローを選択してください</span>
-                 ) : selectedHeroId !== null ? (
-                    <span className="animate-pulse font-bold text-white">配置するスロット（枠）を選択してください</span>
-                 ) : (
-                   "編成枠とヒーローを選んで配置"
-                 )}
-              </p>
-            )}
+          <div className="px-5 mb-3">
+            <p className={`text-[10px] py-2 px-3 rounded-full border text-center font-black tracking-widest uppercase transition-all ${
+              isPartyLocked ? 'text-rose-400 bg-rose-950/40 border-rose-500/30' : 'text-indigo-400 bg-indigo-950/40 border-indigo-500/30 shadow-inner'
+            }`}>
+              {isPartyLocked ? "PARTY LOCKED ON MISSION" : (selectedSlotIndex !== null || selectedHeroId !== null ? "TARGET ACQUIRED: ASSIGNING..." : "SELECT SLOT & UNIT TO DEPLOY")}
+            </p>
           </div>
 
-          {/* Party Tabs */}
-          <div className="flex px-4 gap-2 pb-3">
+          <div className="flex px-5 gap-3 pb-4">
             {[0, 1, 2].map(idx => {
               const isUnlocked = gameState.unlockedParties[idx];
               const isActive = activePartyIndex === idx;
@@ -203,43 +178,35 @@ const PartyView: React.FC<PartyViewProps> = ({
                 <button
                   key={idx}
                   onClick={() => handleTabClick(idx)}
-                  className={`flex-1 py-2 rounded-lg font-black text-xs uppercase tracking-wider transition-all relative overflow-hidden ${
+                  className={`flex-1 py-3 rounded-2xl font-black text-[10px] tracking-widest uppercase transition-all border ${
                     isActive 
-                      ? 'bg-indigo-600 text-white shadow-[0_0_15px_rgba(79,70,229,0.5)] border border-indigo-400'
+                      ? 'bg-indigo-600 text-white border-indigo-400 shadow-[0_0_20px_rgba(99,102,241,0.4)] cursor-pointer'
                       : isUnlocked 
-                        ? 'bg-slate-800 text-slate-400 hover:bg-slate-700 border border-slate-700'
-                        : 'bg-slate-900 text-slate-600 border border-slate-800 cursor-not-allowed opacity-70'
+                        ? 'bg-slate-900 text-slate-500 border-white/5 hover:bg-slate-800 cursor-pointer'
+                        : 'bg-black text-slate-600 border-white/10 cursor-pointer hover:bg-amber-500/10 hover:border-amber-500/50 hover:text-amber-400 shadow-inner'
                   }`}
+                  title={!isUnlocked ? "クリックしてこのパーティ枠を解放" : ""}
                 >
-                  {isUnlocked ? `Party ${idx + 1}` : (
-                    <div className="flex items-center justify-center gap-1 text-[10px]">
-                      <span>🔒</span>
-                      <span>UNLOCK</span>
-                    </div>
-                  )}
-                  {isActive && <div className="absolute bottom-0 left-0 w-full h-0.5 bg-white shadow-[0_0_5px_white]"></div>}
+                  {isUnlocked ? `PARTY 0${idx + 1}` : '🔒 LOCKED'}
                 </button>
               );
             })}
           </div>
         </Header>
 
-        <div className="flex-1 overflow-y-auto px-4 pb-24 pt-8">
+        <div className="flex-1 overflow-y-auto px-5 pb-32 pt-10">
           
-          {/* Main Slots */}
-          <div className="grid grid-cols-3 gap-3 mb-12">
+          <div className="grid grid-cols-3 gap-5 mb-16">
             {[0, 1, 2].map(slotIdx => {
               const heroId = currentPreset[slotIdx];
-              // Fix: Resolved 'id' error by removing redundant and broken lookup logic
               const h = heroId ? gameState.heroes.find(heroObj => heroObj.id === heroId) : null;
               const isSelected = selectedSlotIndex === slotIdx;
 
               return (
-                <div key={slotIdx} className="relative group mb-4">
-                  {/* Slot Label - Improved placement to avoid overlap */}
-                  <div className="absolute -top-4 left-0 right-0 flex justify-center z-20">
-                      <span className={`text-[8px] font-black px-1.5 py-0.5 rounded shadow-lg border whitespace-nowrap ${
-                        isSelected ? 'bg-indigo-500 text-white border-white' : 'bg-slate-700 text-slate-400 border-slate-600'
+                <div key={slotIdx} className="relative group">
+                  <div className="absolute -top-5 left-0 right-0 flex justify-center z-20">
+                      <span className={`text-[8px] font-black px-2.5 py-0.5 rounded-full shadow-xl border whitespace-nowrap transition-all ${
+                        isSelected ? 'bg-indigo-600 text-white border-indigo-400 shadow-[0_0_15px_#6366f1]' : 'bg-slate-900 text-slate-500 border-white/10'
                       }`}>SLOT {slotIdx + 1}</span>
                   </div>
 
@@ -257,26 +224,23 @@ const PartyView: React.FC<PartyViewProps> = ({
                       {!isPartyLocked && (
                         <button 
                           onClick={(e) => handleRemoveHero(e, slotIdx)}
-                          className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-[10px] border border-white shadow-md z-30"
+                          className="absolute -top-2 -right-2 bg-rose-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs border-2 border-white/20 shadow-2xl z-30"
                         >
                           ✕
                         </button>
                       )}
                     </div>
                   ) : (
-                    // Empty Slot Placeholder
                     <button 
                       onClick={() => handleSlotClick(slotIdx)}
-                      className={`w-full aspect-[4/5] rounded-xl border-2 border-dashed flex flex-col items-center justify-center transition-all ${
+                      className={`w-full aspect-[4/5] rounded-[1.8rem] border-2 border-dashed flex flex-col items-center justify-center transition-all ${
                           isSelected 
-                            ? 'border-indigo-400 bg-indigo-500/10 shadow-[0_0_10px_rgba(99,102,241,0.3)] scale-105' 
-                            : selectedHeroId 
-                                ? 'border-indigo-500/50 bg-indigo-500/5 animate-pulse' // Highlight if hero selected
-                                : 'border-slate-700 bg-slate-900/30 hover:bg-slate-800'
+                            ? 'border-indigo-500 bg-indigo-500/10 shadow-2xl' 
+                            : 'border-white/10 bg-black/40 hover:bg-black/60'
                       }`}
                     >
-                        <span className="text-2xl opacity-30">➕</span>
-                        <span className="text-[9px] text-slate-500 mt-1 uppercase font-black">Vacant</span>
+                        <span className="text-2xl mb-1 opacity-10">＋</span>
+                        <span className="text-[9px] font-black text-slate-700 tracking-tighter uppercase">Vacant</span>
                     </button>
                   )}
                 </div>
@@ -284,48 +248,36 @@ const PartyView: React.FC<PartyViewProps> = ({
             })}
           </div>
 
-          {/* Reserve List */}
           <div className="mt-8">
-            <h2 className="text-[10px] font-bold text-slate-500 mb-4 uppercase tracking-widest flex items-center">
-              <span className="w-1 h-3 bg-slate-700 mr-2 rounded-full"></span>
-              待機中のヒーロー
+            <h2 className="text-[10px] font-black text-slate-500 mb-6 uppercase tracking-[0.4em] flex items-center px-1">
+              <span className="w-1.5 h-4 bg-slate-800 mr-4 rounded-full"></span>
+              Barracks (Inactive)
             </h2>
-            <div className="grid grid-cols-2 gap-3 pb-8">
+            <div className="grid grid-cols-2 gap-4 pb-12">
                 {gameState.heroes
-                  .filter(h => !allAssignedHeroIds.includes(h.id)) // Filter out heroes equipped in ANY party
+                  .filter(h => !allAssignedHeroIds.includes(h.id))
                   .map((hero, idx) => {
                     const isQuesting = activeQuestHeroIds.includes(hero.id);
                     const isHeroSelected = selectedHeroId === hero.id;
 
                     return (
-                    <div key={hero.id} className="relative transition-transform duration-200" style={{ transform: isHeroSelected ? 'scale(1.02)' : 'scale(1)' }}>
+                    <div key={hero.id} className="relative">
                       <HeroCard 
                         hero={hero} 
-                        index={idx} // visual index only
+                        index={idx}
                         compact 
                         isLocked={isQuesting}
                         isSelected={isHeroSelected}
                         onClick={() => handleHeroListClick(hero.id)} 
                       />
-                      {isQuesting && (
-                        <div className="absolute top-1 right-1 bg-orange-600 text-[8px] text-white px-1 rounded shadow">
-                          QUEST
-                        </div>
-                      )}
                     </div>
                   );
                 })}
-                {gameState.heroes.length === allAssignedHeroIds.length && (
-                  <p className="col-span-2 text-center text-slate-600 text-xs py-8">
-                    すべてのヒーローが配置されています
-                  </p>
-                )}
             </div>
           </div>
         </div>
       </div>
 
-      {/* Equipment Selector Modal */}
       {equippingState && (
         <EquipmentSelector 
           hero={gameState.heroes.find(h => h.id === equippingState.heroId)!}
@@ -337,39 +289,21 @@ const PartyView: React.FC<PartyViewProps> = ({
         />
       )}
 
-      {/* Party Unlock Confirmation Modal */}
       {unlockingIndex !== null && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/80 backdrop-blur-sm p-4 animate-fade-in">
-          <div className="w-full max-w-sm bg-slate-900 border border-slate-700 rounded-2xl overflow-hidden shadow-2xl transform transition-all scale-100">
-             <div className="p-6 text-center">
-                <div className="w-16 h-16 bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl shadow-inner">
-                   🔒
-                </div>
-                <h3 className="text-xl font-bold text-white mb-2">Party {unlockingIndex + 1} を解放</h3>
-                <p className="text-slate-400 text-xs mb-6">
-                  新しいパーティ編成スロットを解放します。<br/>
-                  コスト: <span className="text-yellow-400 font-bold">10,000 $CHH</span>
-                </p>
-
-                <div className="flex gap-3">
-                   <button 
-                     onClick={() => { playClick(); setUnlockingIndex(null); }}
-                     className="flex-1 py-3 rounded-xl bg-slate-800 text-slate-400 font-bold text-sm hover:bg-slate-700"
-                   >
-                     キャンセル
-                   </button>
-                   <button 
-                     onClick={confirmUnlock}
-                     disabled={gameState.tokens < 10000}
-                     className={`flex-1 py-3 rounded-xl font-bold text-sm text-slate-900 shadow-lg ${
-                       gameState.tokens >= 10000 
-                         ? 'bg-yellow-500 hover:bg-yellow-400' 
-                         : 'bg-slate-700 text-slate-500 cursor-not-allowed'
-                     }`}
-                   >
-                     {gameState.tokens >= 10000 ? '解放する' : '資金不足'}
-                   </button>
-                </div>
+        <div className="fixed inset-0 z-[150] flex items-center justify-center bg-black/80 backdrop-blur-xl p-8 animate-fade-in">
+          <div className="w-full max-w-sm glass-panel rounded-[2.5rem] p-10 text-center border border-white/10 shadow-3xl shadow-black/50">
+             <div className="w-20 h-20 bg-indigo-600/20 rounded-[2rem] flex items-center justify-center mx-auto mb-8 text-3xl border border-indigo-500/30 shadow-inner">
+                🔒
+             </div>
+             <h3 className="text-xl font-black text-white mb-3 tracking-widest">DEPLOY PARTY 0{unlockingIndex + 1}</h3>
+             <p className="text-slate-500 text-xs mb-10 leading-relaxed">
+               コスト: <span className="text-amber-500 font-black">10,000 $CHH</span>
+             </p>
+             <div className="flex gap-4">
+                <button onClick={() => setUnlockingIndex(null)} className="flex-1 py-4 rounded-2xl bg-slate-900 text-slate-400 font-bold text-sm border border-white/5">ABORT</button>
+                <button onClick={confirmUnlock} disabled={gameState.tokens < 10000} className={`flex-1 py-4 rounded-2xl font-black text-sm text-white shadow-2xl transition-all ${gameState.tokens >= 10000 ? 'bg-indigo-600 hover:bg-indigo-500' : 'bg-slate-800 text-slate-600'}`}>
+                  {gameState.tokens >= 10000 ? 'UNLOCK' : 'INSUFFICIENT'}
+                </button>
              </div>
           </div>
         </div>

@@ -1,7 +1,7 @@
 
 export enum View {
   HOME = 'HOME',
-  PARTY = 'TEAM',
+  PARTY = 'PARTY',
   DEPART = 'QUEST',
   RETURN = 'RESULT',
   GACHA = 'GACHA',
