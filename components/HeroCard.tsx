@@ -24,27 +24,19 @@ const HeroCard: React.FC<HeroCardProps> = ({
   isMainSlot
 }) => {
   const rarityColors: Record<string, string> = {
-    C: 'bg-zinc-600 text-zinc-300',
-    UC: 'bg-emerald-600 text-emerald-100',
-    R: 'bg-indigo-600 text-indigo-100',
-    E: 'bg-fuchsia-600 text-fuchsia-100',
-    L: 'bg-amber-600 text-amber-100'
+    C: 'bg-slate-600 text-slate-100',
+    UC: 'bg-emerald-600 text-emerald-50',
+    R: 'bg-indigo-600 text-indigo-50',
+    E: 'bg-fuchsia-600 text-fuchsia-50',
+    L: 'bg-amber-600 text-amber-50'
   };
 
   const rarityBorders: Record<string, string> = {
-    C: 'border-zinc-700/50',
-    UC: 'border-emerald-500/50',
-    R: 'border-indigo-500/50',
-    E: 'border-fuchsia-500/50',
-    L: 'border-amber-400/50'
-  };
-
-  const rarityGlows: Record<string, string> = {
-    C: 'shadow-[0_0_15px_rgba(113,113,122,0.2)]',
-    UC: 'shadow-[0_0_20px_rgba(16,185,129,0.3)]',
-    R: 'shadow-[0_0_25px_rgba(99,102,241,0.4)]',
-    E: 'shadow-[0_0_30px_rgba(192,38,211,0.5)]',
-    L: 'shadow-[0_0_40px_rgba(251,191,36,0.6)]'
+    C: 'border-slate-600',
+    UC: 'border-emerald-600',
+    R: 'border-indigo-600',
+    E: 'border-fuchsia-600',
+    L: 'border-amber-600'
   };
 
   const speciesIcon = {
@@ -60,38 +52,38 @@ const HeroCard: React.FC<HeroCardProps> = ({
     return (
       <div 
         onClick={onClick}
-        className={`flex items-center space-x-3 p-3 glass-panel rounded-2xl transition-all duration-300 relative overflow-hidden ${
-          isLocked ? 'opacity-40 grayscale-[0.5] cursor-not-allowed' : 'cursor-pointer active:scale-95'
+        className={`flex items-center space-x-3 p-3 bg-slate-800 rounded-xl border transition-all duration-200 relative overflow-hidden ${
+          isLocked ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:bg-slate-750'
         } ${
           isSelected 
-            ? 'border-amber-500 bg-amber-500/10 ring-1 ring-amber-500 shadow-[0_0_20px_rgba(251,191,36,0.3)]' 
-            : 'border-white/5 hover:border-white/10'
+            ? 'border-amber-500 ring-1 ring-amber-500' 
+            : 'border-slate-700'
         }`}
       >
         <div className="relative flex-shrink-0">
-          <img src={hero.imageUrl} className="w-12 h-12 rounded-xl border border-white/10 object-cover relative z-10 shadow-lg" alt={hero.name} />
-          <div className="absolute -top-1 -left-1 w-5 h-5 flex items-center justify-center rounded-full bg-black/80 border border-white/20 text-[10px] z-20 shadow-md">
+          <img src={hero.imageUrl} className="w-12 h-12 rounded-lg object-cover relative z-10" alt={hero.name} />
+          <div className="absolute -top-1 -left-1 w-5 h-5 flex items-center justify-center rounded-full bg-slate-900 border border-slate-700 text-[10px] z-20">
             {speciesIcon[hero.species]}
           </div>
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex justify-between items-center mb-1">
-            <p className="font-orbitron font-bold text-[10px] truncate text-white tracking-wide">{hero.name}</p>
-            <span className={`text-[8px] font-black px-1.5 py-0.5 rounded-full ${rarityColors[hero.rarity]} border border-white/10 shadow-lg`}>{hero.rarity}</span>
+            <p className="font-bold text-xs truncate text-slate-200">{hero.name}</p>
+            <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded ${rarityColors[hero.rarity]}`}>{hero.rarity}</span>
           </div>
           <div className="flex items-center space-x-2">
-            <span className="text-[9px] font-mono font-bold text-slate-500">HP {hero.hp}</span>
-            <div className="flex-1 bg-black/40 h-1 rounded-full overflow-hidden border border-white/5">
+            <span className="text-[10px] font-bold text-slate-500">HP {hero.hp}</span>
+            <div className="flex-1 bg-slate-900 h-1.5 rounded-full overflow-hidden">
               <div 
-                className={`h-full transition-all duration-500 ${hero.hp < 30 ? 'bg-rose-500 shadow-[0_0_8px_#f43f5e]' : 'bg-amber-500 shadow-[0_0_8px_#fbbf24]'}`} 
+                className={`h-full ${hero.hp < 30 ? 'bg-rose-500' : 'bg-amber-500'}`} 
                 style={{ width: `${(hero.hp / hero.maxHp) * 100}%` }}
               />
             </div>
           </div>
         </div>
         {isLocked && (
-          <div className="absolute inset-0 bg-black/60 flex items-center justify-center z-50 backdrop-blur-[1px]">
-            <span className="text-[9px] font-black text-amber-400 border border-amber-400/50 px-2 py-0.5 rounded-full bg-black shadow-lg">QUESTING</span>
+          <div className="absolute inset-0 bg-slate-900/60 flex items-center justify-center z-50">
+            <span className="text-[10px] font-bold text-white bg-slate-800 px-2 py-1 rounded border border-slate-600">QUESTING</span>
           </div>
         )}
       </div>
@@ -101,67 +93,63 @@ const HeroCard: React.FC<HeroCardProps> = ({
   return (
     <div 
       onClick={onClick}
-      className={`relative transition-all duration-500 ${
+      className={`relative transition-all duration-300 ${
         isLocked ? 'cursor-not-allowed' : 'cursor-pointer active:scale-95'
       } ${
         isSelected ? 'scale-105 z-30' : 'scale-100 z-10'
       }`}
     >
-      <div className={`relative w-full aspect-[4/5] rounded-[1.8rem] overflow-hidden border-2 transition-all duration-500 ${
+      <div className={`relative w-full aspect-[4/5] rounded-2xl overflow-hidden border-2 bg-slate-800 transition-all ${
         isSelected 
-          ? 'border-amber-400 ring-4 ring-amber-500/20 shadow-[0_0_50px_rgba(251,191,36,0.4)]' 
-          : `${rarityBorders[hero.rarity]} ${rarityGlows[hero.rarity]} glass-panel`
+          ? 'border-amber-400 shadow-lg shadow-amber-900/20' 
+          : `${rarityBorders[hero.rarity]} border-opacity-50`
       }`}>
-        <img src={hero.imageUrl} className={`absolute inset-0 w-full h-full object-cover transition-transform duration-1000 ${isSelected ? 'scale-110' : 'scale-100'}`} alt={hero.name} />
+        <img src={hero.imageUrl} className="absolute inset-0 w-full h-full object-cover" alt={hero.name} />
         
-        {/* Cinematic Overlays */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-black/30 opacity-90"></div>
-        <div className="absolute inset-0 bg-gradient-to-tr from-indigo-900/40 via-transparent to-amber-500/10"></div>
+        {/* Simple Gradient Overlay */}
+        <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-transparent to-transparent opacity-90"></div>
 
         {/* Hero Meta */}
         <div className="absolute top-3 left-3 flex flex-col gap-1.5 items-start z-20">
-          <div className={`px-2.5 py-1 rounded-full border border-white/20 text-[9px] font-black shadow-2xl ${rarityColors[hero.rarity]}`}>
+          <div className={`px-2 py-0.5 rounded text-[10px] font-bold shadow-sm ${rarityColors[hero.rarity]}`}>
             {hero.rarity}
-          </div>
-          <div className="bg-black/60 backdrop-blur-md w-7 h-7 rounded-xl flex items-center justify-center border border-white/10 text-xs shadow-xl">
-            {speciesIcon[hero.species]}
           </div>
         </div>
 
         {/* Level */}
         <div className="absolute top-3 right-3 z-20">
-          <div className="bg-black/60 backdrop-blur-md px-2.5 py-1 rounded-full text-[9px] font-bold text-amber-400 border border-amber-400/20 shadow-xl">
+          <div className="bg-slate-900/80 backdrop-blur-sm px-2 py-0.5 rounded text-[10px] font-bold text-slate-200 border border-slate-700">
             LV.{hero.level}
           </div>
         </div>
 
         {/* Hero Name & HP */}
-        <div className="absolute bottom-12 left-4 right-4 z-20">
-          <h3 className="text-sm font-orbitron font-black text-white mb-2 drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] truncate">
+        <div className="absolute bottom-10 left-3 right-3 z-20">
+          <h3 className="text-sm font-bold text-white mb-1.5 truncate">
             {hero.name}
           </h3>
           <div className="flex items-center gap-2">
-            <div className="flex-1 bg-black/60 h-2 rounded-full overflow-hidden border border-white/10 p-[1px] shadow-inner">
+            <div className="flex-1 bg-slate-900/80 h-2 rounded-full overflow-hidden border border-slate-700">
               <div 
-                className={`h-full rounded-full transition-all duration-1000 ${hero.hp < 30 ? 'bg-rose-500 shadow-[0_0_10px_#f43f5e]' : 'bg-gradient-to-r from-amber-600 to-amber-400 shadow-[0_0_10px_#fbbf24]'}`}
+                className={`h-full rounded-full ${hero.hp < 30 ? 'bg-rose-500' : 'bg-emerald-500'}`}
                 style={{ width: `${(hero.hp / hero.maxHp) * 100}%` }}
               />
             </div>
-            <span className="text-[10px] font-mono font-black text-white/90 drop-shadow-md">{hero.hp}</span>
+            <span className="text-[10px] font-bold text-white/90">{hero.hp}</span>
           </div>
         </div>
 
         {isLocked && (
-          <div className="absolute inset-0 bg-black/70 z-30 flex flex-col items-center justify-center backdrop-blur-sm">
-            <div className="bg-amber-500 text-black font-black text-[10px] px-5 py-2 rounded-full shadow-[0_0_25px_rgba(251,191,36,0.6)] transform -rotate-2 animate-pulse tracking-widest uppercase">
-              On Mission
+          <div className="absolute inset-0 bg-slate-900/70 z-30 flex flex-col items-center justify-center">
+            <div className="bg-amber-500 text-white font-bold text-[10px] px-4 py-1.5 rounded-full transform -rotate-3 shadow-md tracking-wider">
+              ON MISSION
             </div>
           </div>
         )}
       </div>
 
-      {/* Equipment Slots - Fixed at bottom-right */}
-      <div className="absolute -bottom-2 -right-1 flex gap-1 z-40 bg-black/95 backdrop-blur-xl p-1.5 rounded-2xl border border-white/10 shadow-2xl">
+      {/* Equipment Slots */}
+      <div className="absolute -bottom-2 -right-1 flex gap-1 z-40 bg-slate-800 p-1 rounded-xl border border-slate-700 shadow-md">
         {[0, 1, 2].map(i => (
           <button 
             key={i} 
@@ -170,13 +158,13 @@ const HeroCard: React.FC<HeroCardProps> = ({
               onEquipClick && onEquipClick(hero.id, i);
             }}
             disabled={isLocked}
-            className={`w-7 h-7 rounded-xl border flex items-center justify-center transition-all duration-300 ${
+            className={`w-6 h-6 rounded-lg flex items-center justify-center transition-all ${
               hero.equipmentIds[i] 
-                ? 'bg-amber-500 border-amber-300 shadow-[0_0_12px_rgba(251,191,36,0.5)] text-black' 
-                : 'bg-white/5 border-white/10 border-dashed text-slate-500'
-            } ${isLocked ? 'opacity-30' : 'hover:scale-110 active:scale-90'}`}
+                ? 'bg-amber-100 border border-amber-300' 
+                : 'bg-slate-700/50 border border-slate-600 border-dashed'
+            }`}
           >
-            <span className={`text-xs ${hero.equipmentIds[i] ? 'opacity-100 scale-110' : 'opacity-40 grayscale'}`}>
+            <span className={`text-[10px] ${hero.equipmentIds[i] ? 'opacity-100' : 'opacity-30 grayscale'}`}>
                {slotIcons[i]}
             </span>
           </button>

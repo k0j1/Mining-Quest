@@ -26,36 +26,26 @@ const NAV_ITEMS: NavItem[] = [
 
 const BottomNav: React.FC<BottomNavProps> = ({ currentView, onNavClick }) => {
   return (
-    <nav className="flex-none bg-black/90 backdrop-blur-3xl border-t border-white/5 flex items-center justify-around px-3 z-[100] pb-[env(safe-area-inset-bottom)] h-[calc(6.8rem+env(safe-area-inset-bottom))] shadow-[0_-15px_50px_rgba(0,0,0,0.8)]">
+    <nav className="flex-none bg-slate-900 border-t border-slate-800 flex items-center justify-around px-2 z-[100] pb-[env(safe-area-inset-bottom)] h-[calc(6rem+env(safe-area-inset-bottom))]">
       {NAV_ITEMS.map(({ view, label, imageUrl }) => (
         <button
           key={view}
           onClick={() => onNavClick(view)}
-          className={`flex flex-col items-center justify-center transition-all duration-500 w-16 pb-2 group ${
-            currentView === view ? 'scale-110 opacity-100' : 'opacity-30 grayscale-[0.8]'
+          className={`flex flex-col items-center justify-center transition-all duration-200 w-16 pb-1 group ${
+            currentView === view ? 'opacity-100 transform -translate-y-1' : 'opacity-40 grayscale'
           }`}
         >
-          <div className="relative w-14 h-14 flex items-center justify-center">
-            {/* Deep Indigo Glow for active state */}
-            {currentView === view && (
-              <div className="absolute inset-0 bg-indigo-500/20 blur-2xl rounded-full transition-opacity duration-500 animate-pulse"></div>
-            )}
-            
+          <div className="relative w-12 h-12 flex items-center justify-center mb-1">
             <img 
               src={imageUrl} 
               alt={label} 
-              className={`w-12 h-12 object-contain relative z-10 transition-transform duration-500 ${
-                currentView === view ? 'drop-shadow-[0_0_15px_rgba(99,102,241,0.8)]' : ''
+              className={`w-10 h-10 object-contain relative z-10 transition-transform ${
+                currentView === view ? 'scale-110 drop-shadow-md' : 'scale-100'
               }`}
             />
-
-            {/* Amber Active Indicator */}
-            {currentView === view && (
-              <div className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-7 h-1 bg-amber-400 rounded-full shadow-[0_0_15px_#fbbf24] z-20"></div>
-            )}
           </div>
-          <span className={`text-[8px] mt-2 font-black tracking-[0.2em] transition-colors uppercase font-orbitron ${
-             currentView === view ? 'text-white' : 'text-slate-600'
+          <span className={`text-[9px] font-bold tracking-wider transition-colors uppercase ${
+             currentView === view ? 'text-indigo-400' : 'text-slate-500'
           }`}>
             {label}
           </span>

@@ -143,7 +143,7 @@ const PartyView: React.FC<PartyViewProps> = ({
 
   return (
     <>
-      <div className="flex flex-col h-full relative">
+      <div className="flex flex-col h-full relative bg-slate-900">
         <Header 
           title="パーティ編成" 
           tokens={gameState.tokens} 
@@ -158,15 +158,15 @@ const PartyView: React.FC<PartyViewProps> = ({
             <img 
               src="https://miningquest.k0j1.v2002.coreserver.jp/images/B_Team.png" 
               alt="Team Banner" 
-              className="w-full h-auto rounded-[2.5rem] shadow-2xl border border-white/10"
+              className="w-full h-auto rounded-2xl shadow-md border border-slate-700"
             />
           </div>
 
           <div className="px-5 mb-3">
-            <p className={`text-[10px] py-2 px-3 rounded-full border text-center font-black tracking-widest uppercase transition-all ${
-              isPartyLocked ? 'text-rose-400 bg-rose-950/40 border-rose-500/30' : 'text-indigo-400 bg-indigo-950/40 border-indigo-500/30 shadow-inner'
+            <p className={`text-[10px] py-2 px-3 rounded-lg border text-center font-bold tracking-widest uppercase transition-all ${
+              isPartyLocked ? 'text-rose-400 bg-rose-900/20 border-rose-800' : 'text-indigo-400 bg-indigo-900/20 border-indigo-800'
             }`}>
-              {isPartyLocked ? "PARTY LOCKED ON MISSION" : (selectedSlotIndex !== null || selectedHeroId !== null ? "TARGET ACQUIRED: ASSIGNING..." : "SELECT SLOT & UNIT TO DEPLOY")}
+              {isPartyLocked ? "PARTY LOCKED ON MISSION" : (selectedSlotIndex !== null || selectedHeroId !== null ? "ASSIGNING UNIT..." : "SELECT SLOT & UNIT")}
             </p>
           </div>
 
@@ -178,12 +178,12 @@ const PartyView: React.FC<PartyViewProps> = ({
                 <button
                   key={idx}
                   onClick={() => handleTabClick(idx)}
-                  className={`flex-1 py-3 rounded-2xl font-black text-[10px] tracking-widest uppercase transition-all border ${
+                  className={`flex-1 py-3 rounded-xl font-bold text-[10px] tracking-widest uppercase transition-all border ${
                     isActive 
-                      ? 'bg-indigo-600 text-white border-indigo-400 shadow-[0_0_20px_rgba(99,102,241,0.4)] cursor-pointer'
+                      ? 'bg-indigo-600 text-white border-indigo-500 shadow-sm cursor-pointer'
                       : isUnlocked 
-                        ? 'bg-slate-900 text-slate-500 border-white/5 hover:bg-slate-800 cursor-pointer'
-                        : 'bg-black text-slate-600 border-white/10 cursor-pointer hover:bg-amber-500/10 hover:border-amber-500/50 hover:text-amber-400 shadow-inner'
+                        ? 'bg-slate-800 text-slate-500 border-slate-700 hover:bg-slate-700 cursor-pointer'
+                        : 'bg-slate-900 text-slate-600 border-slate-800 cursor-pointer hover:bg-slate-800/50 hover:text-amber-500/80'
                   }`}
                   title={!isUnlocked ? "クリックしてこのパーティ枠を解放" : ""}
                 >
@@ -194,9 +194,9 @@ const PartyView: React.FC<PartyViewProps> = ({
           </div>
         </Header>
 
-        <div className="flex-1 overflow-y-auto px-5 pb-32 pt-10">
+        <div className="flex-1 overflow-y-auto px-5 pb-32 pt-6 bg-slate-900">
           
-          <div className="grid grid-cols-3 gap-5 mb-16">
+          <div className="grid grid-cols-3 gap-4 mb-12">
             {[0, 1, 2].map(slotIdx => {
               const heroId = currentPreset[slotIdx];
               const h = heroId ? gameState.heroes.find(heroObj => heroObj.id === heroId) : null;
@@ -204,9 +204,9 @@ const PartyView: React.FC<PartyViewProps> = ({
 
               return (
                 <div key={slotIdx} className="relative group">
-                  <div className="absolute -top-5 left-0 right-0 flex justify-center z-20">
-                      <span className={`text-[8px] font-black px-2.5 py-0.5 rounded-full shadow-xl border whitespace-nowrap transition-all ${
-                        isSelected ? 'bg-indigo-600 text-white border-indigo-400 shadow-[0_0_15px_#6366f1]' : 'bg-slate-900 text-slate-500 border-white/10'
+                  <div className="absolute -top-3 left-0 right-0 flex justify-center z-20">
+                      <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full border whitespace-nowrap transition-all ${
+                        isSelected ? 'bg-indigo-600 text-white border-indigo-500' : 'bg-slate-800 text-slate-500 border-slate-700'
                       }`}>SLOT {slotIdx + 1}</span>
                   </div>
 
@@ -224,7 +224,7 @@ const PartyView: React.FC<PartyViewProps> = ({
                       {!isPartyLocked && (
                         <button 
                           onClick={(e) => handleRemoveHero(e, slotIdx)}
-                          className="absolute -top-2 -right-2 bg-rose-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs border-2 border-white/20 shadow-2xl z-30"
+                          className="absolute -top-1.5 -right-1.5 bg-rose-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-[10px] border border-slate-800 shadow-sm z-30 hover:bg-rose-600"
                         >
                           ✕
                         </button>
@@ -233,14 +233,14 @@ const PartyView: React.FC<PartyViewProps> = ({
                   ) : (
                     <button 
                       onClick={() => handleSlotClick(slotIdx)}
-                      className={`w-full aspect-[4/5] rounded-[1.8rem] border-2 border-dashed flex flex-col items-center justify-center transition-all ${
+                      className={`w-full aspect-[4/5] rounded-2xl border-2 border-dashed flex flex-col items-center justify-center transition-all ${
                           isSelected 
-                            ? 'border-indigo-500 bg-indigo-500/10 shadow-2xl' 
-                            : 'border-white/10 bg-black/40 hover:bg-black/60'
+                            ? 'border-indigo-500 bg-indigo-900/10' 
+                            : 'border-slate-700 bg-slate-800/50 hover:bg-slate-800'
                       }`}
                     >
-                        <span className="text-2xl mb-1 opacity-10">＋</span>
-                        <span className="text-[9px] font-black text-slate-700 tracking-tighter uppercase">Vacant</span>
+                        <span className="text-2xl mb-1 text-slate-600">＋</span>
+                        <span className="text-[9px] font-bold text-slate-600 tracking-tighter uppercase">Vacant</span>
                     </button>
                   )}
                 </div>
@@ -248,10 +248,10 @@ const PartyView: React.FC<PartyViewProps> = ({
             })}
           </div>
 
-          <div className="mt-8">
-            <h2 className="text-[10px] font-black text-slate-500 mb-6 uppercase tracking-[0.4em] flex items-center px-1">
-              <span className="w-1.5 h-4 bg-slate-800 mr-4 rounded-full"></span>
-              Barracks (Inactive)
+          <div className="mt-4 border-t border-slate-800 pt-6">
+            <h2 className="text-xs font-bold text-slate-500 mb-6 uppercase tracking-widest flex items-center px-1">
+              <span className="w-1 h-4 bg-slate-700 mr-4 rounded-full"></span>
+              Barracks
             </h2>
             <div className="grid grid-cols-2 gap-4 pb-12">
                 {gameState.heroes
@@ -290,19 +290,19 @@ const PartyView: React.FC<PartyViewProps> = ({
       )}
 
       {unlockingIndex !== null && (
-        <div className="fixed inset-0 z-[150] flex items-center justify-center bg-black/80 backdrop-blur-xl p-8 animate-fade-in">
-          <div className="w-full max-w-sm glass-panel rounded-[2.5rem] p-10 text-center border border-white/10 shadow-3xl shadow-black/50">
-             <div className="w-20 h-20 bg-indigo-600/20 rounded-[2rem] flex items-center justify-center mx-auto mb-8 text-3xl border border-indigo-500/30 shadow-inner">
+        <div className="fixed inset-0 z-[150] flex items-center justify-center bg-slate-950/80 backdrop-blur-sm p-8">
+          <div className="w-full max-w-sm bg-slate-900 rounded-3xl p-8 text-center border border-slate-700 shadow-xl">
+             <div className="w-16 h-16 bg-slate-800 rounded-2xl flex items-center justify-center mx-auto mb-6 text-2xl border border-slate-700 text-slate-400">
                 🔒
              </div>
-             <h3 className="text-xl font-black text-white mb-3 tracking-widest">DEPLOY PARTY 0{unlockingIndex + 1}</h3>
-             <p className="text-slate-500 text-xs mb-10 leading-relaxed">
-               コスト: <span className="text-amber-500 font-black">10,000 $CHH</span>
+             <h3 className="text-lg font-bold text-white mb-2 tracking-wide">DEPLOY PARTY 0{unlockingIndex + 1}</h3>
+             <p className="text-slate-400 text-xs mb-8 leading-relaxed">
+               コスト: <span className="text-amber-500 font-bold">10,000 $CHH</span>
              </p>
-             <div className="flex gap-4">
-                <button onClick={() => setUnlockingIndex(null)} className="flex-1 py-4 rounded-2xl bg-slate-900 text-slate-400 font-bold text-sm border border-white/5">ABORT</button>
-                <button onClick={confirmUnlock} disabled={gameState.tokens < 10000} className={`flex-1 py-4 rounded-2xl font-black text-sm text-white shadow-2xl transition-all ${gameState.tokens >= 10000 ? 'bg-indigo-600 hover:bg-indigo-500' : 'bg-slate-800 text-slate-600'}`}>
-                  {gameState.tokens >= 10000 ? 'UNLOCK' : 'INSUFFICIENT'}
+             <div className="flex gap-3">
+                <button onClick={() => setUnlockingIndex(null)} className="flex-1 py-3 rounded-xl bg-slate-800 text-slate-400 font-bold text-sm hover:bg-slate-700">キャンセル</button>
+                <button onClick={confirmUnlock} disabled={gameState.tokens < 10000} className={`flex-1 py-3 rounded-xl font-bold text-sm text-white shadow-md transition-all ${gameState.tokens >= 10000 ? 'bg-indigo-600 hover:bg-indigo-500' : 'bg-slate-700 text-slate-500'}`}>
+                  {gameState.tokens >= 10000 ? '解放する' : '不足'}
                 </button>
              </div>
           </div>

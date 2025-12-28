@@ -41,7 +41,7 @@ const GachaView: React.FC<GachaViewProps> = ({
 
   return (
     <>
-      <div className="flex flex-col h-full">
+      <div className="flex flex-col h-full bg-slate-900">
          <Header 
            title="採掘ガチャ" 
            tokens={gameState.tokens} 
@@ -54,44 +54,44 @@ const GachaView: React.FC<GachaViewProps> = ({
          />
 
          <div className="flex-1 overflow-y-auto p-6 pb-24 flex flex-col items-center">
-            <div className="flex bg-slate-900 p-1.5 rounded-2xl w-full max-w-md mb-8 border border-slate-800">
+            <div className="flex bg-slate-800 p-1.5 rounded-2xl w-full max-w-md mb-8 border border-slate-700">
               <button 
-                className={`flex-1 py-3 rounded-xl font-bold transition-all ${gachaTab === 'Hero' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-500'}`}
+                className={`flex-1 py-3 rounded-xl font-bold transition-all ${gachaTab === 'Hero' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-500 hover:text-slate-300'}`}
                 onClick={() => { playClick(); setGachaTab('Hero'); }}
               >
                 ヒーロー
               </button>
               <button 
-                className={`flex-1 py-3 rounded-xl font-bold transition-all ${gachaTab === 'Equipment' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-500'}`}
+                className={`flex-1 py-3 rounded-xl font-bold transition-all ${gachaTab === 'Equipment' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-500 hover:text-slate-300'}`}
                 onClick={() => { playClick(); setGachaTab('Equipment'); }}
               >
                 装備品
               </button>
             </div>
-            <div className="glass-panel p-10 rounded-[2.5rem] text-center space-y-8 max-w-md w-full border-t-8 border-t-yellow-500 shadow-2xl relative overflow-hidden">
+            
+            <div className="bg-slate-800 p-10 rounded-[2.5rem] text-center space-y-8 max-w-md w-full border border-slate-700 shadow-xl relative overflow-hidden">
               {isGachaRolling && (
-                <div className="absolute inset-0 z-50 bg-slate-950/90 backdrop-blur-sm flex flex-col items-center justify-center p-6 space-y-4">
-                  <div className="w-16 h-16 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
-                  <p className="font-orbitron font-bold text-indigo-400 animate-pulse">CONNECTING...</p>
+                <div className="absolute inset-0 z-50 bg-slate-900/90 flex flex-col items-center justify-center p-6 space-y-4">
+                  <div className="w-12 h-12 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
+                  <p className="font-bold text-indigo-400 text-sm tracking-widest">CONNECTING...</p>
                 </div>
               )}
-              <div className="relative inline-block">
-                <div className="text-7xl animate-bounce drop-shadow-[0_0_20px_rgba(234,179,8,0.5)]">🎁</div>
-                <div className="absolute inset-0 animate-ping bg-yellow-500/20 rounded-full"></div>
+              <div className="relative inline-block py-4">
+                <div className="text-7xl drop-shadow-lg">🎁</div>
               </div>
               <div>
-                <h2 className="text-2xl font-bold mb-2">{gachaTab === 'Hero' ? '新しい相棒を呼ぶ' : '地下の遺物を探す'}</h2>
+                <h2 className="text-xl font-bold text-white mb-2">{gachaTab === 'Hero' ? '新しい相棒を呼ぶ' : '地下の遺物を探す'}</h2>
                 <p className="text-slate-400 text-sm">
-                  コスト: <span className={`font-black text-lg ${canAfford ? 'text-yellow-400' : 'text-red-400'}`}>{currentCost.toLocaleString()} $CHH</span>
+                  コスト: <span className={`font-bold text-lg ${canAfford ? 'text-amber-500' : 'text-red-400'}`}>{currentCost.toLocaleString()} $CHH</span>
                 </p>
               </div>
               <button 
                 onClick={() => onRollGacha(gachaTab)}
                 disabled={isGachaRolling || !canAfford}
-                className={`w-full py-5 bg-gradient-to-b from-yellow-400 to-yellow-600 text-slate-950 rounded-2xl font-black text-xl shadow-xl shadow-yellow-900/20 transition-all ${
+                className={`w-full py-4 bg-amber-500 text-white rounded-xl font-bold text-lg shadow-md transition-all ${
                   (isGachaRolling || !canAfford)
                     ? 'opacity-50 cursor-not-allowed grayscale' 
-                    : 'hover:brightness-110 active:scale-95'
+                    : 'hover:bg-amber-400 active:scale-95'
                 }`}
               >
                 {isGachaRolling ? '通信中...' : !canAfford ? 'トークン不足' : 'ガチャを回す'}
