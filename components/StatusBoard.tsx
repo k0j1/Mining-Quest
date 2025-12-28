@@ -18,6 +18,7 @@ interface StatusBoardProps {
   farcasterUser?: any;
   onChainBalance?: number | null;
   onAccountClick?: () => void;
+  onShowLightpaper?: () => void;
 }
 
 const QuestItem: React.FC<{ quest: any }> = ({ quest }) => {
@@ -80,7 +81,7 @@ const QuestItem: React.FC<{ quest: any }> = ({ quest }) => {
 };
 
 const StatusBoard: React.FC<StatusBoardProps> = ({ 
-  state, actionButtonLabel, onAction, title, view, isSoundOn, onToggleSound, onDebugAddTokens, farcasterUser, onChainBalance, onAccountClick
+  state, actionButtonLabel, onAction, title, view, isSoundOn, onToggleSound, onDebugAddTokens, farcasterUser, onChainBalance, onAccountClick, onShowLightpaper
 }) => {
   return (
     <div className="flex flex-col h-full relative bg-slate-900">
@@ -98,6 +99,20 @@ const StatusBoard: React.FC<StatusBoardProps> = ({
               className="w-full h-auto rounded-2xl shadow-md border border-slate-700"
             />
           </div>
+          {view === View.HOME && onShowLightpaper && (
+            <div className="mt-3 flex justify-end">
+              <button 
+                onClick={() => { playClick(); onShowLightpaper(); }}
+                className="flex items-center gap-2 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 rounded-full border border-slate-700 transition-all active:scale-95 group"
+              >
+                <span className="text-lg">📜</span>
+                <span className="text-[10px] font-bold text-slate-400 group-hover:text-slate-200">View Lightpaper</span>
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-3 h-3 text-slate-500">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+                </svg>
+              </button>
+            </div>
+          )}
         </div>
 
         <div className="px-6 space-y-12">

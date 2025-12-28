@@ -14,6 +14,7 @@ import PartyView from './components/views/PartyView';
 import DepartView from './components/views/DepartView';
 import RecoveryView from './components/views/RecoveryView';
 import GachaView from './components/views/GachaView';
+import LightpaperView from './components/views/LightpaperView';
 
 const App: React.FC = () => {
   const [currentView, setCurrentView] = useState<View>(View.HOME);
@@ -104,9 +105,26 @@ const App: React.FC = () => {
           />
         );
 
+      case View.LIGHTPAPER:
+        return (
+          <LightpaperView
+            tokens={gameState.tokens}
+            onBack={() => { playClick(); setCurrentView(View.HOME); }}
+            {...commonProps}
+          />
+        );
+
       case View.HOME:
       default:
-        return <StatusBoard state={gameState} view={View.HOME} title="ベースキャンプ" {...commonProps} />;
+        return (
+          <StatusBoard 
+            state={gameState} 
+            view={View.HOME} 
+            title="ベースキャンプ" 
+            onShowLightpaper={() => setCurrentView(View.LIGHTPAPER)}
+            {...commonProps} 
+          />
+        );
     }
   };
 
@@ -140,7 +158,7 @@ const App: React.FC = () => {
       )}
 
       <BottomNav 
-        currentView={currentView} 
+        currentView={currentView === View.LIGHTPAPER ? View.HOME : currentView} 
         onNavClick={handleNavClick} 
       />
 

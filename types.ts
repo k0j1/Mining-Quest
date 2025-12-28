@@ -5,7 +5,8 @@ export enum View {
   DEPART = 'QUEST',
   RETURN = 'RESULT',
   GACHA = 'GACHA',
-  RECOVERY = 'RECOVERY'
+  RECOVERY = 'RECOVERY',
+  LIGHTPAPER = 'LIGHTPAPER'
 }
 
 export type QuestRank = 'C' | 'UC' | 'R' | 'E' | 'L';
