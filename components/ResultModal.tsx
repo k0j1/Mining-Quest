@@ -24,7 +24,7 @@ const ResultModal: React.FC<ResultModalProps> = ({ results, totalTokens, onClose
   }, []);
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/90 backdrop-blur-sm p-4 animate-fade-in">
+    <div className="fixed inset-0 z-[200] flex items-center justify-center bg-slate-950/90 backdrop-blur-sm p-4 animate-fade-in">
       <div className="w-full max-w-lg flex flex-col max-h-[90vh]">
         {/* Header */}
         <div className="text-center mb-6">
@@ -35,7 +35,7 @@ const ResultModal: React.FC<ResultModalProps> = ({ results, totalTokens, onClose
         </div>
 
         {/* Scrollable List */}
-        <div className="flex-1 overflow-y-auto space-y-4 px-2 py-2">
+        <div className="flex-1 overflow-y-auto space-y-4 px-2 py-2 custom-scrollbar">
           {results.map((res, idx) => (
             <div 
               key={idx} 
@@ -71,7 +71,7 @@ const ResultModal: React.FC<ResultModalProps> = ({ results, totalTokens, onClose
         </div>
 
         {/* Total & Button */}
-        <div className="mt-6 pt-6 border-t border-slate-800 bg-slate-900 rounded-2xl p-6 text-center shadow-xl border border-slate-800">
+        <div className="mt-6 pt-6 border-t border-slate-800 bg-slate-900 rounded-2xl p-6 text-center shadow-xl border border-slate-800 shrink-0">
           <p className="text-slate-500 text-xs font-bold mb-2 uppercase tracking-wide">Total Earnings</p>
           <div className="text-4xl font-black text-white mb-6">
             +{totalTokens.toLocaleString()} <span className="text-lg text-amber-500">$CHH</span>

@@ -57,13 +57,16 @@ const LightpaperView: React.FC<LightpaperViewProps> = ({
               <span className="w-1.5 h-1.5 bg-amber-500 rounded-full mr-2"></span>
               ゲームサイクル
             </h2>
-            <ol className="list-decimal list-inside space-y-2 text-sm">
-              <li><strong className="text-slate-200">編成 (PARTY)</strong>: ヒーローを選び、装備を整える</li>
-              <li><strong className="text-slate-200">出発 (QUEST)</strong>: 難易度を選んで採掘へ派遣（$CHHを消費）</li>
-              <li><strong className="text-slate-200">待機</strong>: 帰還時間まで待つ（アプリを閉じても進行します）</li>
-              <li><strong className="text-slate-200">帰還 (RETURN)</strong>: 報酬を獲得。ダメージを受けた場合は回復</li>
-              <li><strong className="text-slate-200">強化 (GACHA)</strong>: 獲得した$CHHで新戦力を補充</li>
-            </ol>
+            <div className="overflow-x-auto">
+              <ol className="list-decimal list-inside space-y-3 text-xs whitespace-nowrap min-w-max">
+                <li><strong className="text-slate-200">PARTY (編成)</strong>: ヒーローを選び、装備を整える</li>
+                <li><strong className="text-slate-200">QUEST (出発)</strong>: 難易度を選んで採掘へ派遣（$CHHを消費）</li>
+                <li><strong className="text-slate-200">待機</strong>: 帰還時間まで待つ（アプリを閉じても進行します）</li>
+                <li><strong className="text-slate-200">RESULT (帰還)</strong>: クエスト報酬を獲得</li>
+                <li><strong className="text-slate-200">HEAL (回復)</strong>: ダメージを受けた場合は回復</li>
+                <li><strong className="text-slate-200">GACHA (強化)</strong>: 獲得した$CHHで新戦力を補充</li>
+              </ol>
+            </div>
           </section>
 
           {/* Specs: Heroes */}
@@ -73,11 +76,11 @@ const LightpaperView: React.FC<LightpaperViewProps> = ({
               ヒーローとステータス
             </h2>
             <div className="space-y-4 text-sm">
-              <p>ヒーローは採掘の主役です。HPが0になるとクエストに出発できません。</p>
+              <p>ヒーローは採掘の主役です。<strong className="text-red-400">HPが0になるとヒーローはロスト（消滅）します。</strong></p>
               <ul className="list-disc list-inside space-y-1 text-slate-400 ml-2">
                 <li><strong>レアリティ</strong>: C / UC / R / E / L (Lが最高)</li>
+                <li><strong>装備スロット</strong>: レアリティが高いほど、装備スロットが増えます。</li>
                 <li><strong>HP</strong>: 全員最大100。クエストで減少します。</li>
-                <li><strong>ダメージ軽減</strong>: レアリティが高いほど、被ダメージを抑えやすくなります。</li>
               </ul>
             </div>
           </section>
@@ -111,12 +114,12 @@ const LightpaperView: React.FC<LightpaperViewProps> = ({
               クエストランク
             </h2>
             <div className="overflow-x-auto">
-              <table className="w-full text-xs text-left">
+              <table className="w-full text-xs text-left whitespace-nowrap min-w-max">
                 <thead className="text-slate-500 border-b border-slate-700">
                   <tr>
-                    <th className="py-2">Rank</th>
-                    <th className="py-2">Cost</th>
-                    <th className="py-2">Time</th>
+                    <th className="py-2 pr-4">Rank</th>
+                    <th className="py-2 pr-4">Cost</th>
+                    <th className="py-2 pr-4">Time</th>
                     <th className="py-2">Risk</th>
                   </tr>
                 </thead>
@@ -125,7 +128,7 @@ const LightpaperView: React.FC<LightpaperViewProps> = ({
                     <td className="py-2 font-bold text-slate-400">C</td>
                     <td className="py-2">0</td>
                     <td className="py-2">15m</td>
-                    <td className="py-2 text-slate-500">安全</td>
+                    <td className="py-2 text-slate-500">とても低い</td>
                   </tr>
                   <tr>
                     <td className="py-2 font-bold text-emerald-500">UC</td>
@@ -149,7 +152,7 @@ const LightpaperView: React.FC<LightpaperViewProps> = ({
                     <td className="py-2 font-bold text-amber-500">L</td>
                     <td className="py-2">300</td>
                     <td className="py-2">8h</td>
-                    <td className="py-2 text-red-600 font-bold">死亡リスク有 (約1.6%)</td>
+                    <td className="py-2 text-red-600 font-bold">一撃死亡有り</td>
                   </tr>
                 </tbody>
               </table>
@@ -161,25 +164,25 @@ const LightpaperView: React.FC<LightpaperViewProps> = ({
            <section className="border-t border-slate-800 pt-6">
             <h2 className="text-sm font-bold text-slate-300 mb-3">コスト一覧</h2>
             <ul className="text-xs text-slate-400 space-y-2">
-              <li className="flex justify-between">
+              <li className="flex justify-between items-center">
                 <span>ヒーローガチャ</span>
-                <span className="text-amber-500 font-bold">10,000 $CHH</span>
+                <span className="text-amber-500 font-bold whitespace-nowrap ml-4">10,000 $CHH</span>
               </li>
-              <li className="flex justify-between">
+              <li className="flex justify-between items-center">
                 <span>装備品ガチャ</span>
-                <span className="text-amber-500 font-bold">6,000 $CHH</span>
+                <span className="text-amber-500 font-bold whitespace-nowrap ml-4">6,000 $CHH</span>
               </li>
-              <li className="flex justify-between">
+              <li className="flex justify-between items-center">
                 <span>パーティ枠解放</span>
-                <span className="text-amber-500 font-bold">10,000 $CHH</span>
+                <span className="text-amber-500 font-bold whitespace-nowrap ml-4">10,000 $CHH</span>
               </li>
-              <li className="flex justify-between">
+              <li className="flex justify-between items-center">
                 <span>ポーション (+10HP)</span>
-                <span className="text-amber-500 font-bold">200 $CHH</span>
+                <span className="text-amber-500 font-bold whitespace-nowrap ml-4">200 $CHH</span>
               </li>
-              <li className="flex justify-between">
+              <li className="flex justify-between items-center">
                 <span>エリクサー (MaxHP)</span>
-                <span className="text-amber-500 font-bold">1,200 $CHH</span>
+                <span className="text-amber-500 font-bold whitespace-nowrap ml-4">1,200 $CHH</span>
               </li>
             </ul>
           </section>
