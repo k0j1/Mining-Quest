@@ -42,11 +42,24 @@ const determineRarity = (type: 'Hero' | 'Equipment'): QuestRank => {
   }
 };
 
+const determineEquipmentType = (): 'Pickaxe' | 'Helmet' | 'Boots' => {
+  const rand = Math.random();
+  if (rand < 0.3333) return 'Pickaxe';
+  if (rand < 0.6666) return 'Helmet';
+  return 'Boots';
+};
+
 export const generateGachaItem = async (type: 'Hero' | 'Equipment') => {
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   
   // 1. Determine Rarity Client-side
   const targetRarity = determineRarity(type);
+  
+  // 2. Determine Equipment Type Client-side if needed to ensure balance
+  let targetEquipType: 'Pickaxe' | 'Helmet' | 'Boots' | undefined;
+  if (type === 'Equipment') {
+    targetEquipType = determineEquipmentType();
+  }
 
   const heroSchema = {
     type: Type.OBJECT,
@@ -68,9 +81,12 @@ export const generateGachaItem = async (type: 'Hero' | 'Equipment') => {
     required: ["name", "type"]
   };
 
-  const prompt = type === 'Hero' 
-    ? `新しい採掘ヒーローを生成してください。レアリティは【${targetRarity}】です。種別は犬、猫、鳥、その他から。特性とダメージ軽減率もこのレアリティに合わせて設定してください。`
-    : `新しい採掘用装備を生成してください。レアリティは【${targetRarity}】です。種類はピッケル、ヘルメット、ブーツから。`;
+  let prompt = "";
+  if (type === 'Hero') {
+    prompt = `新しい採掘ヒーローを生成してください。レアリティは【${targetRarity}】です。種別は犬、猫、鳥、その他から。特性とダメージ軽減率もこのレアリティに合わせて設定してください。`;
+  } else {
+    prompt = `新しい採掘用装備を生成してください。レアリティは【${targetRarity}】です。種類は必ず【${targetEquipType}】（${targetEquipType === 'Pickaxe' ? 'ピッケル' : targetEquipType === 'Helmet' ? 'ヘルメット' : 'ブーツ'}）にしてください。名前もその種類にふさわしいものにしてください。`;
+  }
 
   try {
     const response = await ai.models.generateContent({
@@ -92,6 +108,9 @@ export const generateGachaItem = async (type: 'Hero' | 'Equipment') => {
 
     // If Equipment, assign fixed stats based on generated rarity
     if (type === 'Equipment') {
+       if (targetEquipType) {
+         data.type = targetEquipType;
+       }
        const eqType = data.type as keyof typeof EQUIPMENT_STATS;
        data.bonus = EQUIPMENT_STATS[eqType][targetRarity];
     }
@@ -110,9 +129,9 @@ export const generateGachaItem = async (type: 'Hero' | 'Equipment') => {
         damageReduction: 2 
       };
     } else {
-      const fallbackType = "Pickaxe";
+      const fallbackType = targetEquipType || "Pickaxe";
       return { 
-        name: "鉄のつるはし", 
+        name: fallbackType === "Pickaxe" ? "鉄のつるはし" : fallbackType === "Helmet" ? "安全ヘルメット" : "作業用ブーツ", 
         type: fallbackType, 
         rarity: targetRarity, 
         bonus: EQUIPMENT_STATS[fallbackType][targetRarity] 
