@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { GameState } from '../../types';
 import HeroCard from '../HeroCard';
 import EquipmentSelector from '../EquipmentSelector';
+import PartySlotGrid from '../PartySlotGrid';
 import { playClick, playError } from '../../utils/sound';
 import Header from '../Header';
 
@@ -120,8 +121,7 @@ const PartyView: React.FC<PartyViewProps> = ({
     }
   };
 
-  const handleRemoveHero = (e: React.MouseEvent, slotIndex: number) => {
-    e.stopPropagation();
+  const handleRemoveHero = (slotIndex: number) => {
     if (isPartyLocked) return;
     onAssignHero(slotIndex, null);
   };
@@ -196,56 +196,19 @@ const PartyView: React.FC<PartyViewProps> = ({
 
         <div className="flex-1 overflow-y-auto px-5 pb-32 pt-6 bg-slate-900">
           
-          <div className="grid grid-cols-3 gap-4 mb-12">
-            {[0, 1, 2].map(slotIdx => {
-              const heroId = currentPreset[slotIdx];
-              const h = heroId ? gameState.heroes.find(heroObj => heroObj.id === heroId) : null;
-              const isSelected = selectedSlotIndex === slotIdx;
-
-              return (
-                <div key={slotIdx} className="relative group">
-                  <div className="absolute -top-3 left-0 right-0 flex justify-center z-20">
-                      <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full border whitespace-nowrap transition-all ${
-                        isSelected ? 'bg-indigo-600 text-white border-indigo-500' : 'bg-slate-800 text-slate-500 border-slate-700'
-                      }`}>SLOT {slotIdx + 1}</span>
-                  </div>
-
-                  {h ? (
-                    <div className="relative">
-                      <HeroCard 
-                        hero={h} 
-                        index={slotIdx}
-                        isSelected={isSelected}
-                        isLocked={isPartyLocked} 
-                        onClick={() => handleSlotClick(slotIdx)}
-                        onEquipClick={handleEquipClick}
-                        isMainSlot
-                      />
-                      {!isPartyLocked && (
-                        <button 
-                          onClick={(e) => handleRemoveHero(e, slotIdx)}
-                          className="absolute -top-1.5 -right-1.5 bg-rose-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-[10px] border border-slate-800 shadow-sm z-30 hover:bg-rose-600"
-                        >
-                          ✕
-                        </button>
-                      )}
-                    </div>
-                  ) : (
-                    <button 
-                      onClick={() => handleSlotClick(slotIdx)}
-                      className={`w-full aspect-[4/5] rounded-2xl border-2 border-dashed flex flex-col items-center justify-center transition-all ${
-                          isSelected 
-                            ? 'border-indigo-500 bg-indigo-900/10' 
-                            : 'border-slate-700 bg-slate-800/50 hover:bg-slate-800'
-                      }`}
-                    >
-                        <span className="text-2xl mb-1 text-slate-600">＋</span>
-                        <span className="text-[9px] font-bold text-slate-600 tracking-tighter uppercase">Vacant</span>
-                    </button>
-                  )}
-                </div>
-              );
-            })}
+          <div className="mb-12">
+            <PartySlotGrid
+              heroIds={currentPreset}
+              heroes={gameState.heroes}
+              activeQuestHeroIds={activeQuestHeroIds}
+              selectedIndex={selectedSlotIndex}
+              isPartyLocked={isPartyLocked}
+              readOnly={false}
+              showSlotLabels={true}
+              onSlotClick={handleSlotClick}
+              onRemoveClick={handleRemoveHero}
+              onEquipClick={handleEquipClick}
+            />
           </div>
 
           <div className="mt-4 border-t border-slate-800 pt-6">

@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { GameState, QuestRank } from '../../types';
 import { QUEST_CONFIG } from '../../constants';
-import HeroCard from '../HeroCard';
+import PartySlotGrid from '../PartySlotGrid';
 import { playClick } from '../../utils/sound';
 import Header from '../Header';
 
@@ -55,12 +55,6 @@ const DepartView: React.FC<DepartViewProps> = ({
   const mainParty = activePresetIds
     .map(id => gameState.heroes.find(h => h.id === id))
     .filter((h): h is any => !!h);
-
-  // Pad with nulls for display if party is not full
-  const displayParty = [...mainParty];
-  while (displayParty.length < 3) {
-      displayParty.push(null as any);
-  }
 
   return (
     <div className="flex flex-col h-full relative bg-slate-900">
@@ -201,23 +195,16 @@ const DepartView: React.FC<DepartViewProps> = ({
                       <p className="text-xs text-rose-300/70 mt-1">編成画面でヒーローを設定してください</p>
                     </div>
                  ) : (
-                  <div className="grid grid-cols-3 gap-3">
-                    {displayParty.map((hero, index) => (
-                      <div key={index} className="pointer-events-none transform scale-95 relative">
-                          {hero ? (
-                            <HeroCard 
-                              hero={hero} 
-                              index={index} 
-                              isMainSlot 
-                            />
-                          ) : (
-                             <div className="w-full aspect-square bg-slate-800 rounded-xl border border-slate-700 border-dashed flex items-center justify-center">
-                               <span className="text-slate-600 text-[10px] font-bold uppercase">Empty</span>
-                             </div>
-                          )}
-                      </div>
-                    ))}
-                  </div>
+                    <div className="pointer-events-none transform scale-95">
+                      <PartySlotGrid
+                        heroIds={activePresetIds}
+                        heroes={gameState.heroes}
+                        readOnly={true}
+                        showSlotLabels={false}
+                        className="grid grid-cols-3 gap-3"
+                        compactEmpty={true}
+                      />
+                    </div>
                  )}
                  {mainParty.some(h => h.hp <= 0) && (
                    <p className="text-rose-400 text-xs text-center mt-4 font-bold">

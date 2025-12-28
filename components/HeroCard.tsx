@@ -99,6 +99,11 @@ const HeroCard: React.FC<HeroCardProps> = ({
         isSelected ? 'scale-105 z-30' : 'scale-100 z-10'
       }`}
     >
+      {/* Rarity Badge - Top Left Overlapping Border */}
+      <div className={`absolute -top-2 -left-2 z-40 w-8 h-8 flex items-center justify-center rounded-lg border-2 border-slate-900 shadow-lg ${rarityColors[hero.rarity]} transform -rotate-6`}>
+         <span className="text-xs font-black">{hero.rarity}</span>
+      </div>
+
       <div className={`relative w-full aspect-[4/5] rounded-2xl overflow-hidden border-2 bg-slate-800 transition-all ${
         isSelected 
           ? 'border-amber-400 shadow-lg shadow-amber-900/20' 
@@ -108,13 +113,6 @@ const HeroCard: React.FC<HeroCardProps> = ({
         
         {/* Simple Gradient Overlay */}
         <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-transparent to-transparent opacity-90"></div>
-
-        {/* Hero Meta */}
-        <div className="absolute top-3 left-3 flex flex-col gap-1.5 items-start z-20">
-          <div className={`px-2 py-0.5 rounded text-[10px] font-bold shadow-sm ${rarityColors[hero.rarity]}`}>
-            {hero.rarity}
-          </div>
-        </div>
 
         {/* Level */}
         <div className="absolute top-3 right-3 z-20">

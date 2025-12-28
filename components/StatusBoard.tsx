@@ -2,9 +2,9 @@
 import React, { useState, useEffect } from 'react';
 import { GameState, View, QuestRank } from '../types';
 import { QUEST_CONFIG } from '../constants';
-import HeroCard from './HeroCard';
 import { playClick } from '../utils/sound';
 import Header from './Header';
+import PartySlotGrid from './PartySlotGrid';
 
 interface StatusBoardProps {
   state: GameState;
@@ -165,30 +165,14 @@ const StatusBoard: React.FC<StatusBoardProps> = ({
                         )}
                       </div>
 
-                      <div className="grid grid-cols-3 gap-4">
-                        {Array.from({ length: 3 }).map((_, i) => {
-                          const hero = partyHeroes[i];
-                          const isLocked = hero ? state.activeQuests.some(q => q.heroIds.includes(hero.id)) : false;
-                          return (
-                            <div key={i} className="relative group">
-                              <div className="absolute -top-3 left-0 right-0 flex justify-center z-20">
-                                  <span className={`text-[8px] font-bold px-2 py-0.5 rounded-full border whitespace-nowrap ${
-                                    isActive ? 'bg-indigo-900/40 text-indigo-300 border-indigo-500/30' : 'bg-slate-800 text-slate-500 border-slate-700'
-                                  }`}>SLOT {i + 1}</span>
-                              </div>
-
-                              {hero ? (
-                                <HeroCard hero={hero} index={i} isMainSlot isLocked={isLocked} />
-                              ) : (
-                                <div className="w-full aspect-[4/5] bg-slate-900/50 rounded-2xl border border-dashed border-slate-700 flex flex-col items-center justify-center">
-                                  <span className="text-xl mb-1 text-slate-700">＋</span>
-                                  <span className="text-[9px] font-bold text-slate-600 uppercase">Empty</span>
-                                </div>
-                              )}
-                            </div>
-                          );
-                        })}
-                      </div>
+                      <PartySlotGrid
+                        heroIds={presetIds}
+                        heroes={state.heroes}
+                        activeQuestHeroIds={state.activeQuests.flatMap(q => q.heroIds)}
+                        readOnly={true}
+                        showSlotLabels={true}
+                        className="grid grid-cols-3 gap-4"
+                      />
                     </div>
                   );
                 })}
