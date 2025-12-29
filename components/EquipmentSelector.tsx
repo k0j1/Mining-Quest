@@ -42,9 +42,9 @@ const EquipmentSelector: React.FC<EquipmentSelectorProps> = ({
   const filteredList = equipmentList.filter(e => e.type === requiredType);
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
-      <div className="w-full max-w-md glass-panel rounded-[2rem] border-2 border-indigo-500/30 overflow-hidden flex flex-col max-h-[80vh]">
-        <div className="p-6 border-b border-slate-800 flex justify-between items-center bg-slate-900/50">
+    <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+      <div className="w-full max-w-md glass-panel rounded-[2rem] border-2 border-indigo-500/30 overflow-hidden flex flex-col max-h-[70vh] shadow-2xl">
+        <div className="p-6 border-b border-slate-800 flex justify-between items-center bg-slate-900/50 shrink-0">
           <div>
             <h2 className="text-xl font-orbitron font-bold text-white">装備を選択</h2>
             <p className="text-xs text-slate-400 flex items-center gap-1">
@@ -56,11 +56,11 @@ const EquipmentSelector: React.FC<EquipmentSelectorProps> = ({
           </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-4 space-y-2">
+        <div className="flex-1 overflow-y-auto p-4 space-y-2 custom-scrollbar">
           {/* Unequip Option */}
           <button 
             onClick={() => onSelect(null)}
-            className="w-full p-4 rounded-xl border border-dashed border-red-500/30 bg-red-500/5 text-red-400 font-bold hover:bg-red-500/10 transition-colors flex items-center justify-center space-x-2"
+            className="w-full p-4 rounded-xl border border-dashed border-red-500/30 bg-red-500/5 text-red-400 font-bold hover:bg-red-500/10 transition-colors flex items-center justify-center space-x-2 shrink-0"
           >
             <span>🗑️</span>
             <span>装備を外す</span>
@@ -82,7 +82,7 @@ const EquipmentSelector: React.FC<EquipmentSelectorProps> = ({
                 key={item.id}
                 onClick={() => !isEquippedElsewhere && onSelect(item.id)}
                 disabled={isEquippedElsewhere}
-                className={`w-full p-4 rounded-xl border transition-all flex items-center space-x-4 text-left group
+                className={`w-full p-4 rounded-xl border transition-all flex items-center space-x-4 text-left group shrink-0
                   ${isEquippedByThisHeroSlot ? 'border-indigo-500 bg-indigo-500/10' : 'border-slate-800 bg-slate-900/40 hover:border-slate-600'}
                   ${isEquippedElsewhere ? 'opacity-50 grayscale' : ''}
                 `}
