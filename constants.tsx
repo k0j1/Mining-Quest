@@ -18,8 +18,8 @@ export const INITIAL_HEROES: Hero[] = [
     trait: '不屈の魂',
     damageReduction: 10,
     level: 12,
-    hp: 100,
-    maxHp: 100,
+    hp: 80,
+    maxHp: 80,
     imageUrl: 'https://picsum.photos/seed/dog1/300/400',
     equipmentIds: ['e1', '', '']
   },
@@ -31,8 +31,8 @@ export const INITIAL_HEROES: Hero[] = [
     trait: '身軽',
     damageReduction: 5,
     level: 5,
-    hp: 100,
-    maxHp: 100,
+    hp: 50,
+    maxHp: 50,
     imageUrl: 'https://picsum.photos/seed/cat1/300/400',
     equipmentIds: ['', '', '']
   },
@@ -57,8 +57,8 @@ export const INITIAL_HEROES: Hero[] = [
     trait: '空の監視者',
     damageReduction: 8,
     level: 8,
-    hp: 100,
-    maxHp: 100,
+    hp: 70,
+    maxHp: 70,
     imageUrl: 'https://picsum.photos/seed/bird1/300/400',
     equipmentIds: ['', '', '']
   },
@@ -70,8 +70,8 @@ export const INITIAL_HEROES: Hero[] = [
     trait: '闇に潜む',
     damageReduction: 15,
     level: 15,
-    hp: 100,
-    maxHp: 100,
+    hp: 80,
+    maxHp: 80,
     imageUrl: 'https://picsum.photos/seed/cat2/300/400',
     equipmentIds: ['', '', '']
   },
@@ -83,8 +83,8 @@ export const INITIAL_HEROES: Hero[] = [
     trait: '走り屋',
     damageReduction: 3,
     level: 3,
-    hp: 100,
-    maxHp: 100,
+    hp: 50,
+    maxHp: 50,
     imageUrl: 'https://picsum.photos/seed/dog6/300/400',
     equipmentIds: ['', '', '']
   },
@@ -109,8 +109,8 @@ export const INITIAL_HEROES: Hero[] = [
     trait: '逃げ足',
     damageReduction: 12,
     level: 10,
-    hp: 100,
-    maxHp: 100,
+    hp: 70,
+    maxHp: 70,
     imageUrl: 'https://picsum.photos/seed/rabbit1/300/400',
     equipmentIds: ['', '', '']
   },
@@ -122,8 +122,8 @@ export const INITIAL_HEROES: Hero[] = [
     trait: '忠義',
     damageReduction: 12,
     level: 18,
-    hp: 100,
-    maxHp: 100,
+    hp: 80,
+    maxHp: 80,
     imageUrl: 'https://picsum.photos/seed/dog9/300/400',
     equipmentIds: ['', '', '']
   },
@@ -135,8 +135,8 @@ export const INITIAL_HEROES: Hero[] = [
     trait: 'ちょこまか',
     damageReduction: 2,
     level: 1,
-    hp: 100,
-    maxHp: 100,
+    hp: 50,
+    maxHp: 50,
     imageUrl: 'https://picsum.photos/seed/hamster1/300/400',
     equipmentIds: ['', '', '']
   }

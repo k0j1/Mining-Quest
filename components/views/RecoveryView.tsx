@@ -46,6 +46,9 @@ const RecoveryView: React.FC<RecoveryViewProps> = ({
               const hpPercent = (hero.hp / hero.maxHp) * 100;
               const isFull = hero.hp >= hero.maxHp;
               
+              const canAffordPotion = gameState.tokens >= 200;
+              const canAffordElixir = gameState.tokens >= 1200;
+
               return (
                 <div key={hero.id} className="glass-panel p-2 rounded-xl border border-slate-700 flex flex-col gap-2 relative overflow-hidden">
                    {/* Hero Info */}
@@ -68,22 +71,22 @@ const RecoveryView: React.FC<RecoveryViewProps> = ({
                    <div className="grid grid-cols-2 gap-1.5 mt-auto">
                       <button 
                         onClick={() => onPotion(hero.id)}
-                        disabled={isFull}
+                        disabled={isFull} // Only disable if full, not if poor
                         className="py-1.5 px-1 bg-slate-800 border border-slate-700 rounded-lg hover:bg-slate-700 active:scale-95 disabled:opacity-30 disabled:pointer-events-none transition-all flex flex-col items-center justify-center gap-0.5"
                       >
                          <span className="text-sm">🩹</span>
                          <span className="text-[8px] font-bold text-slate-400">+10</span>
-                         <span className="text-[8px] font-orbitron text-yellow-500">200</span>
+                         <span className={`text-[8px] font-orbitron ${canAffordPotion ? 'text-yellow-500' : 'text-rose-500'}`}>200</span>
                       </button>
                       
                       <button 
                          onClick={() => onElixir(hero.id)}
-                         disabled={isFull}
+                         disabled={isFull} // Only disable if full, not if poor
                          className="py-1.5 px-1 bg-indigo-900/30 border border-indigo-500/30 rounded-lg hover:bg-indigo-900/50 active:scale-95 disabled:opacity-30 disabled:pointer-events-none transition-all flex flex-col items-center justify-center gap-0.5"
                       >
                          <span className="text-sm">🧪</span>
                          <span className="text-[8px] font-bold text-indigo-300">MAX</span>
-                         <span className="text-[8px] font-orbitron text-yellow-500">1200</span>
+                         <span className={`text-[8px] font-orbitron ${canAffordElixir ? 'text-yellow-500' : 'text-rose-500'}`}>1200</span>
                       </button>
                    </div>
                 </div>

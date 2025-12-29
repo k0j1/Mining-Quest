@@ -19,10 +19,12 @@ interface StatusBoardProps {
   onChainBalance?: number | null;
   onAccountClick?: () => void;
   onShowLightpaper?: () => void;
+  onDebugCompleteQuest?: (questId: string) => void;
 }
 
-const QuestItem: React.FC<{ quest: any }> = ({ quest }) => {
+const QuestItem: React.FC<{ quest: any; farcasterUser?: any; onDebugComplete?: (id: string) => void }> = ({ quest, farcasterUser, onDebugComplete }) => {
   const [timeLeft, setTimeLeft] = useState(Math.max(0, Math.floor((quest.endTime - Date.now()) / 1000)));
+  const [debugClicks, setDebugClicks] = useState(0);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -32,6 +34,25 @@ const QuestItem: React.FC<{ quest: any }> = ({ quest }) => {
     }, 1000);
     return () => clearInterval(interval);
   }, [quest.endTime]);
+
+  const handleDebugClick = () => {
+    // Only allow debug cheat if NOT connected to Farcaster
+    if (farcasterUser) return;
+    
+    // Only allow if onDebugComplete is provided
+    if (!onDebugComplete) return;
+
+    if (timeLeft <= 0) return;
+
+    const newClicks = debugClicks + 1;
+    setDebugClicks(newClicks);
+    
+    if (newClicks >= 10) {
+      onDebugComplete(quest.id);
+      setDebugClicks(0);
+      playClick();
+    }
+  };
 
   const isCompleted = timeLeft <= 0;
   const minutes = Math.floor(timeLeft / 60);
@@ -57,7 +78,7 @@ const QuestItem: React.FC<{ quest: any }> = ({ quest }) => {
           </p>
         </div>
 
-        <div className="text-right">
+        <div className="text-right select-none" onClick={handleDebugClick}>
           {isCompleted ? (
             <div className="flex flex-col items-end">
               <span className="text-[8px] font-bold text-emerald-500 uppercase tracking-wider mb-1">Status</span>
@@ -67,7 +88,7 @@ const QuestItem: React.FC<{ quest: any }> = ({ quest }) => {
               </div>
             </div>
           ) : (
-            <div className="flex flex-col items-end">
+            <div className="flex flex-col items-end cursor-pointer">
               <span className="text-[8px] font-bold text-slate-500 uppercase tracking-wider mb-1">残り時間</span>
               <div className="font-bold text-lg text-slate-200 tabular-nums">
                 {minutes}:{seconds.toString().padStart(2, '0')}
@@ -81,7 +102,7 @@ const QuestItem: React.FC<{ quest: any }> = ({ quest }) => {
 };
 
 const StatusBoard: React.FC<StatusBoardProps> = ({ 
-  state, actionButtonLabel, onAction, title, view, isSoundOn, onToggleSound, onDebugAddTokens, farcasterUser, onChainBalance, onAccountClick, onShowLightpaper
+  state, actionButtonLabel, onAction, title, view, isSoundOn, onToggleSound, onDebugAddTokens, farcasterUser, onChainBalance, onAccountClick, onShowLightpaper, onDebugCompleteQuest
 }) => {
   return (
     <div className="flex flex-col h-full relative bg-slate-900">
@@ -131,7 +152,14 @@ const StatusBoard: React.FC<StatusBoardProps> = ({
             </div>
             <div className="space-y-3">
               {state.activeQuests.length > 0 ? (
-                state.activeQuests.map(q => <QuestItem key={q.id} quest={q} />)
+                state.activeQuests.map(q => (
+                  <QuestItem 
+                    key={q.id} 
+                    quest={q} 
+                    farcasterUser={farcasterUser} 
+                    onDebugComplete={onDebugCompleteQuest} // Always pass it if provided
+                  />
+                ))
               ) : (
                 <div className="bg-slate-800 border border-dashed border-slate-700 rounded-2xl p-10 text-center">
                   <p className="text-slate-500 text-xs font-bold tracking-wider">クエスト待機中</p>

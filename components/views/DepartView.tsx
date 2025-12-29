@@ -45,7 +45,12 @@ const DepartView: React.FC<DepartViewProps> = ({
     if (selectedRank) {
       const success = onDepart(selectedRank);
       if (!success) {
-        setSelectedRank(null);
+        // Do not close modal on error, so user can see why
+        // or close it? The notification shows up.
+        // Let's keep it open so they can switch party or recover
+        // But for insufficient funds, they might want to go to Gacha/Home.
+        // Let's close it only if successful
+        if (success) setSelectedRank(null);
       }
     }
   };
@@ -55,6 +60,11 @@ const DepartView: React.FC<DepartViewProps> = ({
   const mainParty = activePresetIds
     .map(id => gameState.heroes.find(h => h.id === id))
     .filter((h): h is any => !!h);
+
+  const isPartyFull = mainParty.length === 3;
+  const currentRankConfig = selectedRank ? QUEST_CONFIG[selectedRank] : null;
+  const canAfford = currentRankConfig ? gameState.tokens >= currentRankConfig.burnCost : false;
+  const hasDeadHeroes = mainParty.some(h => h.hp <= 0);
 
   return (
     <div className="flex flex-col h-full relative bg-slate-900">
@@ -135,7 +145,7 @@ const DepartView: React.FC<DepartViewProps> = ({
        </div>
 
        {/* Confirmation Modal */}
-       {selectedRank && (
+       {selectedRank && currentRankConfig && (
          <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
            <div className="w-full max-w-md bg-slate-900 border border-slate-700 rounded-3xl overflow-hidden flex flex-col max-h-[90vh] shadow-2xl">
              <div className="p-4 border-b border-slate-800 bg-slate-900 text-center">
@@ -145,7 +155,7 @@ const DepartView: React.FC<DepartViewProps> = ({
              <div className="p-6 overflow-y-auto">
                <div className="text-center mb-6">
                  <p className="text-slate-500 text-[10px] font-bold uppercase tracking-wider mb-2">Target Destination</p>
-                 <h3 className="text-xl font-bold text-white mb-3">{QUEST_CONFIG[selectedRank].name}</h3>
+                 <h3 className="text-xl font-bold text-white mb-3">{currentRankConfig.name}</h3>
                  <div className="inline-block px-4 py-1.5 rounded-full bg-slate-800 border border-slate-700">
                    <span className={`font-bold mr-2 text-sm ${
                       selectedRank === 'C' ? 'text-slate-400' :
@@ -154,7 +164,9 @@ const DepartView: React.FC<DepartViewProps> = ({
                       selectedRank === 'E' ? 'text-orange-400' :
                       'text-purple-400'
                    }`}>{selectedRank} RANK</span>
-                   <span className="text-slate-400 text-xs font-bold border-l border-slate-700 pl-2">Cost: {QUEST_CONFIG[selectedRank].burnCost} $CHH</span>
+                   <span className={`text-xs font-bold border-l border-slate-700 pl-2 ${canAfford ? 'text-slate-400' : 'text-rose-500'}`}>
+                     Cost: {currentRankConfig.burnCost} $CHH
+                   </span>
                  </div>
                </div>
 
@@ -193,10 +205,10 @@ const DepartView: React.FC<DepartViewProps> = ({
                     })}
                  </div>
 
-                 {mainParty.length === 0 ? (
+                 {!isPartyFull ? (
                     <div className="text-center p-4 border border-dashed border-rose-800/50 bg-rose-900/10 rounded-xl">
-                      <p className="text-rose-400 font-bold text-sm">メンバーがいません</p>
-                      <p className="text-xs text-rose-300/70 mt-1">編成画面でヒーローを設定してください</p>
+                      <p className="text-rose-400 font-bold text-sm">メンバーが足りません</p>
+                      <p className="text-xs text-rose-300/70 mt-1">クエストには3名のヒーローが必要です</p>
                     </div>
                  ) : (
                     <div className="pointer-events-none transform scale-95">
@@ -210,7 +222,7 @@ const DepartView: React.FC<DepartViewProps> = ({
                       />
                     </div>
                  )}
-                 {mainParty.some(h => h.hp <= 0) && (
+                 {hasDeadHeroes && (
                    <p className="text-rose-400 text-xs text-center mt-4 font-bold">
                      ⚠️ HPが0のヒーローがいます！出発できません。
                    </p>
@@ -227,12 +239,16 @@ const DepartView: React.FC<DepartViewProps> = ({
                </button>
                <button 
                  onClick={handleConfirm}
-                 disabled={mainParty.length === 0}
-                 className={`flex-1 py-3 bg-indigo-600 text-white rounded-xl font-bold shadow-md transition-all text-sm ${
-                    mainParty.length === 0 ? 'opacity-50 cursor-not-allowed' : 'hover:bg-indigo-500'
+                 disabled={!isPartyFull}
+                 className={`flex-1 py-3 text-white rounded-xl font-bold shadow-md transition-all text-sm ${
+                    !isPartyFull
+                      ? 'bg-slate-700 opacity-50 cursor-not-allowed'
+                      : !canAfford 
+                        ? 'bg-rose-600 hover:bg-rose-500' // Red for unaffordable but clickable
+                        : 'bg-indigo-600 hover:bg-indigo-500'
                  }`}
                >
-                 出発する
+                 {!isPartyFull ? 'メンバー不足 (3名必要)' : (!canAfford ? '出発する (資金不足)' : '出発する')}
                </button>
              </div>
            </div>

@@ -77,10 +77,14 @@ const LightpaperView: React.FC<LightpaperViewProps> = ({
             </h2>
             <div className="space-y-4 text-sm">
               <p>ヒーローは採掘の主役です。<strong className="text-red-400">HPが0になるとヒーローはロスト（消滅）します。</strong></p>
+              <p className="text-slate-400 bg-slate-800 p-2 rounded border border-slate-700">
+                 ⚠️ <strong>WIPEOUT RULE:</strong><br/>
+                 クエストに参加したヒーローが全員死亡（HP 0）した場合、クエストは<strong>失敗</strong>扱いとなり、報酬は一切得られません。
+              </p>
               <ul className="list-disc list-inside space-y-1 text-slate-400 ml-2">
                 <li><strong>レアリティ</strong>: C / UC / R / E / L (Lが最高)</li>
                 <li><strong>装備スロット</strong>: レアリティが高いほど、装備スロットが増えます。</li>
-                <li><strong>HP</strong>: 全員最大100。クエストで減少します。</li>
+                <li><strong>HP</strong>: レアリティにより最大値が異なります。</li>
               </ul>
             </div>
           </section>
@@ -156,7 +160,6 @@ const LightpaperView: React.FC<LightpaperViewProps> = ({
                   </tr>
                 </tbody>
               </table>
-              <p className="mt-2 text-[10px] text-slate-500">※ダメージによってHPが0になるとヒーローはロストします</p>
             </div>
           </section>
 
@@ -165,12 +168,20 @@ const LightpaperView: React.FC<LightpaperViewProps> = ({
             <h2 className="text-sm font-bold text-slate-300 mb-3">コスト一覧</h2>
             <ul className="text-xs text-slate-400 space-y-2">
               <li className="flex justify-between items-center">
-                <span>ヒーローガチャ</span>
+                <span>ヒーローガチャ (1回)</span>
                 <span className="text-amber-500 font-bold whitespace-nowrap ml-4">10,000 $CHH</span>
               </li>
               <li className="flex justify-between items-center">
-                <span>装備品ガチャ</span>
+                <span>ヒーローガチャ (3連/R以上確定)</span>
+                <span className="text-amber-500 font-bold whitespace-nowrap ml-4">50,000 $CHH</span>
+              </li>
+              <li className="flex justify-between items-center">
+                <span>装備品ガチャ (1回)</span>
                 <span className="text-amber-500 font-bold whitespace-nowrap ml-4">6,000 $CHH</span>
+              </li>
+              <li className="flex justify-between items-center">
+                <span>装備品ガチャ (3連/R以上確定)</span>
+                <span className="text-amber-500 font-bold whitespace-nowrap ml-4">30,000 $CHH</span>
               </li>
               <li className="flex justify-between items-center">
                 <span>パーティ枠解放</span>

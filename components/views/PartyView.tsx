@@ -63,6 +63,9 @@ const PartyView: React.FC<PartyViewProps> = ({
   const confirmUnlock = () => {
     if (unlockingIndex === null) return;
     onUnlockParty(unlockingIndex);
+    // Do not close modal automatically if failed (gameLogic handles the check, but here we can keep it open or close it. 
+    // Since gameLogic does alerts now, we can close it only on success, but useGameLogic doesn't return success/fail for unlock. 
+    // For now, let's close it. The user sees the alert.
     setUnlockingIndex(null);
   };
 
@@ -264,7 +267,7 @@ const PartyView: React.FC<PartyViewProps> = ({
              </p>
              <div className="flex gap-3">
                 <button onClick={() => setUnlockingIndex(null)} className="flex-1 py-3 rounded-xl bg-slate-800 text-slate-400 font-bold text-sm hover:bg-slate-700">キャンセル</button>
-                <button onClick={confirmUnlock} disabled={gameState.tokens < 10000} className={`flex-1 py-3 rounded-xl font-bold text-sm text-white shadow-md transition-all ${gameState.tokens >= 10000 ? 'bg-indigo-600 hover:bg-indigo-500' : 'bg-slate-700 text-slate-500'}`}>
+                <button onClick={confirmUnlock} className={`flex-1 py-3 rounded-xl font-bold text-sm text-white shadow-md transition-all ${gameState.tokens >= 10000 ? 'bg-indigo-600 hover:bg-indigo-500' : 'bg-slate-700 text-slate-500'}`}>
                   {gameState.tokens >= 10000 ? '解放する' : '不足'}
                 </button>
              </div>

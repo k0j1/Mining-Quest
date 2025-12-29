@@ -6,6 +6,7 @@ import MiningBackground from './components/MiningBackground';
 import ResultModal from './components/ResultModal';
 import AccountModal from './components/AccountModal';
 import BottomNav from './components/BottomNav';
+import Notification from './components/Notification';
 import { playClick, playConfirm, toggleSound } from './utils/sound';
 import { useGameLogic } from './hooks/useGameLogic';
 
@@ -62,6 +63,7 @@ const App: React.FC = () => {
           <GachaView 
             gameState={gameState} 
             onRollGacha={actions.rollGacha}
+            onRollGachaTriple={actions.rollGachaTriple}
             isGachaRolling={ui.isGachaRolling}
             gachaResult={ui.gachaResult}
             onCloseResult={() => { playClick(); ui.setGachaResult(null); }}
@@ -91,6 +93,7 @@ const App: React.FC = () => {
             title="報酬を回収" 
             actionButtonLabel="報酬を回収して帰還" 
             onAction={actions.returnFromQuest}
+            onDebugCompleteQuest={actions.debugCompleteQuest}
             {...commonProps}
           />
         );
@@ -122,6 +125,7 @@ const App: React.FC = () => {
             view={View.HOME} 
             title="ベースキャンプ" 
             onShowLightpaper={() => setCurrentView(View.LIGHTPAPER)}
+            onDebugCompleteQuest={actions.debugCompleteQuest}
             {...commonProps} 
           />
         );
@@ -136,6 +140,15 @@ const App: React.FC = () => {
           {renderContent()}
         </div>
       </main>
+
+      {/* Notification Toast */}
+      {ui.notification && (
+        <Notification 
+          message={ui.notification.message}
+          type={ui.notification.type}
+          onClose={() => ui.setNotification(null)}
+        />
+      )}
 
       {ui.returnResult && (
         <ResultModal 

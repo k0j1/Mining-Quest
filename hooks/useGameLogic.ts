@@ -24,9 +24,10 @@ export const useGameLogic = () => {
     ]
   });
 
-  const [gachaResult, setGachaResult] = useState<{ type: 'Hero' | 'Equipment'; data: any } | null>(null);
+  const [gachaResult, setGachaResult] = useState<{ type: 'Hero' | 'Equipment'; data: any[] } | null>(null);
   const [isGachaRolling, setIsGachaRolling] = useState(false);
   const [returnResult, setReturnResult] = useState<{ results: any[], totalTokens: number } | null>(null);
+  const [notification, setNotification] = useState<{ message: string; type: 'error' | 'success' } | null>(null);
   
   // Farcaster State
   const [farcasterUser, setFarcasterUser] = useState<any>(null);
@@ -35,30 +36,13 @@ export const useGameLogic = () => {
   useEffect(() => {
     const initFarcaster = async () => {
       try {
-        // 先にreadyを呼び出し、完了を待つ
         await sdk.actions.ready();
-        
-        // ready後にコンテキストを取得
         const context = await sdk.context;
-        console.log("Farcaster Context Raw:", context);
-
+        
         if (context?.user) {
           const u = context.user as any;
-          
-          // PFPのURL取得
           const pfpUrl = u.pfpUrl || u.pfp_url || "";
-          
-          // ウォレットアドレス取得の優先順位: 
-          // 1. 検証済みアドレス配列の1番目 
-          // 2. カストディアドレス (Hub等)
-          // 3. トップレベルのaddressプロパティ (一部SDKバージョン)
-          const ethAddress = 
-            u.verifiedAddresses?.ethAddresses?.[0] || 
-            u.custodyAddress || 
-            u.address;
-
-          console.log("Farcaster User Found:", u.username);
-          console.log("Extracted ETH Address:", ethAddress);
+          const ethAddress = u.verifiedAddresses?.ethAddresses?.[0] || u.custodyAddress || u.address;
 
           const user = {
             ...u,
@@ -67,11 +51,8 @@ export const useGameLogic = () => {
           };
           
           setFarcasterUser(user);
-          
           if (ethAddress) {
             fetchBalance(ethAddress);
-          } else {
-            console.warn("No valid ETH address found for user:", u.username);
           }
         }
       } catch (e) {
@@ -82,7 +63,6 @@ export const useGameLogic = () => {
   }, []);
 
   const fetchBalance = async (address: string) => {
-    console.log("Fetching balance for address:", address);
     try {
       const response = await fetch(BASE_RPC_URL, {
         method: 'POST',
@@ -93,7 +73,6 @@ export const useGameLogic = () => {
           method: 'eth_call',
           params: [{
             to: CHH_CONTRACT_ADDRESS,
-            // standard balanceOf(address) selector: 0x70a08231
             data: '0x70a08231' + address.replace('0x', '').toLowerCase().padStart(64, '0')
           }, 'latest']
         })
@@ -102,15 +81,17 @@ export const useGameLogic = () => {
       if (result.result && result.result !== '0x') {
         const balanceBigInt = BigInt(result.result);
         const numericBalance = Number(balanceBigInt) / 1e18;
-        console.log("CHH Balance Found:", numericBalance);
         setOnChainBalanceRaw(numericBalance);
       } else {
-        console.log("CHH Balance is 0 or result empty");
         setOnChainBalanceRaw(0);
       }
     } catch (e) {
       console.error("Balance fetch error:", e);
     }
+  };
+
+  const showNotification = (message: string, type: 'error' | 'success') => {
+    setNotification({ message, type });
   };
 
   const depart = (rank: QuestRank) => {
@@ -121,21 +102,21 @@ export const useGameLogic = () => {
       .map(id => gameState.heroes.find(h => h.id === id))
       .filter((h): h is Hero => !!h);
 
-    if (partyHeroes.length === 0) {
+    if (partyHeroes.length < 3) {
       playError();
-      alert("パーティにヒーローがいません！編成してください。");
-      return false;
-    }
-
-    if (gameState.tokens < config.burnCost) {
-      playError();
-      alert(`トークンが足りません！ (必要: ${config.burnCost} $CHH)`);
+      showNotification("パーティは3人揃える必要があります！編成してください。", 'error');
       return false;
     }
 
     if (partyHeroes.some(h => h.hp <= 0)) {
       playError();
-      alert("HPが0のヒーローが編成に含まれています。回復してください。");
+      showNotification("HPが0のヒーローがいます。回復してください。", 'error');
+      return false;
+    }
+
+    if (gameState.tokens < config.burnCost) {
+      playError();
+      showNotification(`トークンが足りません！ (必要: ${config.burnCost.toLocaleString()} $CHH)`, 'error');
       return false;
     }
 
@@ -176,7 +157,7 @@ export const useGameLogic = () => {
     
     if (completed.length === 0) {
       playError();
-      alert("まだ完了したクエストはありません。");
+      showNotification("完了したクエストはありません。", 'error');
       return false;
     }
 
@@ -199,16 +180,20 @@ export const useGameLogic = () => {
 
       const baseReward = Math.floor(Math.random() * (config.maxReward - config.minReward + 1)) + config.minReward;
       const bonusReward = Math.floor(baseReward * (partyPickaxeBonus / 100));
-      const finalReward = baseReward + bonusReward;
-      totalReward += finalReward;
+      let finalReward = baseReward + bonusReward;
+
+      let survivors = 0;
 
       questHeroes.forEach(hero => {
         const idx = newHeroes.findIndex(h => h.id === hero.id);
         if (idx === -1) return;
 
+        let isDead = false;
+
         if (config.deathChance > 0 && Math.random() < config.deathChance) {
           deadHeroIds.push(hero.id);
           logs.push(`💀 悲報: ${hero.name} は帰らぬ犬となりました...`);
+          isDead = true;
         } else {
           const rawDmg = Math.floor(Math.random() * (config.maxDmg - config.minDmg + 1)) + config.minDmg;
           const helmetEquip = gameState.equipment.find(e => e.id === hero.equipmentIds[1]);
@@ -222,16 +207,34 @@ export const useGameLogic = () => {
 
           const newHp = Math.max(0, hero.hp - finalDmg);
           newHeroes[idx] = { ...hero, hp: newHp };
-          logs.push(`💥 ${hero.name}: -${finalDmg} HP (残: ${newHp})`);
+          
+          if (newHp === 0) {
+            deadHeroIds.push(hero.id);
+            logs.push(`💀 ${hero.name} は力尽きた... (HP 0)`);
+            isDead = true;
+          } else {
+            logs.push(`💥 ${hero.name}: -${finalDmg} HP (残: ${newHp})`);
+          }
+        }
+
+        if (!isDead) {
+          survivors++;
         }
       });
+
+      if (survivors === 0 && questHeroes.length > 0) {
+        finalReward = 0;
+        logs.push(`❌ パーティ全滅！クエスト失敗。報酬は得られません。`);
+      } else {
+        totalReward += finalReward;
+      }
 
       resultList.push({
         questName: quest.name,
         rank: quest.rank,
         totalReward: finalReward,
-        baseReward: baseReward,
-        bonusReward: bonusReward,
+        baseReward: finalReward === 0 ? 0 : baseReward,
+        bonusReward: finalReward === 0 ? 0 : bonusReward,
         logs: logs
       });
     });
@@ -248,42 +251,87 @@ export const useGameLogic = () => {
     return true;
   };
 
-  const rollGacha = async (tab: 'Hero' | 'Equipment') => {
-    const cost = tab === 'Hero' ? 10000 : 6000;
-    if (gameState.tokens < cost) {
-      playError();
-      return;
-    }
-    playConfirm();
-    setIsGachaRolling(true);
-    try {
-      const result = await generateGachaItem(tab);
-      setGachaResult({ type: tab, data: result });
-      setGameState(prev => {
-        const next = { ...prev, tokens: prev.tokens - cost };
-        if (tab === 'Hero') {
-          next.heroes = [...prev.heroes, {
+  const processGachaItems = (tab: 'Hero' | 'Equipment', items: any[]) => {
+    setGameState(prev => {
+      const next = { ...prev };
+      
+      if (tab === 'Hero') {
+        const newHeroes = items.map(result => {
+           const rarityMaxHp: Record<string, number> = {
+            C: 50, UC: 60, R: 70, E: 80, L: 100
+          };
+          const maxHp = rarityMaxHp[result.rarity as string] || 50;
+          return {
             id: Math.random().toString(),
             name: result.name,
             species: result.species,
             rarity: result.rarity,
             trait: result.trait,
             damageReduction: result.damageReduction,
-            level: 1, hp: 100, maxHp: 100,
+            level: 1, hp: maxHp, maxHp: maxHp,
             imageUrl: `https://picsum.photos/seed/${Math.random()}/300/400`,
             equipmentIds: ['', '', '']
-          }];
-        } else {
-          next.equipment = [...prev.equipment, {
+          };
+        });
+        next.heroes = [...prev.heroes, ...newHeroes];
+      } else {
+        const newEquipment = items.map(result => ({
             id: Math.random().toString(),
             name: result.name,
             type: result.type,
             bonus: result.bonus,
             rarity: result.rarity
-          }];
-        }
-        return next;
-      });
+        }));
+        next.equipment = [...prev.equipment, ...newEquipment];
+      }
+      return next;
+    });
+  };
+
+  const rollGacha = async (tab: 'Hero' | 'Equipment') => {
+    const cost = tab === 'Hero' ? 10000 : 6000;
+    if (gameState.tokens < cost) {
+      playError();
+      showNotification(`トークンが足りません！ (必要: ${cost.toLocaleString()} $CHH)`, 'error');
+      return;
+    }
+    playConfirm();
+    setIsGachaRolling(true);
+    try {
+      const result = await generateGachaItem(tab);
+      setGachaResult({ type: tab, data: [result] });
+      
+      setGameState(prev => ({ ...prev, tokens: prev.tokens - cost }));
+      processGachaItems(tab, [result]);
+
+    } finally {
+      setIsGachaRolling(false);
+    }
+  };
+
+  const rollGachaTriple = async (tab: 'Hero' | 'Equipment') => {
+    const baseCost = tab === 'Hero' ? 10000 : 6000;
+    const cost = baseCost * 5;
+
+    if (gameState.tokens < cost) {
+      playError();
+      showNotification(`トークンが足りません！ (必要: ${cost.toLocaleString()} $CHH)`, 'error');
+      return;
+    }
+    playConfirm();
+    setIsGachaRolling(true);
+
+    try {
+      const results = await Promise.all([
+        generateGachaItem(tab, undefined),
+        generateGachaItem(tab, undefined),
+        generateGachaItem(tab, 'R')
+      ]);
+
+      setGachaResult({ type: tab, data: results });
+      setGameState(prev => ({ ...prev, tokens: prev.tokens - cost }));
+      processGachaItems(tab, results);
+
     } finally {
       setIsGachaRolling(false);
     }
@@ -307,7 +355,11 @@ export const useGameLogic = () => {
 
   const unlockParty = (index: number) => {
     const cost = 10000;
-    if (gameState.tokens < cost) return;
+    if (gameState.tokens < cost) {
+      playError();
+      showNotification(`トークンが足りません！ (必要: ${cost.toLocaleString()} $CHH)`, 'error');
+      return;
+    }
     playConfirm();
     setGameState(prev => {
       const newUnlocked = [...prev.unlockedParties];
@@ -331,11 +383,11 @@ export const useGameLogic = () => {
     });
   };
 
-  // Recover 10 HP for 200 tokens
   const usePotion = (heroId: string) => {
     const cost = 200;
     if (gameState.tokens < cost) {
       playError();
+      showNotification(`トークンが足りません！ (必要: ${cost.toLocaleString()} $CHH)`, 'error');
       return;
     }
     const hero = gameState.heroes.find(h => h.id === heroId);
@@ -347,13 +399,14 @@ export const useGameLogic = () => {
       tokens: prev.tokens - cost,
       heroes: prev.heroes.map(h => h.id === heroId ? { ...h, hp: Math.min(h.maxHp, h.hp + 10) } : h)
     }));
+    showNotification(`${hero.name}を回復しました (+10HP)`, 'success');
   };
 
-  // Recover to Max HP for 1200 tokens
   const useElixir = (heroId: string) => {
     const cost = 1200;
     if (gameState.tokens < cost) {
       playError();
+      showNotification(`トークンが足りません！ (必要: ${cost.toLocaleString()} $CHH)`, 'error');
       return;
     }
     const hero = gameState.heroes.find(h => h.id === heroId);
@@ -365,24 +418,44 @@ export const useGameLogic = () => {
       tokens: prev.tokens - cost,
       heroes: prev.heroes.map(h => h.id === heroId ? { ...h, hp: h.maxHp } : h)
     }));
+    showNotification(`${hero.name}を全回復しました`, 'success');
+  };
+
+  const debugCompleteQuest = (questId: string) => {
+    setGameState(prev => ({
+      ...prev,
+      activeQuests: prev.activeQuests.map(q => 
+        q.id === questId ? { ...q, endTime: Date.now() - 1000 } : q
+      )
+    }));
   };
 
   return {
     gameState,
     farcasterUser,
     onChainBalanceRaw,
-    ui: { gachaResult, setGachaResult, isGachaRolling, returnResult, setReturnResult },
+    ui: { 
+      gachaResult, setGachaResult, 
+      isGachaRolling, 
+      returnResult, setReturnResult,
+      notification, setNotification 
+    },
     actions: { 
       depart, 
       returnFromQuest, 
       rollGacha, 
+      rollGachaTriple,
       equipItem, 
       switchParty, 
       unlockParty, 
       assignHeroToParty, 
       usePotion,
       useElixir,
-      debugAddTokens: () => setGameState(p => ({ ...p, tokens: p.tokens + 10000 })) 
+      debugCompleteQuest,
+      debugAddTokens: () => {
+        setGameState(p => ({ ...p, tokens: p.tokens + 10000 }));
+        showNotification("デバッグ: 10,000 $CHHを追加しました", 'success');
+      }
     }
   };
 };

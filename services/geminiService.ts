@@ -22,9 +22,18 @@ export const getMiningInsight = async () => {
   }
 };
 
-const determineRarity = (type: 'Hero' | 'Equipment'): QuestRank => {
+const determineRarity = (type: 'Hero' | 'Equipment', minRarity: QuestRank = 'C'): QuestRank => {
   const rand = Math.random() * 100;
   
+  // If minRarity is 'R', we only roll for R, E, L
+  if (minRarity === 'R') {
+    // Weights based on original ratios (R:15, E:4, L:1) -> Total 20
+    // R: 75%, E: 20%, L: 5%
+    if (rand < 75) return 'R';
+    if (rand < 95) return 'E';
+    return 'L';
+  }
+
   if (type === 'Hero') {
     // Hero: C 50% / UC 30% / R 15% / E 4% / L 1%
     if (rand < 50) return 'C';
@@ -49,11 +58,11 @@ const determineEquipmentType = (): 'Pickaxe' | 'Helmet' | 'Boots' => {
   return 'Boots';
 };
 
-export const generateGachaItem = async (type: 'Hero' | 'Equipment') => {
+export const generateGachaItem = async (type: 'Hero' | 'Equipment', forceRarity?: QuestRank) => {
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   
   // 1. Determine Rarity Client-side
-  const targetRarity = determineRarity(type);
+  const targetRarity = forceRarity || determineRarity(type);
   
   // 2. Determine Equipment Type Client-side if needed to ensure balance
   let targetEquipType: 'Pickaxe' | 'Helmet' | 'Boots' | undefined;
