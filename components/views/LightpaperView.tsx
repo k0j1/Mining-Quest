@@ -156,7 +156,7 @@ const LightpaperView: React.FC<LightpaperViewProps> = ({
                   </tr>
                 </tbody>
               </table>
-              <p className="mt-2 text-[10px] text-slate-500">※ランクLではヒーローがロスト（消滅）する可能性があります。</p>
+              <p className="mt-2 text-[10px] text-slate-500">※ダメージによってHPが0になるとヒーローはロストします</p>
             </div>
           </section>
 
