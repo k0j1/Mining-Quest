@@ -26,15 +26,16 @@ const App: React.FC = () => {
 
   // Farcaster Frame v2 Initialization
   // Critical: sdk.actions.ready() must be called to hide the splash screen.
-  // We wrap this in a safe check to prevent app crash if SDK is not fully loaded in preview.
+  // We utilize a try-catch block to handle environments where the SDK might not be fully available (e.g., local preview),
+  // while ensuring it runs in the actual Farcaster environment.
   useEffect(() => {
     const initFrame = async () => {
       try {
-        if (sdk && sdk.actions && sdk.actions.ready) {
-          await sdk.actions.ready();
-        }
+        // Attempt to signal ready. If sdk is undefined or actions is missing, this will throw,
+        // which is caught below, allowing the app to proceed in browser preview modes.
+        await sdk.actions.ready();
       } catch (e) {
-        console.error("Failed to signal ready to Farcaster:", e);
+        console.warn("Farcaster SDK ready signal failed (running in browser?):", e);
       }
     };
     initFrame();

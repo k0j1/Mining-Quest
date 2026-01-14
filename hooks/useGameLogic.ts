@@ -57,7 +57,7 @@ export const useGameLogic = () => {
             }
         }
       } catch (e) {
-        console.error("Farcaster Context Error:", e);
+        console.warn("Farcaster Context not available (running in browser?):", e);
       }
     };
     initFarcasterContext();
