@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View } from './types';
 import StatusBoard from './components/StatusBoard';
 import MiningBackground from './components/MiningBackground';
@@ -9,6 +9,7 @@ import BottomNav from './components/BottomNav';
 import Notification from './components/Notification';
 import { playClick, playConfirm, toggleSound } from './utils/sound';
 import { useGameLogic } from './hooks/useGameLogic';
+import { sdk } from '@farcaster/frame-sdk';
 
 // Views
 import PartyView from './components/views/PartyView';
@@ -22,6 +23,22 @@ const App: React.FC = () => {
   const [isSoundOn, setIsSoundOn] = useState(false);
   const [showAccountModal, setShowAccountModal] = useState(false);
   const { gameState, farcasterUser, onChainBalanceRaw, ui, actions } = useGameLogic();
+
+  // Farcaster Frame v2 Initialization
+  // Critical: sdk.actions.ready() must be called to hide the splash screen.
+  // We wrap this in a safe check to prevent app crash if SDK is not fully loaded in preview.
+  useEffect(() => {
+    const initFrame = async () => {
+      try {
+        if (sdk && sdk.actions && sdk.actions.ready) {
+          await sdk.actions.ready();
+        }
+      } catch (e) {
+        console.error("Failed to signal ready to Farcaster:", e);
+      }
+    };
+    initFrame();
+  }, []);
 
   const handleNavClick = (view: View) => {
     playClick();
@@ -90,7 +107,7 @@ const App: React.FC = () => {
           <StatusBoard 
             state={gameState} 
             view={View.RETURN} 
-            title="報酬を回収" 
+            title="回収" 
             actionButtonLabel="報酬を回収して帰還" 
             onAction={actions.returnFromQuest}
             onDebugCompleteQuest={actions.debugCompleteQuest}
@@ -133,7 +150,7 @@ const App: React.FC = () => {
   };
 
   return (
-    <div className="fixed inset-0 flex flex-col max-w-4xl mx-auto overflow-hidden bg-slate-950 border-x border-slate-800">
+    <div className="fixed inset-0 flex flex-col max-w-4xl mx-auto overflow-hidden bg-slate-950 border-x border-slate-800 shadow-2xl">
       <main className="flex-1 relative overflow-hidden">
         <MiningBackground />
         <div className="relative z-10 h-full">

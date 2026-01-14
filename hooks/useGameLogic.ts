@@ -34,32 +34,33 @@ export const useGameLogic = () => {
   const [onChainBalanceRaw, setOnChainBalanceRaw] = useState<number | null>(null);
 
   useEffect(() => {
-    const initFarcaster = async () => {
+    const initFarcasterContext = async () => {
       try {
-        await sdk.actions.ready();
-        const context = await sdk.context;
-        
-        if (context?.user) {
-          const u = context.user as any;
-          const pfpUrl = u.pfpUrl || u.pfp_url || "";
-          const ethAddress = u.verifiedAddresses?.ethAddresses?.[0] || u.custodyAddress || u.address;
+        // Safe check for SDK context availability
+        if (sdk && sdk.context) {
+            const context = await sdk.context;
+            if (context?.user) {
+              const u = context.user as any;
+              const pfpUrl = u.pfpUrl || u.pfp_url || "";
+              const ethAddress = u.verifiedAddresses?.ethAddresses?.[0] || u.custodyAddress || u.address;
 
-          const user = {
-            ...u,
-            pfpUrl,
-            address: ethAddress
-          };
-          
-          setFarcasterUser(user);
-          if (ethAddress) {
-            fetchBalance(ethAddress);
-          }
+              const user = {
+                ...u,
+                pfpUrl,
+                address: ethAddress
+              };
+              
+              setFarcasterUser(user);
+              if (ethAddress) {
+                fetchBalance(ethAddress);
+              }
+            }
         }
       } catch (e) {
-        console.error("Farcaster SDK Initialization Error:", e);
+        console.error("Farcaster Context Error:", e);
       }
     };
-    initFarcaster();
+    initFarcasterContext();
   }, []);
 
   const fetchBalance = async (address: string) => {
