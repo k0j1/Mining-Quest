@@ -59,10 +59,15 @@ const Header: React.FC<HeaderProps> = ({
     });
   };
 
-  const displayTokens = farcasterUser 
-    ? (typeof onChainBalance === 'number' ? formatCompactNumber(onChainBalance) : '...')
-    : formatCompactNumber(tokens);
+  // Farcasterユーザーかつオンチェーン残高が取得できている場合はそちらを表示
+  // そうでない場合はゲーム内トークンを表示
+  const tokenValue = (farcasterUser && onChainBalance !== null && onChainBalance !== undefined) 
+    ? onChainBalance 
+    : tokens;
+    
+  const displayTokens = formatCompactNumber(tokenValue);
 
+  // Farcasterユーザーの場合はテーマカラーを変える
   const themeColorClass = farcasterUser ? 'text-indigo-400' : 'text-amber-400';
 
   return (

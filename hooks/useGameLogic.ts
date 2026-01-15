@@ -62,10 +62,11 @@ export const useGameLogic = () => {
                 // Fetch balance non-blocking
                 fetchBalance(ethAddress).catch(e => {
                   console.warn("Balance fetch failed in catch:", e);
-                  // 残高取得失敗は致命的ではないので通知はしない、もしくは控えめに
+                  setOnChainBalanceRaw(0); // Error fallback
                 });
               } else {
                  console.warn("No ETH address found for user");
+                 setOnChainBalanceRaw(0);
               }
             } else {
               console.log("No user in Farcaster context");
@@ -82,10 +83,18 @@ export const useGameLogic = () => {
     initFarcasterContext();
   }, []);
 
+  // オンチェーン残高が取得できた場合、ゲーム内トークンもその値に同期する
+  useEffect(() => {
+    if (onChainBalanceRaw !== null) {
+      setGameState(prev => ({ ...prev, tokens: onChainBalanceRaw }));
+    }
+  }, [onChainBalanceRaw]);
+
   const fetchBalance = async (address: string) => {
     try {
       if (!address.startsWith('0x')) {
          console.warn("Invalid address format for balance fetch:", address);
+         setOnChainBalanceRaw(0);
          return;
       }
 
@@ -122,8 +131,8 @@ export const useGameLogic = () => {
       }
     } catch (e: any) {
       console.error("Balance fetch error:", e);
-      // 通信エラーなどは通知するとユーザーが不安になる場合もあるが、デバッグのため表示
-      // setNotification({ message: `Balance Err: ${e.message}`, type: 'error' });
+      // RPCエラー等の場合は0を表示して、UIがローディング状態のままになるのを防ぐ
+      setOnChainBalanceRaw(0);
     }
   };
 
