@@ -36,7 +36,8 @@ export const useGameLogic = () => {
   useEffect(() => {
     const initFarcasterContext = async () => {
       try {
-        // Safe check for SDK context availability
+        // Safe check for SDK context availability.
+        // We use a try-catch and optional chaining to ensure this never breaks the app loop.
         if (sdk && sdk.context) {
             const context = await sdk.context;
             if (context?.user) {
@@ -52,12 +53,13 @@ export const useGameLogic = () => {
               
               setFarcasterUser(user);
               if (ethAddress) {
-                fetchBalance(ethAddress);
+                // Fetch balance non-blocking
+                fetchBalance(ethAddress).catch(e => console.warn("Balance fetch failed", e));
               }
             }
         }
       } catch (e) {
-        console.warn("Farcaster Context not available (running in browser?):", e);
+        console.warn("Farcaster Context initialization warning:", e);
       }
     };
     initFarcasterContext();

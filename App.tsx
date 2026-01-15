@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { View } from './types';
 import StatusBoard from './components/StatusBoard';
 import MiningBackground from './components/MiningBackground';
@@ -22,24 +22,30 @@ const App: React.FC = () => {
   const [currentView, setCurrentView] = useState<View>(View.HOME);
   const [isSoundOn, setIsSoundOn] = useState(false);
   const [showAccountModal, setShowAccountModal] = useState(false);
+  const [isSDKLoaded, setIsSDKLoaded] = useState(false);
+  
   const { gameState, farcasterUser, onChainBalanceRaw, ui, actions } = useGameLogic();
 
-  // Farcaster Frame v2 Initialization
-  // Critical: sdk.actions.ready() must be called to hide the splash screen.
-  // We utilize a try-catch block to handle environments where the SDK might not be fully available (e.g., local preview),
-  // while ensuring it runs in the actual Farcaster environment.
+  // Farcaster Frame v2 Loading Optimization
+  // https://miniapps.farcaster.xyz/docs/guides/loading
   useEffect(() => {
-    const initFrame = async () => {
-      try {
-        // Attempt to signal ready. If sdk is undefined or actions is missing, this will throw,
-        // which is caught below, allowing the app to proceed in browser preview modes.
-        await sdk.actions.ready();
-      } catch (e) {
-        console.warn("Farcaster SDK ready signal failed (running in browser?):", e);
-      }
+    const load = async () => {
+      // Give the app a moment to paint the initial UI before signaling ready
+      // This prevents the splash screen from hiding before the app is visible
+      setTimeout(() => {
+        try {
+          sdk.actions.ready();
+        } catch (e) {
+          console.warn("Farcaster SDK ready signal failed:", e);
+        }
+      }, 100); 
     };
-    initFrame();
-  }, []);
+
+    if (sdk && !isSDKLoaded) {
+      setIsSDKLoaded(true);
+      load();
+    }
+  }, [isSDKLoaded]);
 
   const handleNavClick = (view: View) => {
     playClick();
