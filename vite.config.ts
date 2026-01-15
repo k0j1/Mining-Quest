@@ -2,11 +2,10 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 
-// GitHub Pagesのリポジトリ名に合わせてbaseを設定します。
-// ルートに配置する場合は '/' 、リポジトリ名配下なら './' が安全です。
+// GitHub Pagesのリポジトリ名（サブディレクトリ）に合わせてbaseを設定
 export default defineConfig({
   plugins: [react()],
-  base: './',
+  base: '/Mining-Quest/',
   define: {
     'process.env.API_KEY': JSON.stringify(process.env.API_KEY),
   },
