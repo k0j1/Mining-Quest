@@ -36,30 +36,47 @@ export const useGameLogic = () => {
   useEffect(() => {
     const initFarcasterContext = async () => {
       try {
-        // Safe check for SDK context availability.
-        // We use a try-catch and optional chaining to ensure this never breaks the app loop.
+        // sdk.contextはPromiseとして定義されているため、awaitで待機
         if (sdk && sdk.context) {
             const context = await sdk.context;
+            
+            // ユーザー情報が含まれているか確認
             if (context?.user) {
               const u = context.user as any;
               const pfpUrl = u.pfpUrl || u.pfp_url || "";
-              const ethAddress = u.verifiedAddresses?.ethAddresses?.[0] || u.custodyAddress || u.address;
+              
+              // アドレス取得の優先順位: verified > custody > address
+              const ethAddress = u.verifiedAddresses?.[0] || u.verifiedAddresses?.ethAddresses?.[0] || u.custodyAddress || u.address;
 
               const user = {
                 ...u,
                 pfpUrl,
-                address: ethAddress
+                address: ethAddress,
+                username: u.username || 'Unknown Miner'
               };
               
               setFarcasterUser(user);
+              console.log("Farcaster User Loaded:", user.username);
+
               if (ethAddress) {
                 // Fetch balance non-blocking
-                fetchBalance(ethAddress).catch(e => console.warn("Balance fetch failed", e));
+                fetchBalance(ethAddress).catch(e => {
+                  console.warn("Balance fetch failed in catch:", e);
+                  // 残高取得失敗は致命的ではないので通知はしない、もしくは控えめに
+                });
+              } else {
+                 console.warn("No ETH address found for user");
               }
+            } else {
+              console.log("No user in Farcaster context");
             }
+        } else {
+          console.log("SDK context is null (Browser preview?)");
         }
-      } catch (e) {
+      } catch (e: any) {
         console.warn("Farcaster Context initialization warning:", e);
+        // 開発用にエラーが見えるようにする
+        setNotification({ message: `FC Login Error: ${e.message}`, type: 'error' });
       }
     };
     initFarcasterContext();
@@ -67,6 +84,11 @@ export const useGameLogic = () => {
 
   const fetchBalance = async (address: string) => {
     try {
+      if (!address.startsWith('0x')) {
+         console.warn("Invalid address format for balance fetch:", address);
+         return;
+      }
+
       const response = await fetch(BASE_RPC_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -80,7 +102,17 @@ export const useGameLogic = () => {
           }, 'latest']
         })
       });
+
+      if (!response.ok) {
+        throw new Error(`HTTP Error: ${response.status}`);
+      }
+
       const result = await response.json();
+      
+      if (result.error) {
+         throw new Error(`RPC Error: ${result.error.message}`);
+      }
+
       if (result.result && result.result !== '0x') {
         const balanceBigInt = BigInt(result.result);
         const numericBalance = Number(balanceBigInt) / 1e18;
@@ -88,8 +120,10 @@ export const useGameLogic = () => {
       } else {
         setOnChainBalanceRaw(0);
       }
-    } catch (e) {
+    } catch (e: any) {
       console.error("Balance fetch error:", e);
+      // 通信エラーなどは通知するとユーザーが不安になる場合もあるが、デバッグのため表示
+      // setNotification({ message: `Balance Err: ${e.message}`, type: 'error' });
     }
   };
 

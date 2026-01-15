@@ -23,22 +23,51 @@ const App: React.FC = () => {
   const [isSoundOn, setIsSoundOn] = useState(false);
   const [showAccountModal, setShowAccountModal] = useState(false);
   const [isSDKLoaded, setIsSDKLoaded] = useState(false);
+  const [appError, setAppError] = useState<string | null>(null);
   
+  // useGameLogic フック内のエラーも捕捉したいが、フック自体のクラッシュはErrorBoundaryが必要。
+  // ここではフックから返される通知などを利用する。
   const { gameState, farcasterUser, onChainBalanceRaw, ui, actions } = useGameLogic();
 
+  // グローバルエラーハンドリング
+  useEffect(() => {
+    const handleError = (event: ErrorEvent) => {
+      setAppError(event.message || "Unknown error occurred");
+    };
+    const handleRejection = (event: PromiseRejectionEvent) => {
+      setAppError(`Promise Rejected: ${event.reason?.message || event.reason}`);
+    };
+
+    window.addEventListener('error', handleError);
+    window.addEventListener('unhandledrejection', handleRejection);
+
+    return () => {
+      window.removeEventListener('error', handleError);
+      window.removeEventListener('unhandledrejection', handleRejection);
+    };
+  }, []);
+
   // Farcaster Frame v2 Loading Optimization
-  // https://miniapps.farcaster.xyz/docs/guides/loading
   useEffect(() => {
     const load = async () => {
-      // Give the app a moment to paint the initial UI before signaling ready
-      // This prevents the splash screen from hiding before the app is visible
-      setTimeout(() => {
-        try {
-          sdk.actions.ready();
-        } catch (e) {
-          console.warn("Farcaster SDK ready signal failed:", e);
-        }
-      }, 100); 
+      try {
+        // Give the app a moment to paint the initial UI before signaling ready
+        setTimeout(() => {
+          try {
+            if (sdk && sdk.actions) {
+               sdk.actions.ready();
+            } else {
+               // ローカル環境などでSDKがない場合
+               console.log("Farcaster SDK actions not available (Browser mode?)");
+            }
+          } catch (e: any) {
+            console.warn("Farcaster SDK ready signal failed:", e);
+            setAppError(`SDK Ready Error: ${e.message}`);
+          }
+        }, 200); // Wait a bit longer to ensure render
+      } catch (e: any) {
+         setAppError(`Init Error: ${e.message}`);
+      }
     };
 
     if (sdk && !isSDKLoaded) {
@@ -155,6 +184,24 @@ const App: React.FC = () => {
         );
     }
   };
+
+  // 致命的なエラーが発生した場合の表示
+  if (appError) {
+    return (
+      <div className="fixed inset-0 flex flex-col items-center justify-center bg-slate-950 text-white p-8 text-center z-[9999]">
+        <h2 className="text-2xl font-bold text-rose-500 mb-4">CRITICAL ERROR</h2>
+        <div className="bg-slate-900 p-4 rounded-xl border border-rose-900 w-full overflow-auto max-h-[50vh]">
+          <p className="font-mono text-xs text-rose-200 break-words">{appError}</p>
+        </div>
+        <button 
+          onClick={() => window.location.reload()}
+          className="mt-8 px-6 py-3 bg-slate-800 border border-slate-600 rounded-full font-bold hover:bg-slate-700 active:scale-95"
+        >
+          Reload App
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="fixed inset-0 flex flex-col max-w-4xl mx-auto overflow-hidden bg-slate-950 border-x border-slate-800 shadow-2xl">
