@@ -1,0 +1,156 @@
+
+import React, { useState, useEffect, useRef } from 'react';
+
+interface LogMessage {
+  id: number;
+  type: 'log' | 'warn' | 'error' | 'info';
+  message: string;
+  timestamp: string;
+}
+
+interface DebugConsoleProps {
+  isEnabled: boolean;
+}
+
+const DebugConsole: React.FC<DebugConsoleProps> = ({ isEnabled }) => {
+  const [logs, setLogs] = useState<LogMessage[]>([]);
+  const [isExpanded, setIsExpanded] = useState(false);
+  const [isVisible, setIsVisible] = useState(false); // Initially hidden, shows if enabled
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!isEnabled) return;
+    setIsVisible(true);
+
+    const formatArgs = (args: any[]) => {
+      return args.map(arg => {
+        if (typeof arg === 'object') {
+          try {
+            return JSON.stringify(arg, null, 2);
+          } catch (e) {
+            return '[Circular/Object]';
+          }
+        }
+        return String(arg);
+      }).join(' ');
+    };
+
+    const addLog = (type: 'log' | 'warn' | 'error' | 'info', args: any[]) => {
+      const now = new Date();
+      const timeString = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`;
+      
+      const newMessage: LogMessage = {
+        id: Date.now() + Math.random(),
+        type,
+        message: formatArgs(args),
+        timestamp: timeString
+      };
+
+      setLogs(prev => {
+        const newLogs = [...prev, newMessage];
+        if (newLogs.length > 50) newLogs.shift(); // Keep last 50 logs
+        return newLogs;
+      });
+    };
+
+    // Override Console Methods
+    const originalLog = console.log;
+    const originalWarn = console.warn;
+    const originalError = console.error;
+    const originalInfo = console.info;
+
+    console.log = (...args) => {
+      originalLog(...args);
+      addLog('log', args);
+    };
+
+    console.warn = (...args) => {
+      originalWarn(...args);
+      addLog('warn', args);
+    };
+
+    console.error = (...args) => {
+      originalError(...args);
+      addLog('error', args);
+    };
+
+    console.info = (...args) => {
+      originalInfo(...args);
+      addLog('info', args);
+    };
+
+    // Global Error Handler
+    const errorHandler = (event: ErrorEvent) => {
+      addLog('error', [event.message]);
+    };
+    window.addEventListener('error', errorHandler);
+
+    const rejectionHandler = (event: PromiseRejectionEvent) => {
+      addLog('error', [`Unhandled Promise: ${event.reason}`]);
+    };
+    window.addEventListener('unhandledrejection', rejectionHandler);
+
+    return () => {
+      console.log = originalLog;
+      console.warn = originalWarn;
+      console.error = originalError;
+      console.info = originalInfo;
+      window.removeEventListener('error', errorHandler);
+      window.removeEventListener('unhandledrejection', rejectionHandler);
+    };
+  }, [isEnabled]);
+
+  // Auto-scroll to bottom
+  useEffect(() => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    }
+  }, [logs, isExpanded]);
+
+  if (!isVisible) return null;
+
+  const getTypeColor = (type: string) => {
+    switch (type) {
+      case 'error': return 'text-red-400 bg-red-900/20';
+      case 'warn': return 'text-yellow-400 bg-yellow-900/20';
+      case 'info': return 'text-blue-400 bg-blue-900/20';
+      default: return 'text-slate-300';
+    }
+  };
+
+  return (
+    <div className="fixed bottom-24 right-4 z-[9999] flex flex-col items-end pointer-events-none">
+      <div className="pointer-events-auto">
+        {!isExpanded ? (
+          <button 
+            onClick={() => setIsExpanded(true)}
+            className="w-10 h-10 bg-slate-800/80 backdrop-blur border border-slate-600 rounded-full flex items-center justify-center shadow-lg text-slate-400 hover:text-white hover:bg-slate-700"
+          >
+            🐛
+          </button>
+        ) : (
+          <div className="w-80 h-64 bg-slate-950/90 backdrop-blur-md border border-slate-700 rounded-xl shadow-2xl flex flex-col overflow-hidden text-[10px] font-mono">
+            <div className="flex justify-between items-center px-3 py-2 bg-slate-900 border-b border-slate-800">
+              <span className="font-bold text-slate-400">Debug Console</span>
+              <div className="flex gap-2">
+                <button onClick={() => setLogs([])} className="text-slate-500 hover:text-white">Clear</button>
+                <button onClick={() => setIsExpanded(false)} className="text-slate-500 hover:text-white">✕</button>
+              </div>
+            </div>
+            <div ref={scrollRef} className="flex-1 overflow-y-auto p-2 space-y-1">
+              {logs.length === 0 && <p className="text-slate-600 italic text-center mt-4">No logs yet...</p>}
+              {logs.map(log => (
+                <div key={log.id} className={`break-words p-1 rounded ${getTypeColor(log.type)}`}>
+                  <span className="opacity-50 mr-2">[{log.timestamp}]</span>
+                  <span className="whitespace-pre-wrap">{log.message}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+export default DebugConsole;

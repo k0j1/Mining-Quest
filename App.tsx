@@ -7,6 +7,7 @@ import ResultModal from './components/ResultModal';
 import AccountModal from './components/AccountModal';
 import BottomNav from './components/BottomNav';
 import Notification from './components/Notification';
+import DebugConsole from './components/DebugConsole'; // Import DebugConsole
 import { playClick, playConfirm, toggleSound } from './utils/sound';
 import { useGameLogic } from './hooks/useGameLogic';
 import { sdk } from '@farcaster/frame-sdk';
@@ -24,6 +25,7 @@ const App: React.FC = () => {
   const [showAccountModal, setShowAccountModal] = useState(false);
   const [isSDKLoaded, setIsSDKLoaded] = useState(false);
   const [appError, setAppError] = useState<string | null>(null);
+  const [isFarcasterEnv, setIsFarcasterEnv] = useState(false); // State to track environment
   
   // useGameLogic フック内のエラーも捕捉したいが、フック自体のクラッシュはErrorBoundaryが必要。
   // ここではフックから返される通知などを利用する。
@@ -51,6 +53,18 @@ const App: React.FC = () => {
   useEffect(() => {
     const load = async () => {
       try {
+        // Check if running in Farcaster context
+        if (sdk && sdk.context) {
+           sdk.context.then(context => {
+             if (context) {
+                console.log("Farcaster Context Detected:", context);
+                setIsFarcasterEnv(true);
+             }
+           }).catch(() => {
+             console.log("Not in Farcaster Frame context");
+           });
+        }
+
         // Give the app a moment to paint the initial UI before signaling ready
         setTimeout(() => {
           try {
@@ -199,6 +213,8 @@ const App: React.FC = () => {
         >
           Reload App
         </button>
+        {/* Error時もDebugConsoleは表示する */}
+        <DebugConsole isEnabled={true} />
       </div>
     );
   }
@@ -211,6 +227,9 @@ const App: React.FC = () => {
           {renderContent()}
         </div>
       </main>
+
+      {/* Debug Console: Only enabled if in Farcaster Environment */}
+      <DebugConsole isEnabled={isFarcasterEnv} />
 
       {/* Notification Toast */}
       {ui.notification && (
