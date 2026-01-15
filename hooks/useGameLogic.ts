@@ -49,19 +49,42 @@ export const useGameLogic = () => {
               const pfpUrl = u.pfpUrl || u.pfp_url || "";
               
               // アドレス取得ロジックの改善
-              let ethAddress: string | null = null;
+              // 優先順位:
+              // 1. sdk.wallet.ethProvider (接続中のウォレット)
+              // 2. verifiedAddresses (プロフィール連携済みアドレス)
+              // 3. custodyAddress (Farcaster保管アドレス)
               
-              // 1. Verified Addresses (通常は文字列の配列)
-              if (Array.isArray(u.verifiedAddresses) && u.verifiedAddresses.length > 0) {
-                ethAddress = u.verifiedAddresses[0];
-              } 
-              // 2. Custody Address (カストディアドレス)
-              else if (u.custodyAddress) {
-                ethAddress = u.custodyAddress;
+              let ethAddress: string | null = null;
+
+              // 1. Try to get connected wallet address
+              try {
+                // eth_requestAccountsは配列を返す
+                const accounts = await sdk.wallet.ethProvider.request({ method: 'eth_requestAccounts' }) as string[];
+                if (Array.isArray(accounts) && accounts.length > 0) {
+                  ethAddress = accounts[0];
+                  console.log("Wallet Connected via Provider:", ethAddress);
+                }
+              } catch (walletErr) {
+                console.warn("Wallet provider request failed:", walletErr);
               }
-              // 3. Fallback: 古い形式や直接のaddressプロパティ
-              else if (u.address) {
-                ethAddress = u.address;
+
+              // 2. Fallback to Profile Verified Addresses if wallet not connected
+              if (!ethAddress) {
+                if (Array.isArray(u.verifiedAddresses) && u.verifiedAddresses.length > 0) {
+                  ethAddress = u.verifiedAddresses[0];
+                } 
+                // 別名プロパティの可能性も考慮
+                else if (Array.isArray(u.verifications) && u.verifications.length > 0) {
+                  ethAddress = u.verifications[0];
+                }
+                // 3. Fallback to Custody
+                else if (u.custodyAddress) {
+                  ethAddress = u.custodyAddress;
+                }
+                // 4. Fallback to generic address field
+                else if (u.address) {
+                  ethAddress = u.address;
+                }
               }
 
               // アドレス形式の正規化 (0x付与)
@@ -69,7 +92,7 @@ export const useGameLogic = () => {
                 ethAddress = `0x${ethAddress}`;
               }
 
-              console.log("Resolved ETH Address:", ethAddress);
+              console.log("Resolved Final Address:", ethAddress);
 
               // ユーザーオブジェクトを正規化して保存
               // addressプロパティに決定したアドレスをセットする
@@ -84,6 +107,8 @@ export const useGameLogic = () => {
 
               if (ethAddress) {
                 // Fetch balance non-blocking
+                // BASEチェーンであることをログで確認
+                console.log("Fetching balance from BASE chain...");
                 fetchBalance(ethAddress).catch(e => {
                   console.warn("Balance fetch failed in catch:", e);
                   setOnChainBalanceRaw(0); // Error fallback
@@ -122,7 +147,7 @@ export const useGameLogic = () => {
          return;
       }
 
-      console.log(`Fetching balance for: ${address}`);
+      console.log(`Fetching CHH balance for: ${address} on BASE Chain`);
 
       const response = await fetch(BASE_RPC_URL, {
         method: 'POST',
@@ -133,7 +158,7 @@ export const useGameLogic = () => {
           method: 'eth_call',
           params: [{
             to: CHH_CONTRACT_ADDRESS,
-            data: '0x70a08231' + address.replace('0x', '').toLowerCase().padStart(64, '0')
+            data: '0x70a08231' + address.replace('0x', '').toLowerCase().padStart(64, '0') // balanceOf(address)
           }, 'latest']
         })
       });
@@ -150,7 +175,7 @@ export const useGameLogic = () => {
 
       if (result.result && result.result !== '0x') {
         const balanceBigInt = BigInt(result.result);
-        const numericBalance = Number(balanceBigInt) / 1e18;
+        const numericBalance = Number(balanceBigInt) / 1e18; // 18 decimals assumption
         console.log(`Balance Fetched: ${numericBalance} CHH`);
         setOnChainBalanceRaw(numericBalance);
       } else {
