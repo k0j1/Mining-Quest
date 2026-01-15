@@ -51,6 +51,22 @@ const App: React.FC = () => {
 
   // Farcaster Frame v2 Loading Optimization
   useEffect(() => {
+    // セーフティネット: 3秒経っても初期化が終わらない（スプラッシュが消えない）場合
+    // 強制的にreadyを呼んで画面を表示し、デバッグログを見れるようにする
+    const safetyTimer = setTimeout(() => {
+      if (!isSDKLoaded) {
+        console.warn("Loading timeout - Forcing ready() to show debug console");
+        try {
+          if (sdk && sdk.actions) {
+             sdk.actions.ready();
+          }
+        } catch(e) { console.error("Force ready failed:", e); }
+        
+        // エラーとして表示することでデバッグコンソールを強制出現させる
+        setAppError("Loading Timeout: App took too long to start.\nForcing display for debugging.");
+      }
+    }, 3000);
+
     const load = async () => {
       try {
         // Check if running in Farcaster context
@@ -60,8 +76,8 @@ const App: React.FC = () => {
                 console.log("Farcaster Context Detected:", context);
                 setIsFarcasterEnv(true);
              }
-           }).catch(() => {
-             console.log("Not in Farcaster Frame context");
+           }).catch((e) => {
+             console.log("Not in Farcaster Frame context or context failed:", e);
            });
         }
 
@@ -70,9 +86,11 @@ const App: React.FC = () => {
           try {
             if (sdk && sdk.actions) {
                sdk.actions.ready();
+               setIsSDKLoaded(true); // Mark as loaded to cancel safety timer
             } else {
                // ローカル環境などでSDKがない場合
                console.log("Farcaster SDK actions not available (Browser mode?)");
+               setIsSDKLoaded(true);
             }
           } catch (e: any) {
             console.warn("Farcaster SDK ready signal failed:", e);
@@ -85,9 +103,10 @@ const App: React.FC = () => {
     };
 
     if (sdk && !isSDKLoaded) {
-      setIsSDKLoaded(true);
       load();
     }
+    
+    return () => clearTimeout(safetyTimer);
   }, [isSDKLoaded]);
 
   const handleNavClick = (view: View) => {
@@ -204,15 +223,24 @@ const App: React.FC = () => {
     return (
       <div className="fixed inset-0 flex flex-col items-center justify-center bg-slate-950 text-white p-8 text-center z-[9999]">
         <h2 className="text-2xl font-bold text-rose-500 mb-4">CRITICAL ERROR</h2>
-        <div className="bg-slate-900 p-4 rounded-xl border border-rose-900 w-full overflow-auto max-h-[50vh]">
-          <p className="font-mono text-xs text-rose-200 break-words">{appError}</p>
+        <div className="bg-slate-900 p-4 rounded-xl border border-rose-900 w-full overflow-auto max-h-[50vh] mb-8">
+          <p className="font-mono text-xs text-rose-200 break-words whitespace-pre-wrap">{appError}</p>
         </div>
-        <button 
-          onClick={() => window.location.reload()}
-          className="mt-8 px-6 py-3 bg-slate-800 border border-slate-600 rounded-full font-bold hover:bg-slate-700 active:scale-95"
-        >
-          Reload App
-        </button>
+        
+        <div className="flex gap-4">
+            <button 
+              onClick={() => { setAppError(null); setIsSDKLoaded(true); }}
+              className="px-6 py-3 bg-slate-800 border border-slate-600 rounded-full font-bold hover:bg-slate-700 active:scale-95 text-sm"
+            >
+              Ignore & Continue
+            </button>
+            <button 
+              onClick={() => window.location.reload()}
+              className="px-6 py-3 bg-indigo-600 border border-indigo-500 rounded-full font-bold hover:bg-indigo-500 active:scale-95 text-sm"
+            >
+              Reload App
+            </button>
+        </div>
         {/* Error時もDebugConsoleは表示する */}
         <DebugConsole isEnabled={true} />
       </div>
@@ -228,8 +256,8 @@ const App: React.FC = () => {
         </div>
       </main>
 
-      {/* Debug Console: Only enabled if in Farcaster Environment */}
-      <DebugConsole isEnabled={isFarcasterEnv} />
+      {/* Debug Console: Enabled if Farcaster Env OR Error occurred */}
+      <DebugConsole isEnabled={isFarcasterEnv || appError !== null} />
 
       {/* Notification Toast */}
       {ui.notification && (
