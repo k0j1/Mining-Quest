@@ -39,15 +39,40 @@ export const useGameLogic = () => {
         // sdk.contextはPromiseとして定義されているため、awaitで待機
         if (sdk && sdk.context) {
             const context = await sdk.context;
+            console.log("SDK Context Loaded:", context);
             
             // ユーザー情報が含まれているか確認
             if (context?.user) {
               const u = context.user as any;
+              console.log("Raw User Data:", JSON.stringify(u));
+
               const pfpUrl = u.pfpUrl || u.pfp_url || "";
               
-              // アドレス取得の優先順位: verified > custody > address
-              const ethAddress = u.verifiedAddresses?.[0] || u.verifiedAddresses?.ethAddresses?.[0] || u.custodyAddress || u.address;
+              // アドレス取得ロジックの改善
+              let ethAddress: string | null = null;
+              
+              // 1. Verified Addresses (通常は文字列の配列)
+              if (Array.isArray(u.verifiedAddresses) && u.verifiedAddresses.length > 0) {
+                ethAddress = u.verifiedAddresses[0];
+              } 
+              // 2. Custody Address (カストディアドレス)
+              else if (u.custodyAddress) {
+                ethAddress = u.custodyAddress;
+              }
+              // 3. Fallback: 古い形式や直接のaddressプロパティ
+              else if (u.address) {
+                ethAddress = u.address;
+              }
 
+              // アドレス形式の正規化 (0x付与)
+              if (ethAddress && !ethAddress.startsWith('0x')) {
+                ethAddress = `0x${ethAddress}`;
+              }
+
+              console.log("Resolved ETH Address:", ethAddress);
+
+              // ユーザーオブジェクトを正規化して保存
+              // addressプロパティに決定したアドレスをセットする
               const user = {
                 ...u,
                 pfpUrl,
@@ -56,7 +81,6 @@ export const useGameLogic = () => {
               };
               
               setFarcasterUser(user);
-              console.log("Farcaster User Loaded:", user.username);
 
               if (ethAddress) {
                 // Fetch balance non-blocking
@@ -98,6 +122,8 @@ export const useGameLogic = () => {
          return;
       }
 
+      console.log(`Fetching balance for: ${address}`);
+
       const response = await fetch(BASE_RPC_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -125,8 +151,10 @@ export const useGameLogic = () => {
       if (result.result && result.result !== '0x') {
         const balanceBigInt = BigInt(result.result);
         const numericBalance = Number(balanceBigInt) / 1e18;
+        console.log(`Balance Fetched: ${numericBalance} CHH`);
         setOnChainBalanceRaw(numericBalance);
       } else {
+        console.log("Balance result is 0x or empty, setting to 0");
         setOnChainBalanceRaw(0);
       }
     } catch (e: any) {

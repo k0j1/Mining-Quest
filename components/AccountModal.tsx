@@ -10,7 +10,8 @@ interface AccountModalProps {
 const AccountModal: React.FC<AccountModalProps> = ({ user, balance, onClose }) => {
   if (!user) return null;
 
-  const ethAddress = user.verifiedAddresses?.ethAddresses?.[0] || user.custodyAddress || 'No Address';
+  // useGameLogicで正規化されたアドレス(address)を優先使用し、なければcustodyAddressなどをフォールバック
+  const ethAddress = user.address || user.custodyAddress || 'No Address';
   const truncatedAddress = ethAddress.length > 20 ? `${ethAddress.slice(0, 6)}...${ethAddress.slice(-4)}` : ethAddress;
 
   return (
