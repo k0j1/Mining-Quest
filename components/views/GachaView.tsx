@@ -33,9 +33,9 @@ const HeroListModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
   };
 
   return (
-    <div className="fixed inset-0 z-[200] flex items-center justify-center bg-slate-950/90 backdrop-blur-sm p-4 animate-fade-in">
+    <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-slate-950/90 backdrop-blur-sm p-4 animate-fade-in">
       {/* Main List Modal */}
-      <div className="w-full max-w-lg flex flex-col max-h-[90vh] bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl overflow-hidden relative z-10">
+      <div className="w-full max-w-lg flex flex-col max-h-[80vh] bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl overflow-hidden relative z-10">
         {/* Header */}
         <div className="p-4 border-b border-slate-800 bg-slate-900 flex justify-between items-center shrink-0">
           <h2 className="text-lg font-bold text-white flex items-center gap-2">
@@ -47,7 +47,7 @@ const HeroListModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
         </div>
 
         {/* List */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar">
+        <div className="flex-1 overflow-y-auto p-4 pb-8 space-y-3 custom-scrollbar">
           {GACHA_HERO_DATA.map((hero, idx) => (
             <div key={idx} className="flex gap-4 bg-slate-800/50 p-3 rounded-xl border border-slate-700/50 hover:bg-slate-800 transition-colors">
               {/* Image - Larger & Clickable */}
@@ -95,7 +95,7 @@ const HeroListModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
       {/* Image Zoom Overlay */}
       {zoomImage && (
         <div 
-          className="fixed inset-0 z-[300] bg-black/95 backdrop-blur-md flex flex-col items-center justify-center p-4 animate-fade-in cursor-zoom-out"
+          className="fixed inset-0 z-[1100] bg-black/95 backdrop-blur-md flex flex-col items-center justify-center p-4 animate-fade-in cursor-zoom-out"
           onClick={() => {
             playClick();
             setZoomImage(null);
@@ -134,7 +134,7 @@ const HeroListModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
 
 const GachaView: React.FC<GachaViewProps> = ({ 
   gameState, 
-  onRollGacha,
+  onRollGacha, 
   onRollGachaTriple, 
   isGachaRolling, 
   gachaResult, 
