@@ -9,6 +9,52 @@ export const EQUIPMENT_STATS = {
   Boots: { C: 3, UC: 6, R: 10, E: 15, L: 25 }    // Duration Reduction %
 };
 
+// Gacha Hero List (Display Data)
+export const GACHA_HERO_DATA = [
+  { name: "Magician's Cat", rarity: "C", hp: 50, ability: "HP30以上で出発時、チームのクエスト報酬 +10%" },
+  { name: "SwordsmanCat", rarity: "C", hp: 50, ability: "HP20以下の間このキャラクターの受けるダメージが -5%" },
+  { name: "ScoutRat", rarity: "C", hp: 50, ability: "採掘時間が -5%" },
+  { name: "MedicalHamster", rarity: "C", hp: 50, ability: "チームの受けるダメージが -1%　・　チームのクエスト報酬  -5%" },
+  { name: "ScoutDog", rarity: "C", hp: 50, ability: "採掘時間が -5%" },
+  { name: "ScoutMonkey", rarity: "C", hp: 50, ability: "採掘時間が -5%" },
+  { name: "ArcherLeopard", rarity: "C", hp: 50, ability: "このキャラクターの受けるダメージが -1%" },
+  { name: "ArcherRabbit", rarity: "C", hp: 50, ability: "このキャラクターの受けるダメージが -1%" },
+  { name: "Magician's Snake", rarity: "C", hp: 50, ability: "HP30以上で出発時、チームのクエスト報酬 +10%" },
+  { name: "WizardKoala", rarity: "C", hp: 50, ability: "HP30以上で出発時、チームのクエスト報酬 +10%" },
+  { name: "Magician's Lesser Panda", rarity: "C", hp: 50, ability: "HP30以上で出発時、チームのクエスト報酬 +10%" },
+  { name: "ElephantWarrior", rarity: "C", hp: 50, ability: "このキャラクターの受けるダメージが -1%" },
+  { name: "ScoutPenguin", rarity: "C", hp: 50, ability: "採掘時間が -5%" },
+  { name: "Miner's Hedgehog", rarity: "C", hp: 50, ability: "チームのクエスト報酬 +5%" },
+  { name: "Miner's Panda", rarity: "C", hp: 50, ability: "チームのクエスト報酬 +5%" },
+  { name: "Miner's Otter", rarity: "C", hp: 50, ability: "チームのクエスト報酬 +5%" },
+  { name: "Miner's Turtle", rarity: "C", hp: 50, ability: "チームのクエスト報酬 +5%" },
+  { name: "Big-EaterRaccoon", rarity: "C", hp: 50, ability: "HP=100％で出発時、このキャラクターの受けるダメージが -30%" },
+  { name: "MushroomFrog", rarity: "C", hp: 50, ability: "HP=100％で出発時、このキャラクターの受けるダメージが -30%" },
+  { name: "MiningMonkey", rarity: "UC", hp: 60, ability: "チームのクエスト報酬 +10%" },
+  { name: "MiningFox", rarity: "UC", hp: 60, ability: "チームのクエスト報酬 +10%" },
+  { name: "MiningTiger", rarity: "UC", hp: 60, ability: "チームのクエスト報酬 +10%" },
+  { name: "MiningSheep", rarity: "UC", hp: 60, ability: "チームのクエスト報酬 +10%" },
+  { name: "MiningPanda", rarity: "UC", hp: 60, ability: "チームのクエスト報酬 +10%" },
+  { name: "MiningDog", rarity: "UC", hp: 60, ability: "チームのクエスト報酬 +10%" },
+  { name: "MiningOwl", rarity: "UC", hp: 60, ability: "チームのクエスト報酬 +10%" },
+  { name: "AppleBird", rarity: "UC", hp: 60, ability: "HP=100％で出発時、このキャラクターの受けるダメージが -50%" },
+  { name: "WizardBird", rarity: "UC", hp: 60, ability: "HP30以上で出発時、チームのクエスト報酬 +15%" },
+  { name: "WizardRaccoon", rarity: "UC", hp: 60, ability: "HP30以上で出発時、チームのクエスト報酬 +15%" },
+  { name: "ArcherCat", rarity: "UC", hp: 60, ability: "このキャラクターの受けるダメージが -5%" },
+  { name: "PanDuck", rarity: "UC", hp: 60, ability: "HP=100％で出発時、このキャラクターの受けるダメージが -50%" },
+  { name: "ScoutGorilla", rarity: "UC", hp: 60, ability: "採掘時間が -20%" },
+  { name: "ScoutCat", rarity: "R", hp: 80, ability: "採掘時間が -10%" },
+  { name: "MiningChihuahua", rarity: "R", hp: 80, ability: "チームのクエスト報酬 +15%" },
+  { name: "MiningGorilla", rarity: "R", hp: 80, ability: "チームのクエスト報酬 +15%" },
+  { name: "MiningWolf", rarity: "R", hp: 80, ability: "チームのクエスト報酬 +15%" },
+  { name: "SwordsmanTiger", rarity: "R", hp: 80, ability: "HP60以下の間このキャラクターの受けるダメージが -20%" },
+  { name: "SwordsmanLion", rarity: "R", hp: 80, ability: "このキャラクターの受けるダメージが -10%" },
+  { name: "GemGorilla", rarity: "E", hp: 90, ability: "チームのクエスト報酬 +25%" },
+  { name: "WizardRabbit", rarity: "E", hp: 90, ability: "HP30以上で出発時、チームのクエスト報酬 +30%" },
+  { name: "GemChihuahua", rarity: "E", hp: 90, ability: "チームのクエスト報酬 +25%" },
+  { name: "LegendRetriever", rarity: "L", hp: 100, ability: "チーム全員の受けるダメージが -20%" },
+];
+
 export const INITIAL_HEROES: Hero[] = [
   {
     id: 'h1',
