@@ -39,13 +39,6 @@ const HeroCard: React.FC<HeroCardProps> = ({
     L: 'border-amber-600'
   };
 
-  const speciesIcon = {
-    Dog: '🐕',
-    Cat: '🐈',
-    Bird: '🦅',
-    Other: '🐾'
-  };
-
   const slotIcons = ['⛏️', '🪖', '👢'];
 
   if (compact) {
@@ -62,14 +55,15 @@ const HeroCard: React.FC<HeroCardProps> = ({
       >
         <div className="relative flex-shrink-0">
           <img src={hero.imageUrl} className="w-12 h-12 rounded-lg object-cover relative z-10" alt={hero.name} />
-          <div className="absolute -top-1 -left-1 w-5 h-5 flex items-center justify-center rounded-full bg-slate-900 border border-slate-700 text-[10px] z-20">
-            {speciesIcon[hero.species]}
+          {/* Rarity Badge (replaced Species Icon) */}
+          <div className={`absolute -top-1.5 -left-1.5 w-6 h-6 flex items-center justify-center rounded-lg border-2 border-slate-900 text-[9px] font-black z-20 shadow-sm transform -rotate-6 ${rarityColors[hero.rarity]}`}>
+            {hero.rarity}
           </div>
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex justify-between items-center mb-1">
             <p className="font-bold text-xs truncate text-slate-200">{hero.name}</p>
-            <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded ${rarityColors[hero.rarity]}`}>{hero.rarity}</span>
+            {/* Redundant rarity badge removed */}
           </div>
           <div className="flex items-center space-x-2">
             <span className="text-[10px] font-bold text-slate-500">HP {hero.hp}</span>
