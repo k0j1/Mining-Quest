@@ -1,6 +1,7 @@
 
 import React from 'react';
 import { Hero, Equipment, QuestRank } from './types';
+import { HERO_DEFINITIONS } from './data/hero_data';
 
 // Equipment Stats Configuration
 export const EQUIPMENT_STATS = {
@@ -9,183 +10,59 @@ export const EQUIPMENT_STATS = {
   Boots: { C: 3, UC: 6, R: 10, E: 15, L: 25 }    // Duration Reduction %
 };
 
-// Gacha Hero List (Display Data)
-export const GACHA_HERO_DATA = [
-  { name: "Magician's Cat", rarity: "C", hp: 50, ability: "HP30以上で出発時、チームのクエスト報酬 +10%" },
-  { name: "SwordsmanCat", rarity: "C", hp: 50, ability: "HP20以下の間このキャラクターの受けるダメージが -5%" },
-  { name: "ScoutRat", rarity: "C", hp: 50, ability: "採掘時間が -5%" },
-  { name: "MedicalHamster", rarity: "C", hp: 50, ability: "チームの受けるダメージが -1%　・　チームのクエスト報酬  -5%" },
-  { name: "ScoutDog", rarity: "C", hp: 50, ability: "採掘時間が -5%" },
-  { name: "ScoutMonkey", rarity: "C", hp: 50, ability: "採掘時間が -5%" },
-  { name: "ArcherLeopard", rarity: "C", hp: 50, ability: "このキャラクターの受けるダメージが -1%" },
-  { name: "ArcherRabbit", rarity: "C", hp: 50, ability: "このキャラクターの受けるダメージが -1%" },
-  { name: "Magician's Snake", rarity: "C", hp: 50, ability: "HP30以上で出発時、チームのクエスト報酬 +10%" },
-  { name: "WizardKoala", rarity: "C", hp: 50, ability: "HP30以上で出発時、チームのクエスト報酬 +10%" },
-  { name: "Magician's Lesser Panda", rarity: "C", hp: 50, ability: "HP30以上で出発時、チームのクエスト報酬 +10%" },
-  { name: "ElephantWarrior", rarity: "C", hp: 50, ability: "このキャラクターの受けるダメージが -1%" },
-  { name: "ScoutPenguin", rarity: "C", hp: 50, ability: "採掘時間が -5%" },
-  { name: "Miner's Hedgehog", rarity: "C", hp: 50, ability: "チームのクエスト報酬 +5%" },
-  { name: "Miner's Panda", rarity: "C", hp: 50, ability: "チームのクエスト報酬 +5%" },
-  { name: "Miner's Otter", rarity: "C", hp: 50, ability: "チームのクエスト報酬 +5%" },
-  { name: "Miner's Turtle", rarity: "C", hp: 50, ability: "チームのクエスト報酬 +5%" },
-  { name: "Big-EaterRaccoon", rarity: "C", hp: 50, ability: "HP=100％で出発時、このキャラクターの受けるダメージが -30%" },
-  { name: "MushroomFrog", rarity: "C", hp: 50, ability: "HP=100％で出発時、このキャラクターの受けるダメージが -30%" },
-  { name: "MiningMonkey", rarity: "UC", hp: 60, ability: "チームのクエスト報酬 +10%" },
-  { name: "MiningFox", rarity: "UC", hp: 60, ability: "チームのクエスト報酬 +10%" },
-  { name: "MiningTiger", rarity: "UC", hp: 60, ability: "チームのクエスト報酬 +10%" },
-  { name: "MiningSheep", rarity: "UC", hp: 60, ability: "チームのクエスト報酬 +10%" },
-  { name: "MiningPanda", rarity: "UC", hp: 60, ability: "チームのクエスト報酬 +10%" },
-  { name: "MiningDog", rarity: "UC", hp: 60, ability: "チームのクエスト報酬 +10%" },
-  { name: "MiningOwl", rarity: "UC", hp: 60, ability: "チームのクエスト報酬 +10%" },
-  { name: "AppleBird", rarity: "UC", hp: 60, ability: "HP=100％で出発時、このキャラクターの受けるダメージが -50%" },
-  { name: "WizardBird", rarity: "UC", hp: 60, ability: "HP30以上で出発時、チームのクエスト報酬 +15%" },
-  { name: "WizardRaccoon", rarity: "UC", hp: 60, ability: "HP30以上で出発時、チームのクエスト報酬 +15%" },
-  { name: "ArcherCat", rarity: "UC", hp: 60, ability: "このキャラクターの受けるダメージが -5%" },
-  { name: "PanDuck", rarity: "UC", hp: 60, ability: "HP=100％で出発時、このキャラクターの受けるダメージが -50%" },
-  { name: "ScoutGorilla", rarity: "UC", hp: 60, ability: "採掘時間が -20%" },
-  { name: "ScoutCat", rarity: "R", hp: 80, ability: "採掘時間が -10%" },
-  { name: "MiningChihuahua", rarity: "R", hp: 80, ability: "チームのクエスト報酬 +15%" },
-  { name: "MiningGorilla", rarity: "R", hp: 80, ability: "チームのクエスト報酬 +15%" },
-  { name: "MiningWolf", rarity: "R", hp: 80, ability: "チームのクエスト報酬 +15%" },
-  { name: "SwordsmanTiger", rarity: "R", hp: 80, ability: "HP60以下の間このキャラクターの受けるダメージが -20%" },
-  { name: "SwordsmanLion", rarity: "R", hp: 80, ability: "このキャラクターの受けるダメージが -10%" },
-  { name: "GemGorilla", rarity: "E", hp: 90, ability: "チームのクエスト報酬 +25%" },
-  { name: "WizardRabbit", rarity: "E", hp: 90, ability: "HP30以上で出発時、チームのクエスト報酬 +30%" },
-  { name: "GemChihuahua", rarity: "E", hp: 90, ability: "チームのクエスト報酬 +25%" },
-  { name: "LegendRetriever", rarity: "L", hp: 100, ability: "チーム全員の受けるダメージが -20%" },
-];
+// Re-export GACHA_HERO_DATA for GachaView compatibility
+export const GACHA_HERO_DATA = HERO_DEFINITIONS;
+
+// Helper to create a hero instance from definition
+const createHero = (id: string, name: string, level: number, equipmentIds: string[] = ['', '', '']): Hero => {
+  const def = HERO_DEFINITIONS.find(h => h.name === name);
+  if (!def) {
+    // Fallback if name not found
+    return {
+        id,
+        name: "Unknown Hero",
+        species: "Other",
+        rarity: "C",
+        trait: "None",
+        damageReduction: 0,
+        level: 1,
+        hp: 50,
+        maxHp: 50,
+        imageUrl: "https://placehold.co/300x400/1e293b/475569?text=Unknown",
+        equipmentIds
+    };
+  }
+
+  // Determine damage reduction based on rarity/type logic if needed, 
+  // or just use a default map since it's not strictly in the json for all.
+  // The JSON has "ability" which is the trait.
+  // We can approximate damage reduction based on rarity for now.
+  const drMap: Record<string, number> = { C: 2, UC: 5, R: 10, E: 15, L: 20 };
+
+  return {
+    id,
+    name: def.name,
+    species: def.species,
+    rarity: def.rarity,
+    trait: def.ability,
+    damageReduction: drMap[def.rarity] || 0,
+    level,
+    hp: def.hp,
+    maxHp: def.hp,
+    imageUrl: `https://miningquest.k0j1.v2002.coreserver.jp/images/Hero/${def.name}.png`,
+    equipmentIds
+  };
+};
 
 export const INITIAL_HEROES: Hero[] = [
-  {
-    id: 'h1',
-    name: 'チワワ軍曹',
-    species: 'Dog',
-    rarity: 'E',
-    trait: '不屈の魂',
-    damageReduction: 10,
-    level: 12,
-    hp: 80,
-    maxHp: 80,
-    imageUrl: 'https://picsum.photos/seed/dog1/300/400',
-    equipmentIds: ['e1', '', '']
-  },
-  {
-    id: 'h2',
-    name: '三毛猫ミケ',
-    species: 'Cat',
-    rarity: 'C',
-    trait: '身軽',
-    damageReduction: 5,
-    level: 5,
-    hp: 50,
-    maxHp: 50,
-    imageUrl: 'https://picsum.photos/seed/cat1/300/400',
-    equipmentIds: ['', '', '']
-  },
-  {
-    id: 'h3',
-    name: 'ゴールデン・バグ',
-    species: 'Dog',
-    rarity: 'L',
-    trait: '鋼の肉体',
-    damageReduction: 20,
-    level: 25,
-    hp: 100,
-    maxHp: 100,
-    imageUrl: 'https://picsum.photos/seed/dog3/300/400',
-    equipmentIds: ['', 'e2', '']
-  },
-  {
-    id: 'h4',
-    name: 'キャプテン・パロット',
-    species: 'Bird',
-    rarity: 'R',
-    trait: '空の監視者',
-    damageReduction: 8,
-    level: 8,
-    hp: 70,
-    maxHp: 70,
-    imageUrl: 'https://picsum.photos/seed/bird1/300/400',
-    equipmentIds: ['', '', '']
-  },
-  {
-    id: 'h5',
-    name: 'ブラック・パンサー',
-    species: 'Cat',
-    rarity: 'E',
-    trait: '闇に潜む',
-    damageReduction: 15,
-    level: 15,
-    hp: 80,
-    maxHp: 80,
-    imageUrl: 'https://picsum.photos/seed/cat2/300/400',
-    equipmentIds: ['', '', '']
-  },
-  {
-    id: 'h6',
-    name: 'スピード・ラッセル',
-    species: 'Dog',
-    rarity: 'C',
-    trait: '走り屋',
-    damageReduction: 3,
-    level: 3,
-    hp: 50,
-    maxHp: 50,
-    imageUrl: 'https://picsum.photos/seed/dog6/300/400',
-    equipmentIds: ['', '', '']
-  },
-  {
-    id: 'h7',
-    name: '賢者フクロウ',
-    species: 'Bird',
-    rarity: 'L',
-    trait: '未来予知',
-    damageReduction: 25,
-    level: 30,
-    hp: 100,
-    maxHp: 100,
-    imageUrl: 'https://picsum.photos/seed/bird2/300/400',
-    equipmentIds: ['', '', '']
-  },
-  {
-    id: 'h8',
-    name: '穴掘りウサギ',
-    species: 'Other',
-    rarity: 'R',
-    trait: '逃げ足',
-    damageReduction: 12,
-    level: 10,
-    hp: 70,
-    maxHp: 70,
-    imageUrl: 'https://picsum.photos/seed/rabbit1/300/400',
-    equipmentIds: ['', '', '']
-  },
-  {
-    id: 'h9',
-    name: '柴犬・小太郎',
-    species: 'Dog',
-    rarity: 'E',
-    trait: '忠義',
-    damageReduction: 12,
-    level: 18,
-    hp: 80,
-    maxHp: 80,
-    imageUrl: 'https://picsum.photos/seed/dog9/300/400',
-    equipmentIds: ['', '', '']
-  },
-  {
-    id: 'h10',
-    name: '見習いハムスター',
-    species: 'Other',
-    rarity: 'C',
-    trait: 'ちょこまか',
-    damageReduction: 2,
-    level: 1,
-    hp: 50,
-    maxHp: 50,
-    imageUrl: 'https://picsum.photos/seed/hamster1/300/400',
-    equipmentIds: ['', '', '']
-  }
+  // Party 1: The Starters
+  createHero('h1', 'MiningChihuahua', 10, ['e1', '', '']),
+  createHero('h2', 'ScoutDog', 5, ['', '', '']),
+  createHero('h3', "Miner's Hedgehog", 5, ['', '', '']),
+  
+  // Bench
+  createHero('h4', "Magician's Cat", 3),
+  createHero('h5', "MiningPanda", 2),
 ];
 
 export const INITIAL_EQUIPMENT: Equipment[] = [

@@ -165,9 +165,13 @@ const GachaEffect: React.FC<GachaEffectProps> = ({ result, onClose }) => {
 
               {result.type === 'Hero' ? (
                 <>
-                  <div className="absolute top-0 left-0 w-full h-full">
-                    <img src={currentItem.imageUrl} className="w-full h-full object-cover grayscale-[0.2]" alt="" />
-                    <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/20 to-transparent" />
+                  <div className="absolute top-0 left-0 w-full h-full bg-slate-900">
+                    <img 
+                        src={currentItem.imageUrl} 
+                        className="w-full h-full object-contain" 
+                        alt={currentItem.name} 
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-slate-950 from-15% via-transparent to-transparent" />
                   </div>
                   <div className="absolute bottom-10 left-0 right-0 text-center px-6 z-30">
                     <div className="inline-block px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest mb-3 border border-white/20" style={{ backgroundColor: `${color}cc`, color: '#fff' }}>

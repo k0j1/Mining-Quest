@@ -2,6 +2,7 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { EQUIPMENT_STATS } from "../constants";
 import { QuestRank } from "../types";
+import { HERO_DEFINITIONS } from "../data/hero_data";
 
 export const getMiningInsight = async () => {
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
@@ -59,27 +60,48 @@ const determineEquipmentType = (): 'Pickaxe' | 'Helmet' | 'Boots' => {
 };
 
 export const generateGachaItem = async (type: 'Hero' | 'Equipment', forceRarity?: QuestRank) => {
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   
   // 1. Determine Rarity Client-side
   const targetRarity = forceRarity || determineRarity(type);
   
+  // ---------------------------------------------------------
+  // HERO LOGIC (Static Data from HERO_DEFINITIONS)
+  // ---------------------------------------------------------
+  if (type === 'Hero') {
+    // Filter heroes by the determined rarity
+    const candidates = HERO_DEFINITIONS.filter(h => h.rarity === targetRarity);
+    
+    // Fallback: If no heroes found for that rarity (unlikely), pick from all
+    const pool = candidates.length > 0 ? candidates : HERO_DEFINITIONS;
+    
+    // Pick one random hero from the pool
+    const selectedHero = pool[Math.floor(Math.random() * pool.length)];
+    
+    // Map approximate damage reduction based on rarity since it's not explicitly in the definition for all
+    const drMap: Record<string, number> = { C: 2, UC: 5, R: 10, E: 15, L: 20 };
+
+    // Return structure matching what the UI expects
+    return {
+      name: selectedHero.name,
+      species: selectedHero.species,
+      rarity: selectedHero.rarity, // Use actual rarity
+      trait: selectedHero.ability,
+      damageReduction: drMap[selectedHero.rarity] || 0,
+      hp: selectedHero.hp,
+      imageUrl: `https://miningquest.k0j1.v2002.coreserver.jp/images/Hero/${selectedHero.name}.png`
+    };
+  }
+
+  // ---------------------------------------------------------
+  // EQUIPMENT LOGIC (Gemini AI Generation)
+  // ---------------------------------------------------------
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+
   // 2. Determine Equipment Type Client-side if needed to ensure balance
   let targetEquipType: 'Pickaxe' | 'Helmet' | 'Boots' | undefined;
   if (type === 'Equipment') {
     targetEquipType = determineEquipmentType();
   }
-
-  const heroSchema = {
-    type: Type.OBJECT,
-    properties: {
-      name: { type: Type.STRING, description: "ヒーローの名前（動物らしい名前）" },
-      species: { type: Type.STRING, enum: ["Dog", "Cat", "Bird", "Other"], description: "動物の種別" },
-      trait: { type: Type.STRING, description: "特性の名前（例：厚い毛皮、警戒心、幸運など）" },
-      damageReduction: { type: Type.INTEGER, description: "被ダメージ軽減率(%)。レアリティに合わせる (C:0-5, UC:5-8, R:8-12, E:12-20, L:20-30)" }
-    },
-    required: ["name", "species", "trait", "damageReduction"]
-  };
 
   const equipSchema = {
     type: Type.OBJECT,
@@ -90,12 +112,7 @@ export const generateGachaItem = async (type: 'Hero' | 'Equipment', forceRarity?
     required: ["name", "type"]
   };
 
-  let prompt = "";
-  if (type === 'Hero') {
-    prompt = `新しい採掘ヒーローを生成してください。レアリティは【${targetRarity}】です。種別は犬、猫、鳥、その他から。特性とダメージ軽減率もこのレアリティに合わせて設定してください。`;
-  } else {
-    prompt = `新しい採掘用装備を生成してください。レアリティは【${targetRarity}】です。種類は必ず【${targetEquipType}】（${targetEquipType === 'Pickaxe' ? 'ピッケル' : targetEquipType === 'Helmet' ? 'ヘルメット' : 'ブーツ'}）にしてください。名前もその種類にふさわしいものにしてください。`;
-  }
+  const prompt = `新しい採掘用装備を生成してください。レアリティは【${targetRarity}】です。種類は必ず【${targetEquipType}】（${targetEquipType === 'Pickaxe' ? 'ピッケル' : targetEquipType === 'Helmet' ? 'ヘルメット' : 'ブーツ'}）にしてください。名前もその種類にふさわしいものにしてください。`;
 
   try {
     const response = await ai.models.generateContent({
@@ -103,7 +120,7 @@ export const generateGachaItem = async (type: 'Hero' | 'Equipment', forceRarity?
       contents: prompt,
       config: {
         responseMimeType: "application/json",
-        responseSchema: type === 'Hero' ? heroSchema : equipSchema,
+        responseSchema: equipSchema,
       },
     });
 
@@ -129,22 +146,12 @@ export const generateGachaItem = async (type: 'Hero' | 'Equipment', forceRarity?
   } catch (error) {
     console.error("Gacha generation failed", error);
     // Fallback
-    if (type === 'Hero') {
-      return { 
-        name: "名無しの採掘犬", 
-        species: "Dog", 
-        rarity: targetRarity, 
-        trait: "平凡", 
-        damageReduction: 2 
-      };
-    } else {
-      const fallbackType = targetEquipType || "Pickaxe";
-      return { 
-        name: fallbackType === "Pickaxe" ? "鉄のつるはし" : fallbackType === "Helmet" ? "安全ヘルメット" : "作業用ブーツ", 
-        type: fallbackType, 
-        rarity: targetRarity, 
-        bonus: EQUIPMENT_STATS[fallbackType][targetRarity] 
-      };
-    }
+    const fallbackType = targetEquipType || "Pickaxe";
+    return { 
+      name: fallbackType === "Pickaxe" ? "鉄のつるはし" : fallbackType === "Helmet" ? "安全ヘルメット" : "作業用ブーツ", 
+      type: fallbackType, 
+      rarity: targetRarity, 
+      bonus: EQUIPMENT_STATS[fallbackType][targetRarity] 
+    };
   }
 };

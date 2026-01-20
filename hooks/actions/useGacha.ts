@@ -20,19 +20,20 @@ export const useGacha = ({ gameState, setGameState, showNotification }: UseGacha
       
       if (tab === 'Hero') {
         const newHeroes = items.map(result => {
-           const rarityMaxHp: Record<string, number> = {
-            C: 50, UC: 60, R: 70, E: 80, L: 100
-          };
-          const maxHp = rarityMaxHp[result.rarity as string] || 50;
-          return {
+           // Use HP from result if available (from hero_data), otherwise fallback
+           const maxHp = result.hp || 50;
+           
+           return {
             id: Math.random().toString(),
             name: result.name,
             species: result.species,
             rarity: result.rarity,
             trait: result.trait,
             damageReduction: result.damageReduction,
-            level: 1, hp: maxHp, maxHp: maxHp,
-            imageUrl: `https://picsum.photos/seed/${Math.random()}/300/400`,
+            level: 1, 
+            hp: maxHp, 
+            maxHp: maxHp,
+            imageUrl: result.imageUrl || `https://miningquest.k0j1.v2002.coreserver.jp/images/Hero/${result.name}.png`,
             equipmentIds: ['', '', '']
           };
         });
