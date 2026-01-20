@@ -1,5 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
+import { playClick } from '../utils/sound';
 
 interface HeaderProps {
   title: string;
@@ -59,6 +60,11 @@ const Header: React.FC<HeaderProps> = ({
     });
   };
 
+  const handleReload = () => {
+    playClick();
+    window.location.reload();
+  };
+
   // Farcasterユーザーかつオンチェーン残高が取得できている場合はそちらを表示
   // そうでない場合はゲーム内トークンを表示
   const tokenValue = (farcasterUser && onChainBalance !== null && onChainBalance !== undefined) 
@@ -81,6 +87,16 @@ const Header: React.FC<HeaderProps> = ({
         </div>
         
         <div className="flex items-center gap-4">
+          <button 
+            onClick={handleReload}
+            className="w-10 h-10 flex items-center justify-center bg-slate-800 hover:bg-slate-700 rounded-xl border border-slate-600 text-slate-300 transition-all active:scale-95"
+            title="再読み込み"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99" />
+            </svg>
+          </button>
+
           <button 
             onClick={onToggleSound}
             className="w-10 h-10 flex items-center justify-center bg-slate-800 hover:bg-slate-700 rounded-xl border border-slate-600 text-slate-300 transition-all active:scale-95"
