@@ -114,16 +114,26 @@ const HeroCard: React.FC<HeroCardProps> = ({
         {/* Simple Gradient Overlay */}
         <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-transparent to-transparent opacity-90"></div>
 
-        {/* Hero Name & HP */}
-        <div className="absolute bottom-10 left-3 right-3 z-20">
-          <div className="flex items-center gap-2">
-            <div className="flex-1 bg-slate-900/80 h-2 rounded-full overflow-hidden border border-slate-700">
-              <div 
-                className={`h-full rounded-full ${hero.hp < 30 ? 'bg-rose-500' : 'bg-emerald-500'}`}
-                style={{ width: `${(hero.hp / hero.maxHp) * 100}%` }}
-              />
+        {/* Hero Name & HP - Positioned to fit above equipment slots */}
+        <div className="absolute bottom-8 left-2 right-2 z-20">
+          <div className="flex flex-col gap-1">
+            {/* HP Bar */}
+            <div className="flex items-center gap-1.5">
+              <div className="flex-1 bg-slate-900/80 h-1.5 rounded-full overflow-hidden border border-slate-700">
+                <div 
+                  className={`h-full rounded-full ${hero.hp < 30 ? 'bg-rose-500' : 'bg-emerald-500'}`}
+                  style={{ width: `${(hero.hp / hero.maxHp) * 100}%` }}
+                />
+              </div>
+              <span className="text-[9px] font-bold text-white/90 drop-shadow-md">{hero.hp}</span>
             </div>
-            <span className="text-[10px] font-bold text-white/90">{hero.hp}</span>
+
+            {/* Name */}
+            <div className="bg-slate-900/40 rounded px-1.5 py-0.5 backdrop-blur-[1px] inline-block max-w-full">
+              <p className="text-[8px] font-bold text-white truncate tracking-tight text-center">
+                {hero.name}
+              </p>
+            </div>
           </div>
         </div>
 
