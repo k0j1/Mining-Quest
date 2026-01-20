@@ -12,7 +12,7 @@ interface UseItemsProps {
 export const useItems = ({ gameState, setGameState, showNotification }: UseItemsProps) => {
 
   const usePotion = (heroId: string) => {
-    const cost = 200;
+    const cost = 100;
     if (gameState.tokens < cost) {
       playError();
       showNotification(`トークンが足りません！ (必要: ${cost.toLocaleString()} $CHH)`, 'error');
@@ -31,7 +31,7 @@ export const useItems = ({ gameState, setGameState, showNotification }: UseItems
   };
 
   const useElixir = (heroId: string) => {
-    const cost = 1200;
+    const cost = 500;
     if (gameState.tokens < cost) {
       playError();
       showNotification(`トークンが足りません！ (必要: ${cost.toLocaleString()} $CHH)`, 'error');

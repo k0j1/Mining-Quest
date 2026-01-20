@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Hero } from '../types';
 
 interface HeroCardProps {
@@ -23,6 +23,15 @@ const HeroCard: React.FC<HeroCardProps> = ({
   onEquipClick,
   isMainSlot
 }) => {
+  const [isHighResLoaded, setIsHighResLoaded] = useState(false);
+
+  // Reset loading state when hero changes
+  useEffect(() => {
+    setIsHighResLoaded(false);
+  }, [hero.imageUrl]);
+
+  const thumbUrl = `https://miningquest.k0j1.v2002.coreserver.jp/images/Hero/s/${hero.name}_s.png`;
+
   const rarityColors: Record<string, string> = {
     C: 'bg-slate-600 text-slate-100',
     UC: 'bg-emerald-600 text-emerald-50',
@@ -54,7 +63,16 @@ const HeroCard: React.FC<HeroCardProps> = ({
         }`}
       >
         <div className="relative flex-shrink-0">
-          <img src={hero.imageUrl} className="w-12 h-12 rounded-lg object-cover relative z-10" alt={hero.name} />
+          {/* Use Thumbnail for Compact View */}
+          <img 
+            src={thumbUrl} 
+            className="w-12 h-12 rounded-lg object-cover relative z-10" 
+            alt={hero.name} 
+            onError={(e) => {
+              // Fallback to main image if thumb fails
+              (e.target as HTMLImageElement).src = hero.imageUrl;
+            }}
+          />
           {/* Rarity Badge (replaced Species Icon) */}
           <div className={`absolute -top-1.5 -left-1.5 w-6 h-6 flex items-center justify-center rounded-lg border-2 border-slate-900 text-[9px] font-black z-20 shadow-sm transform -rotate-6 ${rarityColors[hero.rarity]}`}>
             {hero.rarity}
@@ -103,10 +121,25 @@ const HeroCard: React.FC<HeroCardProps> = ({
           ? 'border-amber-400 shadow-lg shadow-amber-900/20' 
           : `${rarityBorders[hero.rarity]} border-opacity-50`
       }`}>
-        <img src={hero.imageUrl} className="absolute inset-0 w-full h-full object-cover" alt={hero.name} />
+        
+        {/* Progressive Loading Images */}
+        {/* 1. Thumbnail (Low Res) - Always present initially, blurred */}
+        <img 
+          src={thumbUrl} 
+          className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-700 ${isHighResLoaded ? 'opacity-0' : 'opacity-100 blur-sm scale-110'}`} 
+          alt={hero.name} 
+        />
+        
+        {/* 2. High Res - Fades in on load */}
+        <img 
+          src={hero.imageUrl} 
+          className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-500 ${isHighResLoaded ? 'opacity-100' : 'opacity-0'}`} 
+          alt={hero.name} 
+          onLoad={() => setIsHighResLoaded(true)}
+        />
         
         {/* Simple Gradient Overlay */}
-        <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-transparent to-transparent opacity-90"></div>
+        <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-transparent to-transparent opacity-90 z-10"></div>
 
         {/* Hero Name & HP - Positioned to fit above equipment slots */}
         <div className="absolute bottom-8 left-2 right-2 z-20">

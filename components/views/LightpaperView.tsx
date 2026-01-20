@@ -189,11 +189,11 @@ const LightpaperView: React.FC<LightpaperViewProps> = ({
               </li>
               <li className="flex justify-between items-center">
                 <span>ポーション (+10HP)</span>
-                <span className="text-amber-500 font-bold whitespace-nowrap ml-4">200 $CHH</span>
+                <span className="text-amber-500 font-bold whitespace-nowrap ml-4">100 $CHH</span>
               </li>
               <li className="flex justify-between items-center">
                 <span>エリクサー (MaxHP)</span>
-                <span className="text-amber-500 font-bold whitespace-nowrap ml-4">1,200 $CHH</span>
+                <span className="text-amber-500 font-bold whitespace-nowrap ml-4">500 $CHH</span>
               </li>
             </ul>
           </section>

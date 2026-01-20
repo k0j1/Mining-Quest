@@ -48,47 +48,52 @@ const HeroListModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
 
         {/* List */}
         <div className="flex-1 overflow-y-auto p-4 pb-8 space-y-3 custom-scrollbar">
-          {GACHA_HERO_DATA.map((hero, idx) => (
-            <div key={idx} className="flex gap-4 bg-slate-800/50 p-3 rounded-xl border border-slate-700/50 hover:bg-slate-800 transition-colors">
-              {/* Image - Larger & Clickable */}
-              <div 
-                className="shrink-0 w-24 h-24 rounded-lg bg-slate-900 border border-slate-700 overflow-hidden relative cursor-zoom-in active:scale-95 transition-transform group"
-                onClick={() => {
-                  playClick();
-                  setZoomImage(`https://miningquest.k0j1.v2002.coreserver.jp/images/Hero/${hero.name}.png`);
-                }}
-              >
-                 <img 
-                   src={`https://miningquest.k0j1.v2002.coreserver.jp/images/Hero/${hero.name}.png`} 
-                   alt={hero.name}
-                   className="w-full h-full object-cover"
-                   onError={(e) => {
-                     (e.target as HTMLImageElement).src = "https://placehold.co/100x100/1e293b/475569?text=?";
-                   }}
-                 />
-                 {/* Zoom Icon Overlay */}
-                 <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
-                    <span className="opacity-0 group-hover:opacity-100 text-white text-2xl drop-shadow-md transition-opacity">🔍</span>
-                 </div>
-              </div>
-              
-              {/* Info */}
-              <div className="flex-1 min-w-0 flex flex-col justify-center">
-                <div className="flex items-center gap-2 mb-1.5">
-                   <span className={`text-[10px] font-black px-1.5 py-0.5 rounded ${rarityColors[hero.rarity] || 'bg-slate-600'}`}>
-                      {hero.rarity}
-                   </span>
-                   <h3 className="text-sm font-bold text-slate-200 truncate">{hero.name}</h3>
+          {GACHA_HERO_DATA.map((hero, idx) => {
+            const thumbUrl = `https://miningquest.k0j1.v2002.coreserver.jp/images/Hero/s/${hero.name}_s.png`;
+            const fullUrl = `https://miningquest.k0j1.v2002.coreserver.jp/images/Hero/${hero.name}.png`;
+
+            return (
+              <div key={idx} className="flex gap-4 bg-slate-800/50 p-3 rounded-xl border border-slate-700/50 hover:bg-slate-800 transition-colors">
+                {/* Image - Larger & Clickable */}
+                <div 
+                  className="shrink-0 w-24 h-24 rounded-lg bg-slate-900 border border-slate-700 overflow-hidden relative cursor-zoom-in active:scale-95 transition-transform group"
+                  onClick={() => {
+                    playClick();
+                    setZoomImage(fullUrl);
+                  }}
+                >
+                   <img 
+                     src={thumbUrl} 
+                     alt={hero.name}
+                     className="w-full h-full object-cover"
+                     onError={(e) => {
+                       (e.target as HTMLImageElement).src = fullUrl;
+                     }}
+                   />
+                   {/* Zoom Icon Overlay */}
+                   <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
+                      <span className="opacity-0 group-hover:opacity-100 text-white text-2xl drop-shadow-md transition-opacity">🔍</span>
+                   </div>
                 </div>
-                <div className="text-[10px] font-bold text-emerald-400 mb-1.5">
-                  HP {hero.hp}
+                
+                {/* Info */}
+                <div className="flex-1 min-w-0 flex flex-col justify-center">
+                  <div className="flex items-center gap-2 mb-1.5">
+                     <span className={`text-[10px] font-black px-1.5 py-0.5 rounded ${rarityColors[hero.rarity] || 'bg-slate-600'}`}>
+                        {hero.rarity}
+                     </span>
+                     <h3 className="text-sm font-bold text-slate-200 truncate">{hero.name}</h3>
+                  </div>
+                  <div className="text-[10px] font-bold text-emerald-400 mb-1.5">
+                    HP {hero.hp}
+                  </div>
+                  <p className="text-[10px] text-slate-400 leading-relaxed bg-slate-900/40 p-2 rounded border border-slate-800">
+                    {hero.ability}
+                  </p>
                 </div>
-                <p className="text-[10px] text-slate-400 leading-relaxed bg-slate-900/40 p-2 rounded border border-slate-800">
-                  {hero.ability}
-                </p>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
 
