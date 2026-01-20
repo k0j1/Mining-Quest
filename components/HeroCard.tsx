@@ -114,18 +114,8 @@ const HeroCard: React.FC<HeroCardProps> = ({
         {/* Simple Gradient Overlay */}
         <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-transparent to-transparent opacity-90"></div>
 
-        {/* Level */}
-        <div className="absolute top-3 right-3 z-20">
-          <div className="bg-slate-900/80 backdrop-blur-sm px-2 py-0.5 rounded text-[10px] font-bold text-slate-200 border border-slate-700">
-            LV.{hero.level}
-          </div>
-        </div>
-
         {/* Hero Name & HP */}
         <div className="absolute bottom-10 left-3 right-3 z-20">
-          <h3 className="text-sm font-bold text-white mb-1.5 truncate">
-            {hero.name}
-          </h3>
           <div className="flex items-center gap-2">
             <div className="flex-1 bg-slate-900/80 h-2 rounded-full overflow-hidden border border-slate-700">
               <div 

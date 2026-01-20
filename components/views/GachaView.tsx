@@ -256,9 +256,8 @@ const GachaView: React.FC<GachaViewProps> = ({
                       <div className="flex flex-col items-start z-10 text-left">
                           <div className="flex items-center gap-2 mb-0.5">
                               <span className="font-black text-sm leading-none drop-shadow-md">3連召喚</span>
-                              <span className="text-[9px] bg-white text-orange-600 px-1.5 py-0.5 rounded shadow-sm font-black leading-none border border-orange-200">R以上確定</span>
+                              <span className="text-[9px] bg-white text-orange-600 px-1.5 py-0.5 rounded shadow-sm font-black leading-none border border-orange-200">R以上最低1枚確定</span>
                           </div>
-                          <span className="text-[10px] text-amber-100 opacity-90 font-medium">※ハイリスク・ハイリターン</span>
                       </div>
                       <div className="z-10 text-right flex flex-col items-end justify-center">
                           <span className={`text-sm font-black ${canAffordTriple ? 'text-white' : 'text-red-100'} drop-shadow-md`}>{tripleCost.toLocaleString()}</span>
