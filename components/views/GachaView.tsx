@@ -22,7 +22,9 @@ interface GachaViewProps {
 }
 
 const HeroListModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
-  const [zoomImage, setZoomImage] = useState<string | null>(null);
+  // Store both thumb and full URL for progressive loading
+  const [zoomData, setZoomData] = useState<{ full: string; thumb: string } | null>(null);
+  const [isHighResLoaded, setIsHighResLoaded] = useState(false);
 
   const rarityColors: Record<string, string> = {
     C: 'bg-slate-600 text-slate-100',
@@ -59,7 +61,8 @@ const HeroListModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
                   className="shrink-0 w-24 h-24 rounded-lg bg-slate-900 border border-slate-700 overflow-hidden relative cursor-zoom-in active:scale-95 transition-transform group"
                   onClick={() => {
                     playClick();
-                    setZoomImage(fullUrl);
+                    setIsHighResLoaded(false); // Reset loading state
+                    setZoomData({ full: fullUrl, thumb: thumbUrl });
                   }}
                 >
                    <img 
@@ -67,6 +70,7 @@ const HeroListModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
                      alt={hero.name}
                      className="w-full h-full object-cover"
                      onError={(e) => {
+                       // Fallback only if thumb fails
                        (e.target as HTMLImageElement).src = fullUrl;
                      }}
                    />
@@ -97,20 +101,29 @@ const HeroListModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
         </div>
       </div>
 
-      {/* Image Zoom Overlay */}
-      {zoomImage && (
+      {/* Image Zoom Overlay with Progressive Loading */}
+      {zoomData && (
         <div 
           className="fixed inset-0 z-[1100] bg-black/95 backdrop-blur-md flex flex-col items-center justify-center p-4 animate-fade-in cursor-zoom-out"
           onClick={() => {
             playClick();
-            setZoomImage(null);
+            setZoomData(null);
           }}
         >
           <div className="relative animate-bounce-in">
+            {/* 1. Thumbnail: Always visible initially, blurred to hide low resolution */}
             <img 
-              src={zoomImage} 
-              alt="Zoom" 
-              className="max-w-[90vw] max-h-[70vh] object-contain rounded-2xl shadow-[0_0_50px_rgba(255,255,255,0.1)] border-2 border-slate-700"
+              src={zoomData.thumb} 
+              alt="Zoom Placeholder" 
+              className={`max-w-[90vw] max-h-[70vh] object-contain rounded-2xl shadow-[0_0_50px_rgba(255,255,255,0.1)] border-2 border-slate-700 transition-opacity duration-700 ${isHighResLoaded ? 'opacity-0' : 'opacity-100 blur-sm scale-105'}`}
+            />
+            
+            {/* 2. High Res: Absolute overlay, fades in when loaded */}
+            <img 
+              src={zoomData.full} 
+              alt="Zoom High Res" 
+              className={`absolute inset-0 w-full h-full object-contain rounded-2xl transition-opacity duration-500 ${isHighResLoaded ? 'opacity-100' : 'opacity-0'}`}
+              onLoad={() => setIsHighResLoaded(true)}
             />
           </div>
           <p className="text-slate-500 text-xs font-bold tracking-[0.2em] mt-8 animate-pulse">TAP TO CLOSE</p>
