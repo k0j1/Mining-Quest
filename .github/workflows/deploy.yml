@@ -31,9 +31,15 @@ jobs:
         env:
           API_KEY: ${{ secrets.API_KEY }}
 
-      - name: Upload artifact
+      - name: Upload artifact for GitHub Pages
         uses: actions/upload-pages-artifact@v3
         with:
+          path: ./dist
+
+      - name: Upload artifact for FTP
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist-files
           path: ./dist
 
   deploy:
@@ -46,3 +52,22 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
+
+  deploy-ftp:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: dist-files
+          path: ./dist
+
+      - name: FTP Deploy
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          local-dir: ./dist/
+          server-dir: ./ # サーバー上のアップロード先ディレクトリを指定してください（例: /public_html/mysite/）
