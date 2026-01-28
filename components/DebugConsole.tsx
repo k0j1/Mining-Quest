@@ -18,6 +18,22 @@ const DebugConsole: React.FC<DebugConsoleProps> = ({ isEnabled }) => {
   const [isVisible, setIsVisible] = useState(false); // Initially hidden, shows if enabled
   const scrollRef = useRef<HTMLDivElement>(null);
 
+  // Dragging state
+  const [position, setPosition] = useState({ x: 0, y: 0 });
+  const isDragging = useRef(false);
+  const dragOffset = useRef({ x: 0, y: 0 });
+  const hasMoved = useRef(false);
+
+  // Initialize position on mount (bottom right default)
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      setPosition({ 
+        x: window.innerWidth - 80, 
+        y: window.innerHeight - 150 
+      });
+    }
+  }, []);
+
   useEffect(() => {
     if (!isEnabled) return;
     setIsVisible(true);
@@ -107,6 +123,47 @@ const DebugConsole: React.FC<DebugConsoleProps> = ({ isEnabled }) => {
     }
   }, [logs, isExpanded]);
 
+  // Drag Event Handlers
+  const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    // Only allow left click or touch
+    if (e.button !== 0 && e.pointerType === 'mouse') return;
+
+    isDragging.current = true;
+    hasMoved.current = false;
+    
+    // Calculate offset from the element's top-left corner
+    dragOffset.current = {
+      x: e.clientX - position.x,
+      y: e.clientY - position.y
+    };
+    
+    // Prevent text selection while dragging
+    e.currentTarget.setPointerCapture(e.pointerId);
+  };
+
+  const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!isDragging.current) return;
+
+    e.preventDefault();
+    hasMoved.current = true;
+
+    setPosition({
+      x: e.clientX - dragOffset.current.x,
+      y: e.clientY - dragOffset.current.y
+    });
+  };
+
+  const handlePointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
+    isDragging.current = false;
+    e.currentTarget.releasePointerCapture(e.pointerId);
+  };
+
+  const toggleExpand = () => {
+    if (!hasMoved.current) {
+      setIsExpanded(prev => !prev);
+    }
+  };
+
   if (!isVisible) return null;
 
   const getTypeColor = (type: string) => {
@@ -119,25 +176,48 @@ const DebugConsole: React.FC<DebugConsoleProps> = ({ isEnabled }) => {
   };
 
   return (
-    <div className="fixed bottom-24 right-4 z-[9999] flex flex-col items-end pointer-events-none">
-      <div className="pointer-events-auto">
+    <div 
+      className="fixed z-[9999] flex flex-col items-end touch-none select-none"
+      style={{ left: position.x, top: position.y }}
+    >
+      <div 
+        className="pointer-events-auto cursor-grab active:cursor-grabbing"
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerUp={handlePointerUp}
+      >
         {!isExpanded ? (
           <button 
-            onClick={() => setIsExpanded(true)}
-            className="w-10 h-10 bg-slate-800/80 backdrop-blur border border-slate-600 rounded-full flex items-center justify-center shadow-lg text-slate-400 hover:text-white hover:bg-slate-700"
+            onClick={toggleExpand}
+            className="w-10 h-10 bg-slate-800/80 backdrop-blur border border-slate-600 rounded-full flex items-center justify-center shadow-lg text-slate-400 hover:text-white hover:bg-slate-700 transition-colors"
           >
             🐛
           </button>
         ) : (
           <div className="w-80 h-64 bg-slate-950/90 backdrop-blur-md border border-slate-700 rounded-xl shadow-2xl flex flex-col overflow-hidden text-[10px] font-mono">
-            <div className="flex justify-between items-center px-3 py-2 bg-slate-900 border-b border-slate-800">
+            <div className="flex justify-between items-center px-3 py-2 bg-slate-900 border-b border-slate-800 cursor-grab active:cursor-grabbing">
               <span className="font-bold text-slate-400">Debug Console</span>
               <div className="flex gap-2">
-                <button onClick={() => setLogs([])} className="text-slate-500 hover:text-white">Clear</button>
-                <button onClick={() => setIsExpanded(false)} className="text-slate-500 hover:text-white">✕</button>
+                <button 
+                  onClick={(e) => { e.stopPropagation(); setLogs([]); }} 
+                  className="text-slate-500 hover:text-white p-1"
+                >
+                  Clear
+                </button>
+                <button 
+                  onClick={(e) => { e.stopPropagation(); toggleExpand(); }} 
+                  className="text-slate-500 hover:text-white p-1"
+                >
+                  ✕
+                </button>
               </div>
             </div>
-            <div ref={scrollRef} className="flex-1 overflow-y-auto p-2 space-y-1">
+            {/* Scrollable area stops propagation so we can scroll logs without dragging the window */}
+            <div 
+              ref={scrollRef} 
+              className="flex-1 overflow-y-auto p-2 space-y-1 cursor-auto"
+              onPointerDown={(e) => e.stopPropagation()}
+            >
               {logs.length === 0 && <p className="text-slate-600 italic text-center mt-4">No logs yet...</p>}
               {logs.map(log => (
                 <div key={log.id} className={`break-words p-1 rounded ${getTypeColor(log.type)}`}>
