@@ -11,9 +11,9 @@
   },
   "dependencies": {
     "@farcaster/frame-sdk": "^0.0.16",
-    "@google/genai": "^1.34.0",
     "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "react-dom": "^19.0.0",
+    "@supabase/supabase-js": "^2.39.0"
   },
   "devDependencies": {
     "@types/node": "^22.10.1",

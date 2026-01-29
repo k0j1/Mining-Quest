@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { GameState } from '../../types';
 import HeroCard from '../HeroCard';
@@ -13,6 +12,7 @@ interface PartyViewProps {
   onSwitchParty: (index: number) => void;
   onUnlockParty: (index: number) => void;
   onAssignHero: (slotIndex: number, heroId: string | null) => void;
+  onSwapSlots: (index1: number, index2: number) => void;
   isSoundOn: boolean;
   onToggleSound: () => void;
   onDebugAddTokens?: () => void;
@@ -27,6 +27,7 @@ const PartyView: React.FC<PartyViewProps> = ({
   onSwitchParty, 
   onUnlockParty,
   onAssignHero,
+  onSwapSlots,
   isSoundOn,
   onToggleSound,
   onDebugAddTokens,
@@ -63,9 +64,6 @@ const PartyView: React.FC<PartyViewProps> = ({
   const confirmUnlock = () => {
     if (unlockingIndex === null) return;
     onUnlockParty(unlockingIndex);
-    // Do not close modal automatically if failed (gameLogic handles the check, but here we can keep it open or close it. 
-    // Since gameLogic does alerts now, we can close it only on success, but useGameLogic doesn't return success/fail for unlock. 
-    // For now, let's close it. The user sees the alert.
     setUnlockingIndex(null);
   };
 
@@ -76,6 +74,7 @@ const PartyView: React.FC<PartyViewProps> = ({
     }
     playClick();
     
+    // Case 1: A hero from barracks is selected -> Assign to clicked slot
     if (selectedHeroId) {
       if (activeQuestHeroIds.includes(selectedHeroId)) {
         playError();
@@ -88,9 +87,18 @@ const PartyView: React.FC<PartyViewProps> = ({
       return;
     }
 
-    if (selectedSlotIndex === slotIdx) {
-      setSelectedSlotIndex(null);
+    // Case 2: A party slot is already selected
+    if (selectedSlotIndex !== null) {
+      if (selectedSlotIndex === slotIdx) {
+        // Clicked same slot -> Deselect
+        setSelectedSlotIndex(null);
+      } else {
+        // Clicked different slot -> Swap
+        onSwapSlots(selectedSlotIndex, slotIdx);
+        setSelectedSlotIndex(null);
+      }
     } else {
+      // Case 3: No slot selected -> Select this slot
       setSelectedSlotIndex(slotIdx);
       setSelectedHeroId(null);
     }
@@ -169,7 +177,7 @@ const PartyView: React.FC<PartyViewProps> = ({
             <p className={`text-[10px] py-2 px-3 rounded-lg border text-center font-bold tracking-widest uppercase transition-all ${
               isPartyLocked ? 'text-rose-400 bg-rose-900/20 border-rose-800' : 'text-indigo-400 bg-indigo-900/20 border-indigo-800'
             }`}>
-              {isPartyLocked ? "PARTY LOCKED ON MISSION" : (selectedSlotIndex !== null || selectedHeroId !== null ? "ASSIGNING UNIT..." : "SELECT SLOT & UNIT")}
+              {isPartyLocked ? "PARTY LOCKED ON MISSION" : (selectedSlotIndex !== null ? "SELECT TARGET SLOT TO SWAP" : selectedHeroId !== null ? "ASSIGNING UNIT..." : "SELECT SLOT TO EDIT")}
             </p>
           </div>
 

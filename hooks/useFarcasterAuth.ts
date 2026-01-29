@@ -1,6 +1,7 @@
 
 import { useState, useEffect } from 'react';
 import { sdk } from '@farcaster/frame-sdk';
+import { supabase } from '../lib/supabase';
 
 const CHH_CONTRACT_ADDRESS = '0xb0525542E3D818460546332e76E511562dFf9B07';
 const BASE_RPC_URL = 'https://mainnet.base.org';
@@ -117,6 +118,24 @@ export const useFarcasterAuth = (setNotification: (msg: string, type: 'error' | 
               };
               
               setFarcasterUser(user);
+
+              // --- Sync to DB ---
+              if (user.fid) {
+                try {
+                  const { error } = await supabase.from('quest_player_stats').upsert({
+                    fid: user.fid,
+                    username: user.username,
+                    display_name: user.displayName,
+                    last_active: new Date().toISOString()
+                  }, { onConflict: 'fid' });
+                  
+                  if (error) console.error("Error syncing player stats:", error);
+                  else console.log("Player stats synced for FID:", user.fid);
+                  
+                } catch (dbError) {
+                  console.error("DB Sync Exception:", dbError);
+                }
+              }
 
               if (ethAddress) {
                 console.log("Fetching balance from BASE chain...");

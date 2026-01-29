@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback } from 'react';
 import { View } from './types';
 import StatusBoard from './components/StatusBoard';
@@ -7,10 +6,12 @@ import ResultModal from './components/ResultModal';
 import AccountModal from './components/AccountModal';
 import BottomNav from './components/BottomNav';
 import Notification from './components/Notification';
-import DebugConsole from './components/DebugConsole'; // Import DebugConsole
+import DebugConsole from './components/DebugConsole'; 
+import EnvSetup from './components/EnvSetup'; // Import Setup Screen
 import { playClick, playConfirm, toggleSound } from './utils/sound';
 import { useGameLogic } from './hooks/useGameLogic';
 import { sdk } from '@farcaster/frame-sdk';
+import { supabase, isSupabaseConfigured } from './lib/supabase'; // Import check flag
 
 // Views
 import PartyView from './components/views/PartyView';
@@ -20,16 +21,51 @@ import GachaView from './components/views/GachaView';
 import LightpaperView from './components/views/LightpaperView';
 
 const App: React.FC = () => {
+  // 0. Configuration Check - Return early if keys are missing
+  if (!isSupabaseConfigured) {
+    return <EnvSetup />;
+  }
+
   const [currentView, setCurrentView] = useState<View>(View.HOME);
   const [isSoundOn, setIsSoundOn] = useState(false);
   const [showAccountModal, setShowAccountModal] = useState(false);
   const [isSDKLoaded, setIsSDKLoaded] = useState(false);
   const [appError, setAppError] = useState<string | null>(null);
-  const [isFarcasterEnv, setIsFarcasterEnv] = useState(false); // State to track environment
+  const [isFarcasterEnv, setIsFarcasterEnv] = useState(false); 
   
-  // useGameLogic フック内のエラーも捕捉したいが、フック自体のクラッシュはErrorBoundaryが必要。
-  // ここではフックから返される通知などを利用する。
+  // Maintenance State
+  const [isMaintenance, setIsMaintenance] = useState(false);
+  const [isConnectionChecked, setIsConnectionChecked] = useState(false);
+
   const { gameState, farcasterUser, onChainBalanceRaw, ui, actions } = useGameLogic();
+
+  // Supabase Connection Check
+  useEffect(() => {
+    const checkSupabase = async () => {
+       try {
+         // タイムアウトを設定 (5秒)
+         const timeoutPromise = new Promise((_, reject) => 
+           setTimeout(() => reject(new Error('Connection timeout')), 5000)
+         );
+         
+         // 単純なHEADリクエストで接続確認
+         const queryPromise = supabase.from('quest_hero').select('count', { count: 'exact', head: true });
+         
+         const { error } = await Promise.race([queryPromise, timeoutPromise]) as any;
+         
+         if (error) throw error;
+         
+         setIsMaintenance(false);
+       } catch (err) {
+         console.error("Supabase Health Check Failed:", err);
+         setIsMaintenance(true);
+       } finally {
+         setIsConnectionChecked(true);
+       }
+    };
+    
+    checkSupabase();
+  }, []);
 
   // グローバルエラーハンドリング
   useEffect(() => {
@@ -51,8 +87,6 @@ const App: React.FC = () => {
 
   // Farcaster Frame v2 Loading Optimization
   useEffect(() => {
-    // セーフティネット: 3秒経っても初期化が終わらない（スプラッシュが消えない）場合
-    // 強制的にreadyを呼んで画面を表示し、デバッグログを見れるようにする
     const safetyTimer = setTimeout(() => {
       if (!isSDKLoaded) {
         console.warn("Loading timeout - Forcing ready() to show debug console");
@@ -62,14 +96,14 @@ const App: React.FC = () => {
           }
         } catch(e) { console.error("Force ready failed:", e); }
         
-        // エラーとして表示することでデバッグコンソールを強制出現させる
-        setAppError("Loading Timeout: App took too long to start.\nForcing display for debugging.");
+        if (!isConnectionChecked) {
+             setAppError("Loading Timeout: App took too long to start.\nForcing display for debugging.");
+        }
       }
     }, 3000);
 
     const load = async () => {
       try {
-        // Check if running in Farcaster context
         if (sdk && sdk.context) {
            sdk.context.then(context => {
              if (context) {
@@ -81,14 +115,12 @@ const App: React.FC = () => {
            });
         }
 
-        // Give the app a moment to paint the initial UI before signaling ready
         setTimeout(() => {
           try {
             if (sdk && sdk.actions) {
                sdk.actions.ready();
-               setIsSDKLoaded(true); // Mark as loaded to cancel safety timer
+               setIsSDKLoaded(true); 
             } else {
-               // ローカル環境などでSDKがない場合
                console.log("Farcaster SDK actions not available (Browser mode?)");
                setIsSDKLoaded(true);
             }
@@ -96,7 +128,7 @@ const App: React.FC = () => {
             console.warn("Farcaster SDK ready signal failed:", e);
             setAppError(`SDK Ready Error: ${e.message}`);
           }
-        }, 200); // Wait a bit longer to ensure render
+        }, 200); 
       } catch (e: any) {
          setAppError(`Init Error: ${e.message}`);
       }
@@ -107,7 +139,7 @@ const App: React.FC = () => {
     }
     
     return () => clearTimeout(safetyTimer);
-  }, [isSDKLoaded]);
+  }, [isSDKLoaded, isConnectionChecked]); 
 
   const handleNavClick = (view: View) => {
     playClick();
@@ -119,6 +151,15 @@ const App: React.FC = () => {
     setIsSoundOn(newState);
     toggleSound(newState);
     if (newState) playConfirm();
+  };
+
+  // Maintenance: Reset Settings Handler
+  const handleResetSettings = () => {
+    if (window.confirm("接続設定をリセットして、セットアップ画面に戻りますか？\n(入力されたAPIキー情報は削除されます)")) {
+      localStorage.removeItem('VITE_SUPABASE_URL');
+      localStorage.removeItem('VITE_SUPABASE_ANON_KEY');
+      window.location.reload();
+    }
   };
 
   const commonProps = {
@@ -140,6 +181,7 @@ const App: React.FC = () => {
             onSwitchParty={actions.switchParty}
             onUnlockParty={actions.unlockParty}
             onAssignHero={actions.assignHeroToParty}
+            onSwapSlots={actions.swapPartyPositions}
             {...commonProps}
           />
         );
@@ -218,7 +260,55 @@ const App: React.FC = () => {
     }
   };
 
-  // 致命的なエラーが発生した場合の表示
+  // 1. Loading State (Connection Check)
+  if (!isConnectionChecked) {
+     return (
+       <div className="fixed inset-0 flex items-center justify-center bg-slate-950 text-white z-[9999]">
+          <div className="flex flex-col items-center gap-4">
+             <div className="w-12 h-12 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
+             <p className="text-xs font-bold tracking-widest text-slate-400 animate-pulse">CONNECTING...</p>
+          </div>
+       </div>
+     );
+  }
+
+  // 2. Maintenance Mode
+  if (isMaintenance) {
+    return (
+      <div className="fixed inset-0 flex flex-col items-center justify-center bg-slate-950 text-white p-8 text-center z-[9999]">
+         <MiningBackground />
+         <div className="relative z-10 flex flex-col items-center">
+            <div className="text-6xl mb-6 animate-bounce">🚧</div>
+            <h2 className="text-2xl font-black text-amber-500 mb-4 tracking-widest uppercase">MAINTENANCE</h2>
+            <p className="text-slate-400 text-sm mb-8 leading-relaxed max-w-xs mx-auto">
+              現在サーバーに接続できません。<br/>
+              メンテナンス中か、ネットワークの問題、あるいは設定されたAPIキーが無効な可能性があります。
+            </p>
+            
+            <div className="flex flex-col gap-4 w-full max-w-xs">
+              <button 
+                onClick={() => window.location.reload()}
+                className="w-full px-8 py-3 bg-indigo-600 hover:bg-indigo-500 rounded-full font-bold text-white transition-all active:scale-95 shadow-lg border border-indigo-500/50 flex items-center justify-center gap-2"
+              >
+                <span>🔄</span> 再接続を試みる
+              </button>
+
+              <button 
+                onClick={handleResetSettings}
+                className="w-full px-8 py-3 bg-slate-800 hover:bg-slate-700 rounded-full font-bold text-slate-400 text-xs transition-all active:scale-95 border border-slate-700 flex items-center justify-center gap-2"
+              >
+                <span>⚙️</span> 接続設定をリセット (API Key再入力)
+              </button>
+            </div>
+         </div>
+         
+         {/* Debug Console in Maintenance Mode */}
+         <DebugConsole isEnabled={true} />
+      </div>
+    );
+  }
+
+  // 3. Critical Error
   if (appError) {
     return (
       <div className="fixed inset-0 flex flex-col items-center justify-center bg-slate-950 text-white p-8 text-center z-[9999]">
@@ -241,7 +331,6 @@ const App: React.FC = () => {
               Reload App
             </button>
         </div>
-        {/* Error時もDebugConsoleは表示する */}
         <DebugConsole isEnabled={true} />
       </div>
     );

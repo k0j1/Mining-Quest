@@ -1,18 +1,97 @@
 
 import { Dispatch, SetStateAction, useState } from 'react';
 import { GameState } from '../../types';
-import { generateGachaItem } from '../../services/geminiService';
+import { rollGachaItem } from '../../services/gachaService';
 import { playConfirm, playError } from '../../utils/sound';
+import { supabase } from '../../lib/supabase';
 
 interface UseGachaProps {
   gameState: GameState;
   setGameState: Dispatch<SetStateAction<GameState>>;
   showNotification: (msg: string, type: 'error' | 'success') => void;
+  farcasterUser?: any;
 }
 
-export const useGacha = ({ gameState, setGameState, showNotification }: UseGachaProps) => {
+export const useGacha = ({ gameState, setGameState, showNotification, farcasterUser }: UseGachaProps) => {
   const [gachaResult, setGachaResult] = useState<{ type: 'Hero' | 'Equipment'; data: any[] } | null>(null);
   const [isGachaRolling, setIsGachaRolling] = useState(false);
+
+  // Helper to save to DB
+  const persistGachaResults = async (tab: 'Hero' | 'Equipment', items: any[]) => {
+    if (!farcasterUser?.fid) return items; // Return as is if no user (local mode)
+
+    const fid = farcasterUser.fid;
+    const persistedItems = [...items];
+
+    if (tab === 'Hero') {
+      for (let i = 0; i < persistedItems.length; i++) {
+        const item = persistedItems[i];
+        
+        // 1. Get Master ID (Need to look up quest_hero by name/rarity or assume rollGachaItem returned it? 
+        // rollGachaItem returns name. We need ID.
+        // Optimization: rollGachaItem should return the DB ID.
+        // Let's fetch it or adjust gachaService. 
+        // For now, we query.
+        const { data: masterData } = await supabase.from('quest_hero').select('id').eq('name', item.name).single();
+        if (masterData) {
+            const { data: inserted, error } = await supabase.from('quest_player_hero').insert({
+                fid: fid,
+                hero_id: masterData.id,
+                hp: item.hp,
+                recovery_count: 0
+            }).select('player_hid').single();
+
+            if (!error && inserted) {
+                // Update the ID to the DB ID
+                persistedItems[i].id = inserted.player_hid.toString();
+            }
+        }
+      }
+      
+      // Update stats
+      await supabase.rpc('increment_player_stat', { 
+          player_fid: fid, 
+          column_name: 'gacha_hero_count', 
+          amount: items.length 
+      }).catch(async () => {
+          // Fallback if RPC missing (manual update)
+          const { data } = await supabase.from('quest_player_stats').select('gacha_hero_count').eq('fid', fid).single();
+          if (data) {
+              await supabase.from('quest_player_stats').update({ gacha_hero_count: (data.gacha_hero_count || 0) + items.length }).eq('fid', fid);
+          }
+      });
+
+    } else {
+      for (let i = 0; i < persistedItems.length; i++) {
+        const item = persistedItems[i];
+        const { data: masterData } = await supabase.from('quest_equipment').select('id').eq('name', item.name).single();
+        if (masterData) {
+            const { data: inserted, error } = await supabase.from('quest_player_equipment').insert({
+                fid: fid,
+                equipment_id: masterData.id
+            }).select('player_eid').single();
+
+            if (!error && inserted) {
+                persistedItems[i].id = inserted.player_eid.toString();
+            }
+        }
+      }
+
+      // Update stats
+      await supabase.rpc('increment_player_stat', { 
+          player_fid: fid, 
+          column_name: 'gacha_equipment_count', 
+          amount: items.length 
+      }).catch(async () => {
+          const { data } = await supabase.from('quest_player_stats').select('gacha_equipment_count').eq('fid', fid).single();
+          if (data) {
+              await supabase.from('quest_player_stats').update({ gacha_equipment_count: (data.gacha_equipment_count || 0) + items.length }).eq('fid', fid);
+          }
+      });
+    }
+
+    return persistedItems;
+  };
 
   const processGachaItems = (tab: 'Hero' | 'Equipment', items: any[]) => {
     setGameState(prev => {
@@ -20,11 +99,10 @@ export const useGacha = ({ gameState, setGameState, showNotification }: UseGacha
       
       if (tab === 'Hero') {
         const newHeroes = items.map(result => {
-           // Use HP from result if available (from hero_data), otherwise fallback
            const maxHp = result.hp || 50;
-           
+           // ID is already updated to DB ID if persisted, or random string if local
            return {
-            id: Math.random().toString(),
+            id: result.id || Math.random().toString(),
             name: result.name,
             species: result.species,
             rarity: result.rarity,
@@ -33,14 +111,14 @@ export const useGacha = ({ gameState, setGameState, showNotification }: UseGacha
             level: 1, 
             hp: maxHp, 
             maxHp: maxHp,
-            imageUrl: result.imageUrl || `https://miningquest.k0j1.v2002.coreserver.jp/images/Hero/${result.name}.png`,
+            imageUrl: result.imageUrl || `https://miningquest.k0j1.v2002.coreserver.jp/images/Hero/s/${result.name}_s.png`,
             equipmentIds: ['', '', '']
           };
         });
         next.heroes = [...prev.heroes, ...newHeroes];
       } else {
         const newEquipment = items.map(result => ({
-            id: Math.random().toString(),
+            id: result.id || Math.random().toString(),
             name: result.name,
             type: result.type,
             bonus: result.bonus,
@@ -62,12 +140,18 @@ export const useGacha = ({ gameState, setGameState, showNotification }: UseGacha
     playConfirm();
     setIsGachaRolling(true);
     try {
-      const result = await generateGachaItem(tab);
-      setGachaResult({ type: tab, data: [result] });
+      const result = await rollGachaItem(tab);
       
+      // Persist to DB
+      const persisted = await persistGachaResults(tab, [result]);
+      
+      setGachaResult({ type: tab, data: persisted });
       setGameState(prev => ({ ...prev, tokens: prev.tokens - cost }));
-      processGachaItems(tab, [result]);
+      processGachaItems(tab, persisted);
 
+    } catch (e) {
+      console.error(e);
+      showNotification("ガチャ処理中にエラーが発生しました", 'error');
     } finally {
       setIsGachaRolling(false);
     }
@@ -87,15 +171,20 @@ export const useGacha = ({ gameState, setGameState, showNotification }: UseGacha
 
     try {
       const results = await Promise.all([
-        generateGachaItem(tab, undefined),
-        generateGachaItem(tab, undefined),
-        generateGachaItem(tab, 'R')
+        rollGachaItem(tab, undefined),
+        rollGachaItem(tab, undefined),
+        rollGachaItem(tab, 'R')
       ]);
 
-      setGachaResult({ type: tab, data: results });
-      setGameState(prev => ({ ...prev, tokens: prev.tokens - cost }));
-      processGachaItems(tab, results);
+      const persisted = await persistGachaResults(tab, results);
 
+      setGachaResult({ type: tab, data: persisted });
+      setGameState(prev => ({ ...prev, tokens: prev.tokens - cost }));
+      processGachaItems(tab, persisted);
+
+    } catch (e) {
+      console.error(e);
+      showNotification("ガチャ処理中にエラーが発生しました", 'error');
     } finally {
       setIsGachaRolling(false);
     }

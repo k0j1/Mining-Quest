@@ -1,10 +1,10 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { GameState } from '../../types';
 import GachaEffect from '../GachaEffect';
 import { playClick } from '../../utils/sound';
 import Header from '../Header';
-import { GACHA_HERO_DATA } from '../../constants';
+import { supabase } from '../../lib/supabase';
+import { HeroDefinition } from '../../data/hero_data';
 
 interface GachaViewProps {
   gameState: GameState;
@@ -21,10 +21,105 @@ interface GachaViewProps {
   onAccountClick?: () => void;
 }
 
+// --- Hero List Components ---
+
+const HeroListItem: React.FC<{ 
+  hero: HeroDefinition; 
+  rarityColors: Record<string, string>; 
+  onZoom: (full: string, thumb: string) => void; 
+}> = ({ hero, rarityColors, onZoom }) => {
+  const [hasError, setHasError] = useState(false);
+  
+  // Use _s image for both since high-res is removed
+  const imageUrl = `https://miningquest.k0j1.v2002.coreserver.jp/images/Hero/s/${hero.name}_s.png`;
+
+  const handleImageError = () => {
+    setHasError(true);
+  };
+
+  return (
+    <div className="flex gap-4 bg-slate-800/50 p-3 rounded-xl border border-slate-700/50 hover:bg-slate-800 transition-colors">
+      {/* Image - Larger & Clickable */}
+      <div 
+        className="shrink-0 w-24 h-24 rounded-lg bg-slate-900 border border-slate-700 overflow-hidden relative cursor-zoom-in active:scale-95 transition-transform group"
+        onClick={() => {
+          if (!hasError) {
+            playClick();
+            // Pass the same URL for both since we only use one size now
+            onZoom(imageUrl, imageUrl);
+          }
+        }}
+      >
+         {hasError ? (
+           <div className="w-full h-full flex flex-col items-center justify-center bg-slate-800 text-slate-500">
+             <span className="text-xl mb-1">⚠️</span>
+             <span className="text-[8px] font-bold">NO IMAGE</span>
+           </div>
+         ) : (
+           <img 
+             src={imageUrl} 
+             alt={hero.name}
+             className="w-full h-full object-cover"
+             onError={handleImageError}
+           />
+         )}
+         
+         {/* Zoom Icon Overlay (Only if no error) */}
+         {!hasError && (
+           <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
+              <span className="opacity-0 group-hover:opacity-100 text-white text-2xl drop-shadow-md transition-opacity">🔍</span>
+           </div>
+         )}
+      </div>
+      
+      {/* Info */}
+      <div className="flex-1 min-w-0 flex flex-col justify-center">
+        <div className="flex items-center gap-2 mb-1.5">
+           <span className={`text-[10px] font-black px-1.5 py-0.5 rounded ${rarityColors[hero.rarity] || 'bg-slate-600'}`}>
+              {hero.rarity}
+           </span>
+           <h3 className="text-sm font-bold text-slate-200 truncate">{hero.name}</h3>
+        </div>
+        <div className="text-[10px] font-bold text-emerald-400 mb-1.5">
+          HP {hero.hp}
+        </div>
+        <p className="text-[10px] text-slate-400 leading-relaxed bg-slate-900/40 p-2 rounded border border-slate-800">
+          {hero.ability}
+        </p>
+      </div>
+    </div>
+  );
+};
+
 const HeroListModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
-  // Store both thumb and full URL for progressive loading
   const [zoomData, setZoomData] = useState<{ full: string; thumb: string } | null>(null);
-  const [isHighResLoaded, setIsHighResLoaded] = useState(false);
+  const [heroList, setHeroList] = useState<HeroDefinition[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchHeroes = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('quest_hero')
+          .select('*')
+          .order('id', { ascending: true }); // ID順などでソート
+        
+        if (error) throw error;
+        
+        if (data && data.length > 0) {
+          setHeroList(data as HeroDefinition[]);
+        } else {
+          setHeroList([]);
+        }
+      } catch (e) {
+        console.error("Error fetching hero list:", e);
+        setHeroList([]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchHeroes();
+  }, []);
 
   const rarityColors: Record<string, string> = {
     C: 'bg-slate-600 text-slate-100',
@@ -33,6 +128,9 @@ const HeroListModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
     E: 'bg-fuchsia-600 text-fuchsia-50',
     L: 'bg-amber-600 text-amber-50'
   };
+
+  const rarityPriority: Record<string, number> = { L: 5, E: 4, R: 3, UC: 2, C: 1 };
+  const sortedList = [...heroList].sort((a, b) => rarityPriority[b.rarity] - rarityPriority[a.rarity]);
 
   return (
     <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-slate-950/90 backdrop-blur-sm p-4 animate-fade-in">
@@ -50,58 +148,35 @@ const HeroListModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
 
         {/* List */}
         <div className="flex-1 overflow-y-auto p-4 pb-8 space-y-3 custom-scrollbar">
-          {GACHA_HERO_DATA.map((hero, idx) => {
-            const thumbUrl = `https://miningquest.k0j1.v2002.coreserver.jp/images/Hero/s/${hero.name}_s.png`;
-            const fullUrl = `https://miningquest.k0j1.v2002.coreserver.jp/images/Hero/${hero.name}.png`;
-
-            return (
-              <div key={idx} className="flex gap-4 bg-slate-800/50 p-3 rounded-xl border border-slate-700/50 hover:bg-slate-800 transition-colors">
-                {/* Image - Larger & Clickable */}
-                <div 
-                  className="shrink-0 w-24 h-24 rounded-lg bg-slate-900 border border-slate-700 overflow-hidden relative cursor-zoom-in active:scale-95 transition-transform group"
-                  onClick={() => {
-                    playClick();
-                    setIsHighResLoaded(false); // Reset loading state
-                    setZoomData({ full: fullUrl, thumb: thumbUrl });
-                  }}
-                >
-                   <img 
-                     src={thumbUrl} 
-                     alt={hero.name}
-                     className="w-full h-full object-cover"
-                     onError={(e) => {
-                       // Fallback only if thumb fails
-                       (e.target as HTMLImageElement).src = fullUrl;
-                     }}
-                   />
-                   {/* Zoom Icon Overlay */}
-                   <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
-                      <span className="opacity-0 group-hover:opacity-100 text-white text-2xl drop-shadow-md transition-opacity">🔍</span>
-                   </div>
+          {isLoading ? (
+            <div className="text-center py-10">
+              <div className="w-8 h-8 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
+              <p className="text-slate-500 text-xs">Loading...</p>
+            </div>
+          ) : (
+            <>
+              {sortedList.length > 0 ? (
+                sortedList.map((hero, idx) => (
+                  <HeroListItem 
+                    key={idx} 
+                    hero={hero} 
+                    rarityColors={rarityColors}
+                    onZoom={(full, thumb) => {
+                      setZoomData({ full, thumb });
+                    }}
+                  />
+                ))
+              ) : (
+                <div className="text-center py-10 text-slate-500 text-xs">
+                  No hero data found in database.
                 </div>
-                
-                {/* Info */}
-                <div className="flex-1 min-w-0 flex flex-col justify-center">
-                  <div className="flex items-center gap-2 mb-1.5">
-                     <span className={`text-[10px] font-black px-1.5 py-0.5 rounded ${rarityColors[hero.rarity] || 'bg-slate-600'}`}>
-                        {hero.rarity}
-                     </span>
-                     <h3 className="text-sm font-bold text-slate-200 truncate">{hero.name}</h3>
-                  </div>
-                  <div className="text-[10px] font-bold text-emerald-400 mb-1.5">
-                    HP {hero.hp}
-                  </div>
-                  <p className="text-[10px] text-slate-400 leading-relaxed bg-slate-900/40 p-2 rounded border border-slate-800">
-                    {hero.ability}
-                  </p>
-                </div>
-              </div>
-            );
-          })}
+              )}
+            </>
+          )}
         </div>
       </div>
 
-      {/* Image Zoom Overlay with Progressive Loading */}
+      {/* Image Zoom Overlay */}
       {zoomData && (
         <div 
           className="fixed inset-0 z-[1100] bg-black/95 backdrop-blur-md flex flex-col items-center justify-center p-4 animate-fade-in cursor-zoom-out"
@@ -111,19 +186,10 @@ const HeroListModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
           }}
         >
           <div className="relative animate-bounce-in">
-            {/* 1. Thumbnail: Always visible initially, blurred to hide low resolution */}
-            <img 
-              src={zoomData.thumb} 
-              alt="Zoom Placeholder" 
-              className={`max-w-[90vw] max-h-[70vh] object-contain rounded-2xl shadow-[0_0_50px_rgba(255,255,255,0.1)] border-2 border-slate-700 transition-opacity duration-700 ${isHighResLoaded ? 'opacity-0' : 'opacity-100 blur-sm scale-105'}`}
-            />
-            
-            {/* 2. High Res: Absolute overlay, fades in when loaded */}
             <img 
               src={zoomData.full} 
-              alt="Zoom High Res" 
-              className={`absolute inset-0 w-full h-full object-contain rounded-2xl transition-opacity duration-500 ${isHighResLoaded ? 'opacity-100' : 'opacity-0'}`}
-              onLoad={() => setIsHighResLoaded(true)}
+              alt="Zoom" 
+              className="max-w-[90vw] max-h-[70vh] object-contain rounded-2xl shadow-[0_0_50px_rgba(255,255,255,0.1)] border-2 border-slate-700"
             />
           </div>
           <p className="text-slate-500 text-xs font-bold tracking-[0.2em] mt-8 animate-pulse">TAP TO CLOSE</p>
@@ -150,22 +216,150 @@ const HeroListModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
   );
 };
 
+// --- Equipment List Components ---
+
+interface EquipmentDefinition {
+  id: number;
+  name: string;
+  type: 'Pickaxe' | 'Helmet' | 'Boots';
+  rarity: string;
+  bonus: number;
+  ability: string;
+}
+
+const EquipmentListItem: React.FC<{ 
+  item: EquipmentDefinition; 
+  rarityColors: Record<string, string>; 
+}> = ({ item, rarityColors }) => {
+  const icon = item.type === 'Pickaxe' ? '⛏️' : item.type === 'Helmet' ? '🪖' : '👢';
+  
+  return (
+    <div className="flex gap-4 bg-slate-800/50 p-3 rounded-xl border border-slate-700/50 hover:bg-slate-800 transition-colors">
+      {/* Icon Area */}
+      <div className="shrink-0 w-16 h-16 rounded-lg bg-slate-900 border border-slate-700 flex items-center justify-center text-3xl shadow-inner">
+         {icon}
+      </div>
+      
+      {/* Info */}
+      <div className="flex-1 min-w-0 flex flex-col justify-center">
+        <div className="flex items-center gap-2 mb-1.5">
+           <span className={`text-[10px] font-black px-1.5 py-0.5 rounded ${rarityColors[item.rarity] || 'bg-slate-600'}`}>
+              {item.rarity}
+           </span>
+           <h3 className="text-sm font-bold text-slate-200 truncate">{item.name}</h3>
+        </div>
+        <div className="text-[10px] font-bold text-indigo-400 mb-1.5">
+          {item.type === 'Pickaxe' ? `Reward +${item.bonus}%` : item.type === 'Helmet' ? `Damage -${item.bonus}%` : `Duration -${item.bonus}%`}
+        </div>
+        <p className="text-[10px] text-slate-400 leading-relaxed bg-slate-900/40 p-2 rounded border border-slate-800">
+          {item.ability}
+        </p>
+      </div>
+    </div>
+  );
+};
+
+const EquipmentListModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
+  const [equipList, setEquipList] = useState<EquipmentDefinition[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchEquipment = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('quest_equipment')
+          .select('*')
+          .order('id', { ascending: true });
+        
+        if (error) throw error;
+        
+        if (data && data.length > 0) {
+          setEquipList(data as EquipmentDefinition[]);
+        } else {
+            setEquipList([]);
+        }
+      } catch (e) {
+        console.error("Error fetching equipment list:", e);
+        setEquipList([]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchEquipment();
+  }, []);
+
+  const rarityColors: Record<string, string> = {
+    C: 'bg-slate-600 text-slate-100',
+    UC: 'bg-emerald-600 text-emerald-50',
+    R: 'bg-indigo-600 text-indigo-50',
+    E: 'bg-fuchsia-600 text-fuchsia-50',
+    L: 'bg-amber-600 text-amber-50'
+  };
+
+  const rarityPriority: Record<string, number> = { L: 5, E: 4, R: 3, UC: 2, C: 1 };
+  const sortedList = [...equipList].sort((a, b) => rarityPriority[b.rarity] - rarityPriority[a.rarity]);
+
+  return (
+    <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-slate-950/90 backdrop-blur-sm p-4 animate-fade-in">
+      {/* Main List Modal */}
+      <div className="w-full max-w-lg flex flex-col max-h-[80vh] bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl overflow-hidden relative z-10">
+        {/* Header */}
+        <div className="p-4 border-b border-slate-800 bg-slate-900 flex justify-between items-center shrink-0">
+          <h2 className="text-lg font-bold text-white flex items-center gap-2">
+            <span>⚒️</span> 排出装備一覧
+          </h2>
+          <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-full bg-slate-800 text-slate-400 hover:text-white hover:bg-slate-700 transition-colors">
+            ✕
+          </button>
+        </div>
+
+        {/* List */}
+        <div className="flex-1 overflow-y-auto p-4 pb-8 space-y-3 custom-scrollbar">
+          {isLoading ? (
+            <div className="text-center py-10">
+              <div className="w-8 h-8 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
+              <p className="text-slate-500 text-xs">Loading...</p>
+            </div>
+          ) : (
+            sortedList.map((item, idx) => (
+              <EquipmentListItem 
+                key={idx} 
+                item={item} 
+                rarityColors={rarityColors}
+              />
+            ))
+          )}
+          {!isLoading && sortedList.length === 0 && (
+            <div className="text-center py-10 text-slate-500 text-xs">
+              No equipment data found in database.
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+
+// --- Main View ---
+
 const GachaView: React.FC<GachaViewProps> = ({ 
   gameState, 
   onRollGacha, 
   onRollGachaTriple, 
   isGachaRolling, 
   gachaResult, 
-  onCloseResult,
-  isSoundOn,
-  onToggleSound,
-  onDebugAddTokens,
-  farcasterUser,
-  onChainBalance,
-  onAccountClick
+  onCloseResult, 
+  isSoundOn, 
+  onToggleSound, 
+  onDebugAddTokens, 
+  farcasterUser, 
+  onChainBalance, 
+  onAccountClick 
 }) => {
   const [gachaTab, setGachaTab] = useState<'Hero' | 'Equipment'>('Hero');
   const [showHeroList, setShowHeroList] = useState(false);
+  const [showEquipmentList, setShowEquipmentList] = useState(false);
 
   const heroCost = 10000;
   const equipCost = 6000;
@@ -210,15 +404,20 @@ const GachaView: React.FC<GachaViewProps> = ({
             <div className="bg-slate-800 p-8 rounded-[2.5rem] text-center w-full max-w-[360px] border border-slate-700 shadow-xl relative overflow-hidden shrink-0 flex flex-col justify-center min-h-[480px]">
               
               {/* List Button Inside Frame (Absolute Position) */}
-              {gachaTab === 'Hero' && (
-                <button 
-                  onClick={() => { playClick(); setShowHeroList(true); }}
+              <button 
+                  onClick={() => { 
+                    playClick(); 
+                    if (gachaTab === 'Hero') {
+                      setShowHeroList(true);
+                    } else {
+                      setShowEquipmentList(true);
+                    }
+                  }}
                   className="absolute top-5 right-5 z-40 flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-900/40 text-slate-400 hover:bg-slate-800 hover:text-white border border-slate-700/50 backdrop-blur-md transition-all active:scale-95 shadow-sm group"
                 >
-                  <span className="text-xs group-hover:scale-110 transition-transform">📜</span>
+                  <span className="text-xs group-hover:scale-110 transition-transform">{gachaTab === 'Hero' ? '📜' : '⚒️'}</span>
                   <span className="text-[10px] font-bold">一覧</span>
-                </button>
-              )}
+              </button>
 
               {isGachaRolling && (
                 <div className="absolute inset-0 z-50 bg-slate-900/90 flex flex-col items-center justify-center p-6 space-y-4">
@@ -291,6 +490,7 @@ const GachaView: React.FC<GachaViewProps> = ({
       {gachaResult && <GachaEffect result={gachaResult} onClose={onCloseResult} />}
       
       {showHeroList && <HeroListModal onClose={() => { playClick(); setShowHeroList(false); }} />}
+      {showEquipmentList && <EquipmentListModal onClose={() => { playClick(); setShowEquipmentList(false); }} />}
     </>
   );
 };

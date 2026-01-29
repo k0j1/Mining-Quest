@@ -47,11 +47,25 @@ export interface Quest {
   heroIds: string[]; // IDs of heroes sent on this quest
 }
 
+export interface QuestConfig {
+  rank: QuestRank;
+  name: string;
+  duration: number; // seconds
+  minReward: number;
+  maxReward: number;
+  burnCost: number;
+  minDmg: number;
+  maxDmg: number;
+  deathChance: number; // 0 to 1
+  minHpReq?: number;
+}
+
 export interface GameState {
   tokens: number;
   heroes: Hero[];
   equipment: Equipment[];
   activeQuests: Quest[];
+  questConfigs: QuestConfig[]; // Loaded from DB
   // Party Management
   activePartyIndex: number; // 0, 1, 2
   unlockedParties: boolean[]; // [true, false, false]

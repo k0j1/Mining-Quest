@@ -1,7 +1,5 @@
-
 import React, { useState, useEffect } from 'react';
-import { GameState, View, QuestRank } from '../types';
-import { QUEST_CONFIG } from '../constants';
+import { GameState, View, QuestRank, QuestConfig } from '../types';
 import { playClick } from '../utils/sound';
 import Header from './Header';
 import PartySlotGrid from './PartySlotGrid';
@@ -22,7 +20,7 @@ interface StatusBoardProps {
   onDebugCompleteQuest?: (questId: string) => void;
 }
 
-const QuestItem: React.FC<{ quest: any; farcasterUser?: any; onDebugComplete?: (id: string) => void }> = ({ quest, farcasterUser, onDebugComplete }) => {
+const QuestItem: React.FC<{ quest: any; config?: QuestConfig; farcasterUser?: any; onDebugComplete?: (id: string) => void }> = ({ quest, config, farcasterUser, onDebugComplete }) => {
   const [timeLeft, setTimeLeft] = useState(Math.max(0, Math.floor((quest.endTime - Date.now()) / 1000)));
   const [debugClicks, setDebugClicks] = useState(0);
 
@@ -57,11 +55,14 @@ const QuestItem: React.FC<{ quest: any; farcasterUser?: any; onDebugComplete?: (
   const isCompleted = timeLeft <= 0;
   const minutes = Math.floor(timeLeft / 60);
   const seconds = timeLeft % 60;
-  const config = QUEST_CONFIG[quest.rank as QuestRank];
 
   const rankColors: Record<string, string> = {
     C: 'text-slate-400', UC: 'text-emerald-500', R: 'text-indigo-400', E: 'text-fuchsia-400', L: 'text-amber-500'
   };
+
+  // Fallback display if config not found (shouldn't happen if loaded)
+  const minReward = config ? config.minReward : '?';
+  const maxReward = config ? config.maxReward : '?';
 
   return (
     <div className={`relative p-4 rounded-2xl border transition-all ${
@@ -74,7 +75,7 @@ const QuestItem: React.FC<{ quest: any; farcasterUser?: any; onDebugComplete?: (
             <h3 className="font-bold text-sm text-slate-100">{quest.name}</h3>
           </div>
           <p className="text-[10px] text-slate-500">
-            予想報酬: <span className="text-amber-500 font-bold">{config.minReward}-{config.maxReward}</span> $CHH
+            予想報酬: <span className="text-amber-500 font-bold">{minReward}-{maxReward}</span> $CHH
           </p>
         </div>
 
@@ -156,6 +157,7 @@ const StatusBoard: React.FC<StatusBoardProps> = ({
                   <QuestItem 
                     key={q.id} 
                     quest={q} 
+                    config={state.questConfigs.find(c => c.rank === q.rank)}
                     farcasterUser={farcasterUser} 
                     onDebugComplete={onDebugCompleteQuest} // Always pass it if provided
                   />

@@ -1,7 +1,5 @@
-
 import React, { useState } from 'react';
 import { GameState, QuestRank } from '../../types';
-import { QUEST_CONFIG } from '../../constants';
 import PartySlotGrid from '../PartySlotGrid';
 import { playClick } from '../../utils/sound';
 import Header from '../Header';
@@ -44,14 +42,7 @@ const DepartView: React.FC<DepartViewProps> = ({
   const handleConfirm = () => {
     if (selectedRank) {
       const success = onDepart(selectedRank);
-      if (!success) {
-        // Do not close modal on error, so user can see why
-        // or close it? The notification shows up.
-        // Let's keep it open so they can switch party or recover
-        // But for insufficient funds, they might want to go to Gacha/Home.
-        // Let's close it only if successful
-        if (success) setSelectedRank(null);
-      }
+      if (success) setSelectedRank(null);
     }
   };
 
@@ -62,9 +53,25 @@ const DepartView: React.FC<DepartViewProps> = ({
     .filter((h): h is any => !!h);
 
   const isPartyFull = mainParty.length === 3;
-  const currentRankConfig = selectedRank ? QUEST_CONFIG[selectedRank] : null;
+  const currentRankConfig = selectedRank ? gameState.questConfigs.find(q => q.rank === selectedRank) : null;
   const canAfford = currentRankConfig ? gameState.tokens >= currentRankConfig.burnCost : false;
   const hasDeadHeroes = mainParty.some(h => h.hp <= 0);
+
+  // Rarity styling maps
+  const rankColors: Record<string, string> = {
+    C: 'border-slate-700 bg-slate-800',
+    UC: 'border-emerald-700/50 bg-emerald-900/10',
+    R: 'border-indigo-700/50 bg-indigo-900/10',
+    E: 'border-orange-700/50 bg-orange-900/10',
+    L: 'border-purple-700/50 bg-purple-900/10'
+  };
+  const rankBadges: Record<string, string> = {
+    C: 'bg-slate-600',
+    UC: 'bg-emerald-600',
+    R: 'bg-indigo-600',
+    E: 'bg-orange-600',
+    L: 'bg-purple-600'
+  };
 
   return (
     <div className="flex flex-col h-full relative bg-slate-900">
@@ -91,32 +98,25 @@ const DepartView: React.FC<DepartViewProps> = ({
           </div>
 
           <p className="text-xs text-slate-500 mb-2 font-bold">難易度を選択してクエストに出発します</p>
-          {(Object.keys(QUEST_CONFIG) as QuestRank[]).map((rank) => {
-            const config = QUEST_CONFIG[rank];
-            const rankColors: Record<QuestRank, string> = {
-              C: 'border-slate-700 bg-slate-800',
-              UC: 'border-emerald-700/50 bg-emerald-900/10',
-              R: 'border-indigo-700/50 bg-indigo-900/10',
-              E: 'border-orange-700/50 bg-orange-900/10',
-              L: 'border-purple-700/50 bg-purple-900/10'
-            };
-            const rankBadges: Record<QuestRank, string> = {
-              C: 'bg-slate-600',
-              UC: 'bg-emerald-600',
-              R: 'bg-indigo-600',
-              E: 'bg-orange-600',
-              L: 'bg-purple-600'
-            };
+          
+          {gameState.questConfigs.length === 0 && (
+             <div className="text-center py-10 text-slate-500">
+                <div className="w-6 h-6 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
+                Loading Quests...
+             </div>
+          )}
 
+          {gameState.questConfigs.map((config) => {
+            const rank = config.rank;
             return (
               <button
                 key={rank}
                 onClick={() => handleSelect(rank)}
-                className={`w-full text-left relative group overflow-hidden rounded-xl border p-4 transition-all active:scale-[0.98] hover:shadow-md ${rankColors[rank]}`}
+                className={`w-full text-left relative group overflow-hidden rounded-xl border p-4 transition-all active:scale-[0.98] hover:shadow-md ${rankColors[rank] || rankColors['C']}`}
               >
                 <div className="flex justify-between items-start mb-3">
                    <div className="flex items-center space-x-2">
-                     <span className={`text-[10px] font-black px-2 py-0.5 rounded text-white ${rankBadges[rank]}`}>{rank}</span>
+                     <span className={`text-[10px] font-black px-2 py-0.5 rounded text-white ${rankBadges[rank] || rankBadges['C']}`}>{rank}</span>
                      <h3 className="font-bold text-slate-100 text-sm">{config.name}</h3>
                    </div>
                    <div className="text-right">

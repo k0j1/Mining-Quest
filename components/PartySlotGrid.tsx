@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Hero } from '../types';
 import HeroCard from './HeroCard';
@@ -83,13 +82,13 @@ const PartySlotGrid: React.FC<PartySlotGridProps> = ({
               </div>
             ) : (
               readOnly ? (
-                <div className={`w-full ${compactEmpty ? 'aspect-square rounded-xl' : 'aspect-[4/5] rounded-2xl'} bg-slate-900/50 border border-dashed border-slate-700 flex flex-col items-center justify-center`}>
+                <div className={`w-full ${compactEmpty ? 'aspect-square rounded-xl' : 'aspect-[4/5.5] rounded-2xl'} bg-slate-900/50 border border-dashed border-slate-700 flex flex-col items-center justify-center`}>
                   <span className={`text-slate-600 font-bold uppercase ${compactEmpty ? 'text-[8px]' : 'text-[9px]'}`}>Empty</span>
                 </div>
               ) : (
                 <button 
                   onClick={() => onSlotClick?.(slotIdx)}
-                  className={`w-full aspect-[4/5] rounded-2xl border-2 border-dashed flex flex-col items-center justify-center transition-all ${
+                  className={`w-full aspect-[4/5.5] rounded-2xl border-2 border-dashed flex flex-col items-center justify-center transition-all ${
                       isSelected 
                         ? 'border-indigo-500 bg-indigo-900/10' 
                         : 'border-slate-700 bg-slate-800/50 hover:bg-slate-800'
