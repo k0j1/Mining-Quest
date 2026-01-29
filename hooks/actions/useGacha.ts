@@ -27,11 +27,7 @@ export const useGacha = ({ gameState, setGameState, showNotification, farcasterU
       for (let i = 0; i < persistedItems.length; i++) {
         const item = persistedItems[i];
         
-        // 1. Get Master ID (Need to look up quest_hero by name/rarity or assume rollGachaItem returned it? 
-        // rollGachaItem returns name. We need ID.
-        // Optimization: rollGachaItem should return the DB ID.
-        // Let's fetch it or adjust gachaService. 
-        // For now, we query.
+        // 1. Get Master ID
         const { data: masterData } = await supabase.from('quest_hero').select('id').eq('name', item.name).single();
         if (masterData) {
             const { data: inserted, error } = await supabase.from('quest_player_hero').insert({
@@ -49,17 +45,19 @@ export const useGacha = ({ gameState, setGameState, showNotification, farcasterU
       }
       
       // Update stats
-      await supabase.rpc('increment_player_stat', { 
+      const { error: statError } = await supabase.rpc('increment_player_stat', { 
           player_fid: fid, 
           column_name: 'gacha_hero_count', 
           amount: items.length 
-      }).catch(async () => {
+      });
+
+      if (statError) {
           // Fallback if RPC missing (manual update)
           const { data } = await supabase.from('quest_player_stats').select('gacha_hero_count').eq('fid', fid).single();
           if (data) {
               await supabase.from('quest_player_stats').update({ gacha_hero_count: (data.gacha_hero_count || 0) + items.length }).eq('fid', fid);
           }
-      });
+      }
 
     } else {
       for (let i = 0; i < persistedItems.length; i++) {
@@ -78,16 +76,18 @@ export const useGacha = ({ gameState, setGameState, showNotification, farcasterU
       }
 
       // Update stats
-      await supabase.rpc('increment_player_stat', { 
+      const { error: statError } = await supabase.rpc('increment_player_stat', { 
           player_fid: fid, 
           column_name: 'gacha_equipment_count', 
           amount: items.length 
-      }).catch(async () => {
+      });
+
+      if (statError) {
           const { data } = await supabase.from('quest_player_stats').select('gacha_equipment_count').eq('fid', fid).single();
           if (data) {
               await supabase.from('quest_player_stats').update({ gacha_equipment_count: (data.gacha_equipment_count || 0) + items.length }).eq('fid', fid);
           }
-      });
+      }
     }
 
     return persistedItems;

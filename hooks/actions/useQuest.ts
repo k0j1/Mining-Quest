@@ -269,16 +269,18 @@ export const useQuest = ({ gameState, setGameState, showNotification, setReturnR
           }
 
           // 3. Update stats
-          await supabase.rpc('increment_player_stat', { 
+          const { error: statError } = await supabase.rpc('increment_player_stat', { 
             player_fid: farcasterUser.fid, 
             column_name: 'quest_count', 
             amount: 1 
-          }).catch(async () => {
+          });
+
+          if (statError) {
              const { data } = await supabase.from('quest_player_stats').select('quest_count').eq('fid', farcasterUser.fid).single();
              if (data) {
                 await supabase.from('quest_player_stats').update({ quest_count: (data.quest_count || 0) + 1 }).eq('fid', farcasterUser.fid);
              }
-          });
+          }
       }
     }
 
