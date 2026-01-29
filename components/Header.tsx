@@ -77,7 +77,7 @@ const Header: React.FC<HeaderProps> = ({
   const themeColorClass = farcasterUser ? 'text-indigo-400' : 'text-amber-400';
 
   return (
-    <div className="sticky top-0 z-[60] pt-[env(safe-area-inset-top)] bg-slate-900 border-b border-slate-700 shadow-sm">
+    <div className="sticky top-0 z-[60] bg-slate-900 border-b border-slate-700 shadow-sm">
       <div className="px-5 py-4 flex justify-between items-center h-16">
         <div className="flex flex-col">
           <h1 className={`text-sm font-bold tracking-wider uppercase ${themeColorClass}`}>
