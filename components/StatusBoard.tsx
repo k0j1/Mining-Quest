@@ -18,7 +18,10 @@ interface StatusBoardProps {
   onAccountClick?: () => void;
   onShowLightpaper?: () => void;
   onDebugCompleteQuest?: (questId: string) => void;
+  onToggleDebug?: () => void;
 }
+
+const ADMIN_FIDS = [891963, 159718, 406233, 1379028];
 
 const QuestItem: React.FC<{ quest: any; config?: QuestConfig; farcasterUser?: any; onDebugComplete?: (id: string) => void }> = ({ quest, config, farcasterUser, onDebugComplete }) => {
   const [timeLeft, setTimeLeft] = useState(Math.max(0, Math.floor((quest.endTime - Date.now()) / 1000)));
@@ -34,7 +37,11 @@ const QuestItem: React.FC<{ quest: any; config?: QuestConfig; farcasterUser?: an
   }, [quest.endTime]);
 
   const handleDebugClick = () => {
-    // Only allow debug cheat if NOT connected to Farcaster
+    // Only allow debug cheat if NOT connected to Farcaster OR if explicitly an admin (though this handles local cheat logic mainly)
+    // For admins, we might want to enable this too, but let's stick to existing logic + explicit admin IDs later if needed.
+    // Existing logic: if (farcasterUser) return; (Disabled for FC users to prevent easy cheating)
+    // We will keep it strictly disabled for normal gameplay even for admins to avoid accidental clicks, 
+    // relying on the dedicated debug console for advanced stuff if needed.
     if (farcasterUser) return;
     
     // Only allow if onDebugComplete is provided
@@ -103,8 +110,10 @@ const QuestItem: React.FC<{ quest: any; config?: QuestConfig; farcasterUser?: an
 };
 
 const StatusBoard: React.FC<StatusBoardProps> = ({ 
-  state, actionButtonLabel, onAction, title, view, isSoundOn, onToggleSound, onDebugAddTokens, farcasterUser, onChainBalance, onAccountClick, onShowLightpaper, onDebugCompleteQuest
+  state, actionButtonLabel, onAction, title, view, isSoundOn, onToggleSound, onDebugAddTokens, farcasterUser, onChainBalance, onAccountClick, onShowLightpaper, onDebugCompleteQuest, onToggleDebug
 }) => {
+  const isAdmin = farcasterUser && ADMIN_FIDS.includes(farcasterUser.fid);
+
   return (
     <div className="flex flex-col h-full relative bg-slate-900">
       <Header 
@@ -121,8 +130,19 @@ const StatusBoard: React.FC<StatusBoardProps> = ({
               className="w-full h-auto rounded-2xl shadow-md border border-slate-700"
             />
           </div>
-          {view === View.HOME && onShowLightpaper && (
-            <div className="mt-3 flex justify-end">
+          
+          <div className="mt-3 flex justify-end gap-2">
+            {isAdmin && onToggleDebug && view === View.HOME && (
+              <button 
+                onClick={() => { playClick(); onToggleDebug(); }}
+                className="flex items-center gap-2 px-3 py-1.5 bg-rose-900/30 hover:bg-rose-900/50 rounded-full border border-rose-800 transition-all active:scale-95 group"
+              >
+                <span className="text-lg">🐛</span>
+                <span className="text-[10px] font-bold text-rose-300 group-hover:text-rose-200">DEBUG</span>
+              </button>
+            )}
+
+            {view === View.HOME && onShowLightpaper && (
               <button 
                 onClick={() => { playClick(); onShowLightpaper(); }}
                 className="flex items-center gap-2 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 rounded-full border border-slate-700 transition-all active:scale-95 group"
@@ -133,8 +153,8 @@ const StatusBoard: React.FC<StatusBoardProps> = ({
                   <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
                 </svg>
               </button>
-            </div>
-          )}
+            )}
+          </div>
         </div>
 
         <div className="px-6 space-y-12">

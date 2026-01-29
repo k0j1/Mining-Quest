@@ -101,13 +101,17 @@ export const useGameLogic = () => {
 
         if (equipError) throw equipError;
 
-        const loadedEquipment: Equipment[] = (equipData || []).map((e: any) => ({
-          id: e.player_eid.toString(),
-          name: e.quest_equipment.name,
-          type: e.quest_equipment.type,
-          bonus: e.quest_equipment.bonus,
-          rarity: e.quest_equipment.rarity
-        }));
+        const loadedEquipment: Equipment[] = (equipData || []).map((e: any) => {
+          const base = Array.isArray(e.quest_equipment) ? e.quest_equipment[0] : e.quest_equipment;
+          if (!base) return null;
+          return {
+            id: e.player_eid.toString(),
+            name: base.name,
+            type: base.type,
+            bonus: base.bonus,
+            rarity: base.rarity
+          };
+        }).filter((e): e is Equipment => e !== null);
 
         // 2. Load Heroes
         const { data: heroData, error: heroError } = await supabase
@@ -120,23 +124,28 @@ export const useGameLogic = () => {
         // Helper to get ability/dr map
         const drMap: Record<string, number> = { C: 2, UC: 5, R: 10, E: 15, L: 20 };
 
-        const loadedHeroes: Hero[] = (heroData || []).map((h: any) => ({
-          id: h.player_hid.toString(),
-          name: h.quest_hero.name,
-          species: h.quest_hero.species,
-          rarity: h.quest_hero.rarity,
-          trait: h.quest_hero.ability,
-          damageReduction: drMap[h.quest_hero.rarity] || 0,
-          level: 1,
-          hp: h.hp,
-          maxHp: h.quest_hero.hp, // Or handle if player maxHp scales
-          imageUrl: `https://miningquest.k0j1.v2002.coreserver.jp/images/Hero/s/${h.quest_hero.name}_s.png`,
-          equipmentIds: [
-            h.pickaxe_player_eid ? h.pickaxe_player_eid.toString() : '',
-            h.helmet_player_eid ? h.helmet_player_eid.toString() : '',
-            h.boots_player_eid ? h.boots_player_eid.toString() : ''
-          ]
-        }));
+        const loadedHeroes: Hero[] = (heroData || []).map((h: any) => {
+          const base = Array.isArray(h.quest_hero) ? h.quest_hero[0] : h.quest_hero;
+          if (!base) return null;
+
+          return {
+            id: h.player_hid.toString(),
+            name: base.name,
+            species: base.species,
+            rarity: base.rarity,
+            trait: base.ability,
+            damageReduction: drMap[base.rarity] || 0,
+            level: 1,
+            hp: h.hp,
+            maxHp: base.hp,
+            imageUrl: `https://miningquest.k0j1.v2002.coreserver.jp/images/Hero/s/${base.name}_s.png`,
+            equipmentIds: [
+              h.pickaxe_player_eid ? h.pickaxe_player_eid.toString() : '',
+              h.helmet_player_eid ? h.helmet_player_eid.toString() : '',
+              h.boots_player_eid ? h.boots_player_eid.toString() : ''
+            ]
+          };
+        }).filter((h): h is Hero => h !== null);
 
         // 3. Load Party
         const { data: partyData, error: partyError } = await supabase
@@ -152,7 +161,6 @@ export const useGameLogic = () => {
             [null, null, null]
         ];
         
-        // Logic: If user has row for party 2, it is unlocked.
         const newUnlockedParties = [true, false, false];
 
         partyData?.forEach((p: any) => {
@@ -177,13 +185,16 @@ export const useGameLogic = () => {
         if (questError) throw questError;
 
         const loadedQuests: Quest[] = (questData || []).map((q: any) => {
+            const base = Array.isArray(q.quest_mining) ? q.quest_mining[0] : q.quest_mining;
+            if (!base) return null;
+
             // Reconstruct duration/end time
             const startTime = new Date(q.start_time).getTime();
             const endTime = new Date(q.end_time).getTime();
             
             // Calculate actual duration from DB time
             const actualDuration = Math.floor((endTime - startTime) / 1000);
-            const duration = q.quest_mining.duration;
+            const duration = base.duration;
 
             // Resolve Hero IDs for this quest from the party snapshot logic
             const questPartyId = q.party_id;
@@ -202,16 +213,16 @@ export const useGameLogic = () => {
 
             return {
                 id: q.quest_pid.toString(),
-                name: q.quest_mining.name,
-                rank: q.quest_mining.rank as QuestRank,
+                name: base.name,
+                rank: base.rank as QuestRank,
                 duration: duration,
                 actualDuration: actualDuration,
                 endTime: endTime,
-                reward: Math.floor((q.quest_mining.min_reward + q.quest_mining.max_reward) / 2),
+                reward: Math.floor((base.min_reward + base.max_reward) / 2),
                 status: 'active',
                 heroIds: heroIds
             };
-        });
+        }).filter((q): q is Quest => q !== null);
 
         setGameState(prev => ({
             ...prev,
@@ -221,6 +232,8 @@ export const useGameLogic = () => {
             unlockedParties: newUnlockedParties,
             activeQuests: loadedQuests
         }));
+        
+        console.log(`Loaded ${loadedHeroes.length} heroes, ${loadedEquipment.length} items, ${loadedQuests.length} quests.`);
 
       } catch (e) {
         console.error("Failed to load player data from DB:", e);
@@ -273,7 +286,7 @@ export const useGameLogic = () => {
       depart, 
       returnFromQuest, 
       rollGacha, 
-      rollGachaTriple,
+      rollGachaTriple, 
       equipItem, 
       switchParty, 
       unlockParty, 

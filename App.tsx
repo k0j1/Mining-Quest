@@ -32,6 +32,7 @@ const App: React.FC = () => {
   const [isSDKLoaded, setIsSDKLoaded] = useState(false);
   const [appError, setAppError] = useState<string | null>(null);
   const [isFarcasterEnv, setIsFarcasterEnv] = useState(false); 
+  const [isDebugMode, setIsDebugMode] = useState(false);
   
   // Maintenance State
   const [isMaintenance, setIsMaintenance] = useState(false);
@@ -254,6 +255,7 @@ const App: React.FC = () => {
             title="ベースキャンプ" 
             onShowLightpaper={() => setCurrentView(View.LIGHTPAPER)}
             onDebugCompleteQuest={actions.debugCompleteQuest}
+            onToggleDebug={() => setIsDebugMode(p => !p)}
             {...commonProps} 
           />
         );
@@ -345,8 +347,8 @@ const App: React.FC = () => {
         </div>
       </main>
 
-      {/* Debug Console: Enabled only if Error occurred (User requested removal of bug icon for normal use) */}
-      <DebugConsole isEnabled={appError !== null} />
+      {/* Debug Console: Enabled on error or when toggled by admin */}
+      <DebugConsole isEnabled={appError !== null || isDebugMode} />
 
       {/* Notification Toast */}
       {ui.notification && (
