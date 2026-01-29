@@ -152,7 +152,6 @@ export const useGameLogic = () => {
             [null, null, null]
         ];
         
-        // Also determine unlocked status based on existence of party 2/3 rows or just allow 1 for now?
         // Logic: If user has row for party 2, it is unlocked.
         const newUnlockedParties = [true, false, false];
 
@@ -167,12 +166,6 @@ export const useGameLogic = () => {
                 newUnlockedParties[idx] = true; 
             }
         });
-        
-        // Default unlock logic if data missing or only party 1
-        // Note: The app starts with party 1 unlocked.
-        // If the user hasn't unlocked 2 or 3, rows won't exist or logic handles it.
-        // To persist unlock state, we might need to check if rows exist even if empty?
-        // For now, if party data exists for index, assume unlocked.
 
         // 4. Load Active Quests
         const { data: questData, error: questError } = await supabase
@@ -187,11 +180,25 @@ export const useGameLogic = () => {
             // Reconstruct duration/end time
             const startTime = new Date(q.start_time).getTime();
             const endTime = new Date(q.end_time).getTime();
-            const now = Date.now();
             
             // Calculate actual duration from DB time
             const actualDuration = Math.floor((endTime - startTime) / 1000);
             const duration = q.quest_mining.duration;
+
+            // Resolve Hero IDs for this quest from the party snapshot logic
+            const questPartyId = q.party_id;
+            let heroIds: string[] = [];
+            
+            // Find the party configuration that matches this quest's party_id
+            const matchedParty = partyData?.find((p: any) => p.party_id === questPartyId);
+            
+            if (matchedParty) {
+                heroIds = [
+                    matchedParty.hero1_id ? matchedParty.hero1_id.toString() : null,
+                    matchedParty.hero2_id ? matchedParty.hero2_id.toString() : null,
+                    matchedParty.hero3_id ? matchedParty.hero3_id.toString() : null
+                ].filter((id): id is string => !!id);
+            }
 
             return {
                 id: q.quest_pid.toString(),
@@ -202,7 +209,7 @@ export const useGameLogic = () => {
                 endTime: endTime,
                 reward: Math.floor((q.quest_mining.min_reward + q.quest_mining.max_reward) / 2),
                 status: 'active',
-                heroIds: loadedQuestsHeroIds(q, loadedHeroes)
+                heroIds: heroIds
             };
         });
 
@@ -223,54 +230,6 @@ export const useGameLogic = () => {
     loadPlayerState();
   }, [farcasterUser?.fid]);
   
-  // Helper to find heroes for a loaded quest process since quest_process might not explicitly store array of hero IDs easily in select
-  // Actually quest_process has party_id, but we need hero IDs.
-  // We can look at quest_player_party snapshot? 
-  // IMPORTANT: The table `quest_process` does NOT strictly link heroes, it links `party_id`.
-  // But heroes might move parties. 
-  // However, `quest_process` has `hero1_damage` etc, implying it tracks specific heroes. 
-  // Wait, the table definition has `party_id`, but doesn't snapshot the hero IDs.
-  // Assumption: Active quests lock the heroes. We can infer which heroes are in the quest?
-  // Actually, for this prototype, if we load an active quest, we might struggle to know EXACTLY which heroes if we don't store them.
-  // The `quest_process` table provided earlier: `party_id`.
-  // If we look at `quest_player_party` for that ID, we get current heroes.
-  // BUT, heroes are locked during quest. So `quest_player_party` shouldn't change for that ID?
-  // Yes, if UI blocks it.
-  // Let's rely on finding heroes that match the party snapshot if possible, or just the current party state.
-  const loadedQuestsHeroIds = (processRow: any, allHeroes: Hero[]): string[] => {
-      // Need to fetch party info or store hero IDs in quest_process.
-      // The schema didn't have hero_ids array.
-      // We will try to fetch the party configuration linked to this process.
-      // But wait, we loaded `quest_player_party`.
-      // If `processRow.party_id` matches a loaded party, use those heroes.
-      // This is imperfect if user swaps heroes (should be blocked) but for now:
-      // We need to implement proper locking.
-      // *Workaround*: Since we can't easily join to get historical party state without a snapshot table, 
-      // we will assume the heroes currently in that party slot are the ones questing.
-      // This works because the UI locks the party while questing.
-      
-      // We need to find the party in our newly loaded presets.
-      // However, `quest_player_party` has `party_id` PK.
-      // We need to match `processRow.party_id`.
-      // Since `partyPresets` is just arrays, we don't have the PKs handy in GameState.
-      // We might need to query specifically or just guess based on `party_no`.
-      // Ideally `quest_process` should have `party_no` or snapshot heroes.
-      
-      // Let's fallback: The heroes will be marked as "in quest" if we find them.
-      // Actually, let's use a separate query or join in the main load if possible.
-      // Since I can't easily change schema now without another prompt, I will try to look up the party by ID from a separate map if needed.
-      // But simpler:
-      // We can query `quest_player_party` again by `party_id` inside the map? No, async issue.
-      
-      // For now, let's assume `quest_process` `party_id` corresponds to the row in `quest_player_party`.
-      // We will fetch `quest_player_party` fully and check IDs.
-      return []; 
-      // Note: This logic is tricky without a direct link.
-      // **Correction**: I will fix this by fetching the hero IDs for the active quests in a sub-query style or just loading everything.
-      // Actually, let's just make `loadedQuestsHeroIds` return empty and rely on visual lock if we can't find them?
-      // No, that breaks return logic.
-      // I will add a realtime fetch for quest heroes in `loadPlayerState`.
-  };
 
   // --- 2. Action Hooks ---
   

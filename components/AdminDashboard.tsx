@@ -14,16 +14,17 @@ const TABLES = [
   'quest_player_hero',
   'quest_player_equipment',
   'quest_player_party',
-  'quest_process'
+  'quest_process',
+  'quest_player_hero_lost'
 ];
 
-// Helper to determine Primary Key for updates
+// Helper to determine Primary Key for updates/deletes
 const getPKey = (table: string): string => {
   if (table === 'quest_player_hero') return 'player_hid';
   if (table === 'quest_player_equipment') return 'player_eid';
   if (table === 'quest_process') return 'quest_pid';
-  // quest_player_party has composite PK (fid, party_no) - simple edit might fail without special handling
-  // For simplicity, we use 'id' as default fallback, but for composite PKs we might disable edit or warn
+  // quest_player_party has composite PK (fid, party_no)
+  // For simplicity in this admin tool, we'll try 'id' first, but deletion logic will need specific handling for composite keys if 'id' doesn't exist
   return 'id';
 };
 
@@ -44,7 +45,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
       const { data: rows, error: err } = await supabase
         .from(table)
         .select('*')
-        .limit(50); // Limit to avoid massive load
+        .limit(50)
+        .order(getPKey(table) === 'id' ? 'id' : getPKey(table), { ascending: false }); // Show newest first if possible
 
       if (err) throw err;
       setData(rows || []);
@@ -64,28 +66,52 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
     setEditJson(JSON.stringify(row, null, 2));
   };
 
+  const handleDelete = async (row: any) => {
+    // Safety check: Only allow deleting if FID is present (User Data) to prevent accidental master data wipe
+    if (!row.fid && !confirm("This record does not have an FID. Are you sure you want to delete MASTER DATA?")) {
+      return;
+    }
+    if (!confirm("Are you sure you want to DELETE this record? This cannot be undone.")) {
+      return;
+    }
+
+    try {
+      const pk = getPKey(activeTable);
+      let query = supabase.from(activeTable).delete();
+
+      if (activeTable === 'quest_player_party') {
+        // Handle composite key for party
+        query = query.eq('fid', row.fid).eq('party_no', row.party_no);
+      } else {
+        query = query.eq(pk, row[pk]);
+      }
+
+      const { error } = await query;
+      if (error) throw error;
+
+      alert('Delete Successful');
+      fetchData(activeTable);
+    } catch (e: any) {
+      alert(`Delete Failed: ${e.message}`);
+    }
+  };
+
   const handleSave = async () => {
     if (!editingRow) return;
     try {
       const updatedRow = JSON.parse(editJson);
       const pk = getPKey(activeTable);
       
-      // If table has composite PK or no ID, this might fail.
-      if (!updatedRow[pk] && activeTable === 'quest_player_party') {
-          // Special handling for composite PK if needed, but for now specific ID-based update:
-          const { error } = await supabase
-            .from(activeTable)
-            .update(updatedRow)
-            .eq('fid', updatedRow.fid)
-            .eq('party_no', updatedRow.party_no);
-          if (error) throw error;
+      let query = supabase.from(activeTable).update(updatedRow);
+
+      if (activeTable === 'quest_player_party') {
+          query = query.eq('fid', updatedRow.fid).eq('party_no', updatedRow.party_no);
       } else {
-          const { error } = await supabase
-            .from(activeTable)
-            .update(updatedRow)
-            .eq(pk, updatedRow[pk]);
-          if (error) throw error;
+          query = query.eq(pk, updatedRow[pk]);
       }
+
+      const { error } = await query;
+      if (error) throw error;
 
       alert('Update Successful');
       setEditingRow(null);
@@ -141,7 +167,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
               <table className="w-full border-collapse border border-slate-800 text-left">
                 <thead>
                   <tr className="bg-slate-900">
-                    <th className="p-2 border border-slate-800 text-slate-400">Action</th>
+                    <th className="p-2 border border-slate-800 text-slate-400 sticky left-0 bg-slate-900 z-10 shadow-md">Action</th>
                     {Object.keys(data[0]).map(key => (
                       <th key={key} className="p-2 border border-slate-800 text-indigo-400">{key}</th>
                     ))}
@@ -149,14 +175,23 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
                 </thead>
                 <tbody>
                   {data.map((row, i) => (
-                    <tr key={i} className="hover:bg-slate-900/50">
-                      <td className="p-2 border border-slate-800">
+                    <tr key={i} className="hover:bg-slate-900/50 group">
+                      <td className="p-2 border border-slate-800 sticky left-0 bg-slate-950 group-hover:bg-slate-900/50 z-10 shadow-sm flex gap-2">
                         <button 
                           onClick={() => handleEdit(row)}
-                          className="px-2 py-1 bg-slate-800 hover:bg-indigo-600 rounded text-[10px] text-white transition-colors"
+                          className="px-2 py-1 bg-slate-800 hover:bg-indigo-600 rounded text-[10px] text-white transition-colors border border-slate-700"
                         >
                           EDIT
                         </button>
+                        {/* Only show delete for rows with FID (User Data) to be safe, or allow all with confirm */}
+                        {row.fid && (
+                          <button 
+                            onClick={() => handleDelete(row)}
+                            className="px-2 py-1 bg-rose-900/30 hover:bg-rose-600 rounded text-[10px] text-rose-200 hover:text-white transition-colors border border-rose-900/50"
+                          >
+                            DEL
+                          </button>
+                        )}
                       </td>
                       {Object.values(row).map((val: any, j) => (
                         <td key={j} className="p-2 border border-slate-800 text-slate-300 truncate max-w-[200px]">
