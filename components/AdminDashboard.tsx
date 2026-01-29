@@ -23,8 +23,8 @@ const getPKey = (table: string): string => {
   if (table === 'quest_player_hero') return 'player_hid';
   if (table === 'quest_player_equipment') return 'player_eid';
   if (table === 'quest_process') return 'quest_pid';
-  // quest_player_party has composite PK (fid, party_no)
-  // For simplicity in this admin tool, we'll try 'id' first, but deletion logic will need specific handling for composite keys if 'id' doesn't exist
+  if (table === 'quest_player_stats') return 'fid';
+  if (table === 'quest_player_party') return 'party_id';
   return 'id';
 };
 
@@ -46,7 +46,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
         .from(table)
         .select('*')
         .limit(50)
-        .order(getPKey(table) === 'id' ? 'id' : getPKey(table), { ascending: false }); // Show newest first if possible
+        .order(getPKey(table), { ascending: false }); // Show newest first if possible
 
       if (err) throw err;
       setData(rows || []);
@@ -77,14 +77,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
 
     try {
       const pk = getPKey(activeTable);
-      let query = supabase.from(activeTable).delete();
-
-      if (activeTable === 'quest_player_party') {
-        // Handle composite key for party
-        query = query.eq('fid', row.fid).eq('party_no', row.party_no);
-      } else {
-        query = query.eq(pk, row[pk]);
-      }
+      const query = supabase.from(activeTable).delete().eq(pk, row[pk]);
 
       const { error } = await query;
       if (error) throw error;
@@ -102,13 +95,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
       const updatedRow = JSON.parse(editJson);
       const pk = getPKey(activeTable);
       
-      let query = supabase.from(activeTable).update(updatedRow);
-
-      if (activeTable === 'quest_player_party') {
-          query = query.eq('fid', updatedRow.fid).eq('party_no', updatedRow.party_no);
-      } else {
-          query = query.eq(pk, updatedRow[pk]);
-      }
+      const query = supabase.from(activeTable).update(updatedRow).eq(pk, updatedRow[pk]);
 
       const { error } = await query;
       if (error) throw error;
@@ -222,7 +209,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
                 className="w-full h-64 bg-slate-950 text-emerald-400 font-mono text-xs p-4 rounded border border-slate-800 focus:border-indigo-500 outline-none resize-none"
               />
               <p className="text-xs text-slate-500 mt-2">
-                ※ JSON形式で編集してください。Primary Keyを変更すると新しいレコードとして作成されるか、エラーになります。
+                ※ JSON形式で編集してください。Primary Key ({getPKey(activeTable)}) を変更すると新しいレコードとして作成されるか、エラーになります。
               </p>
             </div>
             <div className="p-4 border-t border-slate-800 flex justify-end gap-3">
