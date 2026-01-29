@@ -1,5 +1,5 @@
-
-import React from 'react';
+import React, { useState } from 'react';
+import AdminDashboard from './AdminDashboard';
 
 interface AccountModalProps {
   user: any;
@@ -7,12 +7,23 @@ interface AccountModalProps {
   onClose: () => void;
 }
 
+// Allowed Admin FIDs
+const ADMIN_FIDS = [891963, 159718, 406233, 1379028]; // ここに管理者のFIDを追加してください
+
 const AccountModal: React.FC<AccountModalProps> = ({ user, balance, onClose }) => {
+  const [showAdmin, setShowAdmin] = useState(false);
+
   if (!user) return null;
 
   // useGameLogicで正規化されたアドレス(address)を優先使用し、なければcustodyAddressなどをフォールバック
   const ethAddress = user.address || user.custodyAddress || 'No Address';
   const truncatedAddress = ethAddress.length > 20 ? `${ethAddress.slice(0, 6)}...${ethAddress.slice(-4)}` : ethAddress;
+
+  const isAdmin = ADMIN_FIDS.includes(user.fid);
+
+  if (showAdmin) {
+    return <AdminDashboard onClose={() => setShowAdmin(false)} />;
+  }
 
   return (
     <div className="fixed inset-0 z-[200] flex items-center justify-center bg-slate-950/80 backdrop-blur-md p-4 animate-fade-in">
@@ -43,12 +54,23 @@ const AccountModal: React.FC<AccountModalProps> = ({ user, balance, onClose }) =
             </div>
           </div>
 
-          <button 
-            onClick={onClose}
-            className="w-full py-4 bg-indigo-600 hover:bg-indigo-500 text-white rounded-2xl font-black text-lg transition-all active:scale-95 shadow-lg shadow-indigo-900/40"
-          >
-            閉じる
-          </button>
+          <div className="w-full space-y-3">
+             {isAdmin && (
+               <button 
+                 onClick={() => setShowAdmin(true)}
+                 className="w-full py-3 bg-slate-800 hover:bg-slate-700 text-indigo-300 border border-indigo-500/30 rounded-2xl font-bold text-sm transition-all flex items-center justify-center gap-2"
+               >
+                 <span>🛠️</span> ADMIN DASHBOARD
+               </button>
+             )}
+
+             <button 
+               onClick={onClose}
+               className="w-full py-4 bg-indigo-600 hover:bg-indigo-500 text-white rounded-2xl font-black text-lg transition-all active:scale-95 shadow-lg shadow-indigo-900/40"
+             >
+               閉じる
+             </button>
+          </div>
         </div>
       </div>
       

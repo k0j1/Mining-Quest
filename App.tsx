@@ -345,8 +345,8 @@ const App: React.FC = () => {
         </div>
       </main>
 
-      {/* Debug Console: Enabled if Farcaster Env OR Error occurred */}
-      <DebugConsole isEnabled={isFarcasterEnv || appError !== null} />
+      {/* Debug Console: Enabled only if Error occurred (User requested removal of bug icon for normal use) */}
+      <DebugConsole isEnabled={appError !== null} />
 
       {/* Notification Toast */}
       {ui.notification && (

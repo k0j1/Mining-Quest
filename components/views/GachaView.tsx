@@ -5,6 +5,7 @@ import { playClick } from '../../utils/sound';
 import Header from '../Header';
 import { supabase } from '../../lib/supabase';
 import { HeroDefinition } from '../../data/hero_data';
+import { HERO_RATES, EQUIPMENT_RATES } from '../../services/gachaService';
 
 interface GachaViewProps {
   gameState: GameState;
@@ -20,6 +21,30 @@ interface GachaViewProps {
   onChainBalance?: number | null;
   onAccountClick?: () => void;
 }
+
+// --- Rate Display Component ---
+const RateDisplay: React.FC<{ rates: Record<string, number> }> = ({ rates }) => {
+  const colors: Record<string, string> = {
+    C: 'text-slate-400',
+    UC: 'text-emerald-400',
+    R: 'text-indigo-400',
+    E: 'text-fuchsia-400',
+    L: 'text-amber-400'
+  };
+
+  return (
+    <div className="bg-slate-950 p-3 rounded-xl border border-slate-800 mb-4 flex justify-between items-center text-[10px] font-bold">
+       <span className="text-slate-500 mr-2">提供割合:</span>
+       <div className="flex gap-3">
+         {Object.entries(rates).map(([rarity, rate]) => (
+           <span key={rarity} className={colors[rarity]}>
+             {rarity}: {rate}%
+           </span>
+         ))}
+       </div>
+    </div>
+  );
+};
 
 // --- Hero List Components ---
 
@@ -148,6 +173,8 @@ const HeroListModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
 
         {/* List */}
         <div className="flex-1 overflow-y-auto p-4 pb-8 space-y-3 custom-scrollbar">
+          <RateDisplay rates={HERO_RATES} />
+
           {isLoading ? (
             <div className="text-center py-10">
               <div className="w-8 h-8 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
@@ -315,6 +342,8 @@ const EquipmentListModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
 
         {/* List */}
         <div className="flex-1 overflow-y-auto p-4 pb-8 space-y-3 custom-scrollbar">
+          <RateDisplay rates={EQUIPMENT_RATES} />
+
           {isLoading ? (
             <div className="text-center py-10">
               <div className="w-8 h-8 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>

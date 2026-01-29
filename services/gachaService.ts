@@ -2,6 +2,9 @@ import { supabase } from "../lib/supabase";
 import { QuestRank } from "../types";
 
 // Rarity Logic
+export const HERO_RATES = { C: 50, UC: 30, R: 15, E: 4, L: 1 };
+export const EQUIPMENT_RATES = { C: 55, UC: 28, R: 12, E: 4, L: 1 };
+
 const determineRarity = (type: 'Hero' | 'Equipment', minRarity: QuestRank = 'C'): QuestRank => {
   const rand = Math.random() * 100;
   
