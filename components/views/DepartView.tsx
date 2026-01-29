@@ -6,7 +6,7 @@ import Header from '../Header';
 
 interface DepartViewProps {
   gameState: GameState;
-  onDepart: (rank: QuestRank) => boolean;
+  onDepart: (rank: QuestRank) => Promise<boolean>;
   onSwitchParty: (index: number) => void;
   isSoundOn: boolean;
   onToggleSound: () => void;
@@ -28,6 +28,7 @@ const DepartView: React.FC<DepartViewProps> = ({
   onAccountClick
 }) => {
   const [selectedRank, setSelectedRank] = useState<QuestRank | null>(null);
+  const [isProcessing, setIsProcessing] = useState(false);
 
   const handleSelect = (rank: QuestRank) => {
     playClick();
@@ -39,9 +40,11 @@ const DepartView: React.FC<DepartViewProps> = ({
     setSelectedRank(null);
   };
 
-  const handleConfirm = () => {
-    if (selectedRank) {
-      const success = onDepart(selectedRank);
+  const handleConfirm = async () => {
+    if (selectedRank && !isProcessing) {
+      setIsProcessing(true);
+      const success = await onDepart(selectedRank);
+      setIsProcessing(false);
       if (success) setSelectedRank(null);
     }
   };
@@ -239,16 +242,16 @@ const DepartView: React.FC<DepartViewProps> = ({
                </button>
                <button 
                  onClick={handleConfirm}
-                 disabled={!isPartyFull}
+                 disabled={!isPartyFull || isProcessing}
                  className={`flex-1 py-3 text-white rounded-xl font-bold shadow-md transition-all text-sm ${
-                    !isPartyFull
+                    !isPartyFull || isProcessing
                       ? 'bg-slate-700 opacity-50 cursor-not-allowed'
                       : !canAfford 
                         ? 'bg-rose-600 hover:bg-rose-500' // Red for unaffordable but clickable
                         : 'bg-indigo-600 hover:bg-indigo-500'
                  }`}
                >
-                 {!isPartyFull ? 'メンバー不足 (3名必要)' : (!canAfford ? '出発する (資金不足)' : '出発する')}
+                 {isProcessing ? '処理中...' : !isPartyFull ? 'メンバー不足 (3名必要)' : (!canAfford ? '出発する (資金不足)' : '出発する')}
                </button>
              </div>
            </div>

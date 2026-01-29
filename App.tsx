@@ -203,8 +203,8 @@ const App: React.FC = () => {
         return (
           <DepartView 
             gameState={gameState} 
-            onDepart={(rank) => {
-              const success = actions.depart(rank);
+            onDepart={async (rank) => {
+              const success = await actions.depart(rank);
               if (success) setCurrentView(View.HOME);
               return success;
             }}

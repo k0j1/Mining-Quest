@@ -8,6 +8,7 @@ export default defineConfig({
   base: '/Mining-Quest/',
   define: {
     'process.env.API_KEY': JSON.stringify(process.env.API_KEY),
+    'process.env.VITE_SUPABASE_ANON_KEY': JSON.stringify(process.env.VITE_SUPABASE_ANON_KEY),
   },
   build: {
     outDir: 'dist',
