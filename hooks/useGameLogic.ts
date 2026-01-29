@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { GameState, QuestConfig, QuestRank, Hero, Equipment, Quest } from '../types';
 import { INITIAL_HEROES, INITIAL_EQUIPMENT } from '../constants';
@@ -99,9 +98,12 @@ export const useGameLogic = () => {
           .select('*, quest_equipment(*)')
           .eq('fid', fid);
 
-        if (equipError) throw equipError;
+        if (equipError) {
+            console.error("Equipment load error:", equipError);
+        }
 
         const loadedEquipment: Equipment[] = (equipData || []).map((e: any) => {
+          // Handle Join: might be array or object depending on Supabase client version/config
           const base = Array.isArray(e.quest_equipment) ? e.quest_equipment[0] : e.quest_equipment;
           if (!base) return null;
           return {
@@ -119,9 +121,10 @@ export const useGameLogic = () => {
           .select('*, quest_hero(*)')
           .eq('fid', fid);
 
-        if (heroError) throw heroError;
+        if (heroError) {
+            console.error("Hero load error:", heroError);
+        }
         
-        // Helper to get ability/dr map
         const drMap: Record<string, number> = { C: 2, UC: 5, R: 10, E: 15, L: 20 };
 
         const loadedHeroes: Hero[] = (heroData || []).map((h: any) => {
@@ -153,7 +156,9 @@ export const useGameLogic = () => {
           .select('*')
           .eq('fid', fid);
 
-        if (partyError) throw partyError;
+        if (partyError) {
+             console.error("Party load error:", partyError);
+        }
 
         const newPartyPresets: (string | null)[][] = [
             [null, null, null],
@@ -182,25 +187,31 @@ export const useGameLogic = () => {
           .eq('fid', fid)
           .eq('status', 'active');
 
-        if (questError) throw questError;
+        if (questError) {
+            console.error("Quest load error:", questError);
+        }
 
         const loadedQuests: Quest[] = (questData || []).map((q: any) => {
             const base = Array.isArray(q.quest_mining) ? q.quest_mining[0] : q.quest_mining;
             if (!base) return null;
 
-            // Reconstruct duration/end time
             const startTime = new Date(q.start_time).getTime();
             const endTime = new Date(q.end_time).getTime();
             
-            // Calculate actual duration from DB time
             const actualDuration = Math.floor((endTime - startTime) / 1000);
             const duration = base.duration;
 
-            // Resolve Hero IDs for this quest from the party snapshot logic
+            // Resolve Hero IDs based on the party_id snapshot in quest_process
+            // To do this strictly, we need to know which heroes were in that party. 
+            // Currently quest_player_party represents current state. 
+            // Ideally quest_process should snapshot the heroes, but for now we look at current party configuration matches
+            // OR we assume the party_id in `quest_player_party` matches `q.party_id`.
+            
             const questPartyId = q.party_id;
             let heroIds: string[] = [];
             
-            // Find the party configuration that matches this quest's party_id
+            // Find the party configuration that matches this quest's party_id (assuming party_id is persistent key in quest_player_party)
+            // Note: In Supabase table setup, quest_player_party primary key is party_id.
             const matchedParty = partyData?.find((p: any) => p.party_id === questPartyId);
             
             if (matchedParty) {
@@ -209,6 +220,10 @@ export const useGameLogic = () => {
                     matchedParty.hero2_id ? matchedParty.hero2_id.toString() : null,
                     matchedParty.hero3_id ? matchedParty.hero3_id.toString() : null
                 ].filter((id): id is string => !!id);
+            } else {
+                // Fallback: Try to find which party slot (party_no) this quest might belong to if logic allows,
+                // otherwise empty (visual glitch risk but prevents crash)
+                console.warn("Could not find party config for quest", q.quest_pid);
             }
 
             return {
@@ -233,7 +248,7 @@ export const useGameLogic = () => {
             activeQuests: loadedQuests
         }));
         
-        console.log(`Loaded ${loadedHeroes.length} heroes, ${loadedEquipment.length} items, ${loadedQuests.length} quests.`);
+        console.log(`Loaded: ${loadedHeroes.length} Heroes, ${loadedEquipment.length} Equipment, ${loadedQuests.length} Quests`);
 
       } catch (e) {
         console.error("Failed to load player data from DB:", e);
