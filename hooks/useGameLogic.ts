@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { GameState, QuestConfig, QuestRank, Hero, Equipment, Quest } from '../types';
 import { INITIAL_HEROES, INITIAL_EQUIPMENT } from '../constants';
@@ -93,98 +92,69 @@ export const useGameLogic = () => {
       console.log(`[useGameLogic] Starting DB fetch for FID: ${fid}`);
 
       try {
-        // --- 1. Load Equipment (Manual Join) ---
-        // Fetch Player Equipment
-        const { data: playerEquips, error: peError } = await supabase
+        // --- 1. Load Equipment (Join) ---
+        // Fetch Player Equipment with Inner Join to Master Data
+        const { data: equipData, error: equipError } = await supabase
           .from('quest_player_equipment')
-          .select('*')
+          .select('*, quest_equipment!inner(*)')
           .eq('fid', fid);
 
-        if (peError) {
-             console.error("[useGameLogic] Player Equipment load error:", peError);
-             throw peError;
+        if (equipError) {
+            console.error("[useGameLogic] Equipment load error:", equipError);
+        } else {
+            console.log(`[useGameLogic] Equipment raw data count: ${equipData?.length || 0}`);
+        }
+
+        const loadedEquipment: Equipment[] = (equipData || []).map((e: any) => {
+          // Handle Join: quest_equipment is usually an object here due to FK
+          const base = Array.isArray(e.quest_equipment) ? e.quest_equipment[0] : e.quest_equipment;
+          if (!base) return null;
+          return {
+            id: e.player_eid.toString(),
+            name: base.name,
+            type: base.type,
+            bonus: base.bonus,
+            rarity: base.rarity
+          };
+        }).filter((e): e is Equipment => e !== null);
+
+        // --- 2. Load Heroes (Join) ---
+        // Fetch Player Heroes with Inner Join to Master Data
+        const { data: heroData, error: heroError } = await supabase
+          .from('quest_player_hero')
+          .select('*, quest_hero!inner(*)')
+          .eq('fid', fid);
+
+        if (heroError) {
+            console.error("[useGameLogic] Hero load error:", heroError);
+        } else {
+            console.log(`[useGameLogic] Hero raw data count: ${heroData?.length || 0}`);
         }
         
-        // Fetch Master Equipment Data
-        let loadedEquipment: Equipment[] = [];
-        if (playerEquips && playerEquips.length > 0) {
-            const equipIds = playerEquips.map((e: any) => e.equipment_id);
-            // Deduplicate for query
-            const uniqueEquipIds = [...new Set(equipIds)];
-            
-            const { data: masterEquips, error: meError } = await supabase
-                .from('quest_equipment')
-                .select('*')
-                .in('id', uniqueEquipIds);
-                
-            if (meError) console.error("Master Equipment load error:", meError);
-            
-            // Map Map for fast lookup
-            const masterMap = new Map<any, any>(masterEquips?.map((m: any) => [m.id, m]) || []);
+        const drMap: Record<string, number> = { C: 2, UC: 5, R: 10, E: 15, L: 20 };
 
-            loadedEquipment = playerEquips.map((pe: any) => {
-                const base = masterMap.get(pe.equipment_id);
-                if (!base) return null;
-                return {
-                    id: pe.player_eid.toString(),
-                    name: base.name,
-                    type: base.type,
-                    bonus: base.bonus,
-                    rarity: base.rarity
-                };
-            }).filter((e): e is Equipment => e !== null);
-        }
+        const loadedHeroes: Hero[] = (heroData || []).map((h: any) => {
+          const base = Array.isArray(h.quest_hero) ? h.quest_hero[0] : h.quest_hero;
+          if (!base) return null;
 
-        // --- 2. Load Heroes (Manual Join) ---
-        // Fetch Player Heroes
-        const { data: playerHeroes, error: phError } = await supabase
-          .from('quest_player_hero')
-          .select('*')
-          .eq('fid', fid);
-
-        if (phError) {
-             console.error("[useGameLogic] Player Hero load error:", phError);
-             throw phError;
-        }
-
-        let loadedHeroes: Hero[] = [];
-        if (playerHeroes && playerHeroes.length > 0) {
-             const heroIds = playerHeroes.map((h: any) => h.hero_id);
-             const uniqueHeroIds = [...new Set(heroIds)];
-
-             const { data: masterHeroes, error: mhError } = await supabase
-                 .from('quest_hero')
-                 .select('*')
-                 .in('id', uniqueHeroIds);
-
-             if (mhError) console.error("Master Hero load error:", mhError);
-
-             const masterHeroMap = new Map<any, any>(masterHeroes?.map((m: any) => [m.id, m]) || []);
-             const drMap: Record<string, number> = { C: 2, UC: 5, R: 10, E: 15, L: 20 };
-
-             loadedHeroes = playerHeroes.map((h: any) => {
-                 const base = masterHeroMap.get(h.hero_id);
-                 if (!base) return null;
-
-                 return {
-                    id: h.player_hid.toString(),
-                    name: base.name,
-                    species: base.species,
-                    rarity: base.rarity,
-                    trait: base.ability,
-                    damageReduction: drMap[base.rarity] || 0,
-                    level: 1,
-                    hp: h.hp,
-                    maxHp: base.hp,
-                    imageUrl: `https://miningquest.k0j1.v2002.coreserver.jp/images/Hero/s/${base.name}_s.png`,
-                    equipmentIds: [
-                      h.pickaxe_player_eid ? h.pickaxe_player_eid.toString() : '',
-                      h.helmet_player_eid ? h.helmet_player_eid.toString() : '',
-                      h.boots_player_eid ? h.boots_player_eid.toString() : ''
-                    ]
-                 };
-             }).filter((h): h is Hero => h !== null);
-        }
+          return {
+            id: h.player_hid.toString(),
+            name: base.name,
+            species: base.species,
+            rarity: base.rarity,
+            trait: base.ability,
+            damageReduction: drMap[base.rarity] || 0,
+            level: 1,
+            hp: h.hp,
+            maxHp: base.hp,
+            imageUrl: `https://miningquest.k0j1.v2002.coreserver.jp/images/Hero/s/${base.name}_s.png`,
+            equipmentIds: [
+              h.pickaxe_player_eid ? h.pickaxe_player_eid.toString() : '',
+              h.helmet_player_eid ? h.helmet_player_eid.toString() : '',
+              h.boots_player_eid ? h.boots_player_eid.toString() : ''
+            ]
+          };
+        }).filter((h): h is Hero => h !== null);
 
         // --- 3. Load Party ---
         const { data: partyData, error: partyError } = await supabase
@@ -194,6 +164,8 @@ export const useGameLogic = () => {
 
         if (partyError) {
              console.error("[useGameLogic] Party load error:", partyError);
+        } else {
+             console.log(`[useGameLogic] Party raw data count: ${partyData?.length || 0}`);
         }
 
         const newPartyPresets: (string | null)[][] = [
@@ -201,78 +173,73 @@ export const useGameLogic = () => {
             [null, null, null],
             [null, null, null]
         ];
+        
         const newUnlockedParties = [true, false, false];
 
         partyData?.forEach((p: any) => {
             const idx = p.party_no - 1; // 1-based in DB
             if (idx >= 0 && idx < 3) {
+                // CHANGED: Using herox_hid columns now
                 newPartyPresets[idx] = [
-                    p.hero1_id ? p.hero1_id.toString() : null,
-                    p.hero2_id ? p.hero2_id.toString() : null,
-                    p.hero3_id ? p.hero3_id.toString() : null
+                    p.hero1_hid ? p.hero1_hid.toString() : null,
+                    p.hero2_hid ? p.hero2_hid.toString() : null,
+                    p.hero3_hid ? p.hero3_hid.toString() : null
                 ];
                 newUnlockedParties[idx] = true; 
             }
         });
 
-        // --- 4. Load Active Quests (Manual Join) ---
-        const { data: questProcess, error: qpError } = await supabase
+        // --- 4. Load Active Quests (Join) ---
+        const { data: questData, error: questError } = await supabase
           .from('quest_process')
-          .select('*')
+          .select('*, quest_mining!inner(*)')
           .eq('fid', fid)
           .eq('status', 'active');
 
-        if (qpError) {
-             console.error("[useGameLogic] Quest Process load error:", qpError);
+        if (questError) {
+            console.error("[useGameLogic] Quest load error:", questError);
+        } else {
+             console.log(`[useGameLogic] Active quests count: ${questData?.length || 0}`);
         }
-        
-        let loadedQuests: Quest[] = [];
-        if (questProcess && questProcess.length > 0) {
-             const questIds = questProcess.map((q: any) => q.quest_id);
-             const uniqueQuestIds = [...new Set(questIds)];
 
-             const { data: masterQuests, error: mqError } = await supabase
-                 .from('quest_mining')
-                 .select('*')
-                 .in('id', uniqueQuestIds);
-                 
-             if (mqError) console.error("Master Quest load error:", mqError);
-             const masterQuestMap = new Map<any, any>(masterQuests?.map((m: any) => [m.id, m]) || []);
+        const loadedQuests: Quest[] = (questData || []).map((q: any) => {
+            const base = Array.isArray(q.quest_mining) ? q.quest_mining[0] : q.quest_mining;
+            if (!base) return null;
 
-             loadedQuests = questProcess.map((q: any) => {
-                 const base = masterQuestMap.get(q.quest_id);
-                 if (!base) return null;
+            const startTime = new Date(q.start_time).getTime();
+            const endTime = new Date(q.end_time).getTime();
+            
+            const actualDuration = Math.floor((endTime - startTime) / 1000);
+            const duration = base.duration;
 
-                 const startTime = new Date(q.start_time).getTime();
-                 const endTime = new Date(q.end_time).getTime();
-                 const actualDuration = Math.floor((endTime - startTime) / 1000);
+            const questPartyId = q.party_id;
+            let heroIds: string[] = [];
+            
+            const matchedParty = partyData?.find((p: any) => p.party_id === questPartyId);
+            
+            if (matchedParty) {
+                // CHANGED: Using herox_hid columns
+                heroIds = [
+                    matchedParty.hero1_hid ? matchedParty.hero1_hid.toString() : null,
+                    matchedParty.hero2_hid ? matchedParty.hero2_hid.toString() : null,
+                    matchedParty.hero3_hid ? matchedParty.hero3_hid.toString() : null
+                ].filter((id): id is string => !!id);
+            } else {
+                console.warn("[useGameLogic] Could not find party config for quest", q.quest_pid);
+            }
 
-                 // Identify Heroes in Party
-                 const questPartyId = q.party_id;
-                 let heroIds: string[] = [];
-                 const matchedParty = partyData?.find((p: any) => p.party_id === questPartyId);
-
-                 if (matchedParty) {
-                    heroIds = [
-                        matchedParty.hero1_id ? matchedParty.hero1_id.toString() : null,
-                        matchedParty.hero2_id ? matchedParty.hero2_id.toString() : null,
-                        matchedParty.hero3_id ? matchedParty.hero3_id.toString() : null
-                    ].filter((id): id is string => !!id);
-                 }
-
-                 return {
-                    id: q.quest_pid.toString(),
-                    name: base.name,
-                    rank: base.rank as QuestRank,
-                    duration: base.duration,
-                    actualDuration: actualDuration,
-                    endTime: endTime,
-                    reward: Math.floor((base.min_reward + base.max_reward) / 2),
-                    status: 'active',
-                    heroIds: heroIds
-                 };
-             }).filter((q): q is Quest => q !== null);
-        }
+            return {
+                id: q.quest_pid.toString(),
+                name: base.name,
+                rank: base.rank as QuestRank,
+                duration: duration,
+                actualDuration: actualDuration,
+                endTime: endTime,
+                reward: Math.floor((base.min_reward + base.max_reward) / 2),
+                status: 'active',
+                heroIds: heroIds
+            };
+        }).filter((q): q is Quest => q !== null);
 
         setGameState(prev => ({
             ...prev,
