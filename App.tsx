@@ -20,7 +20,7 @@ import RecoveryView from './components/views/RecoveryView';
 import GachaView from './components/views/GachaView';
 import LightpaperView from './components/views/LightpaperView';
 
-const ADMIN_FIDS = [891963, 159718, 406233, 1379028];
+const ADMIN_FIDS = [406233];
 
 const App: React.FC = () => {
   // 0. Configuration Check - Return early if keys are missing

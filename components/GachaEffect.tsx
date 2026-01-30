@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { playGachaReveal, playClick } from '../utils/sound';
 
@@ -61,7 +60,7 @@ const GachaEffect: React.FC<GachaEffectProps> = ({ result, onClose }) => {
   const color = rarityColors[rarity] || '#94a3b8';
   
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950 overflow-hidden">
+    <div className="fixed inset-0 z-[300] flex items-center justify-center bg-slate-950 overflow-hidden">
       {/* 1. Background God Rays - Enhanced for Special Pull */}
       <div className={`absolute inset-0 flex items-center justify-center transition-opacity duration-1000 ${phase === 'reveal' ? 'opacity-60' : 'opacity-0'}`}>
         <div 

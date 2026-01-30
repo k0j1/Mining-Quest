@@ -7,8 +7,8 @@ interface AccountModalProps {
   onClose: () => void;
 }
 
-// Allowed Admin FIDs
-const ADMIN_FIDS = [891963, 159718, 406233, 1379028]; // ここに管理者のFIDを追加してください
+// Allowed Admin FIDs for Admin Dashboard
+const ADMIN_FIDS = [406233, 137908]; 
 
 const AccountModal: React.FC<AccountModalProps> = ({ user, balance, onClose }) => {
   const [showAdmin, setShowAdmin] = useState(false);

@@ -22,7 +22,7 @@ interface StatusBoardProps {
   onToggleDebug?: () => void;
 }
 
-const ADMIN_FIDS = [891963, 159718, 406233, 1379028];
+const ADMIN_FIDS = [406233];
 
 const QuestItem: React.FC<{ quest: any; config?: QuestConfig; farcasterUser?: any; onDebugComplete?: (id: string) => void }> = ({ quest, config, farcasterUser, onDebugComplete }) => {
   const [timeLeft, setTimeLeft] = useState(Math.max(0, Math.floor((quest.endTime - Date.now()) / 1000)));
