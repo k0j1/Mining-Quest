@@ -14,13 +14,10 @@ interface DebugConsoleProps {
 const DebugConsole: React.FC<DebugConsoleProps> = ({ isEnabled }) => {
   const [logs, setLogs] = useState<LogMessage[]>([]);
   const [isExpanded, setIsExpanded] = useState(false);
-  const [isVisible, setIsVisible] = useState(false); 
   const scrollRef = useRef<HTMLDivElement>(null);
 
+  // Capture logs ALWAYS, regardless of isEnabled
   useEffect(() => {
-    if (!isEnabled) return;
-    setIsVisible(true);
-
     const formatArgs = (args: any[]) => {
       return args.map(arg => {
         if (typeof arg === 'object') {
@@ -47,7 +44,7 @@ const DebugConsole: React.FC<DebugConsoleProps> = ({ isEnabled }) => {
 
       setLogs(prev => {
         const newLogs = [...prev, newMessage];
-        if (newLogs.length > 50) newLogs.shift(); // Keep last 50 logs
+        if (newLogs.length > 100) newLogs.shift(); // Keep last 100 logs
         return newLogs;
       });
     };
@@ -97,7 +94,7 @@ const DebugConsole: React.FC<DebugConsoleProps> = ({ isEnabled }) => {
       window.removeEventListener('error', errorHandler);
       window.removeEventListener('unhandledrejection', rejectionHandler);
     };
-  }, [isEnabled]);
+  }, []);
 
   // Auto-scroll to bottom
   useEffect(() => {
@@ -105,8 +102,6 @@ const DebugConsole: React.FC<DebugConsoleProps> = ({ isEnabled }) => {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
   }, [logs, isExpanded]);
-
-  if (!isVisible) return null;
 
   const getTypeColor = (type: string) => {
     switch (type) {
@@ -117,13 +112,18 @@ const DebugConsole: React.FC<DebugConsoleProps> = ({ isEnabled }) => {
     }
   };
 
+  // Logic: Always capture logs (useEffect above), but only render UI if isEnabled is true
+  if (!isEnabled) {
+    return null; 
+  }
+
   return (
     <div className="fixed bottom-24 right-4 z-[9999] flex flex-col items-end pointer-events-none">
       <div className="pointer-events-auto">
         {!isExpanded ? (
           <button 
             onClick={() => setIsExpanded(true)}
-            className="w-12 h-12 bg-slate-800/90 backdrop-blur border border-slate-600 rounded-full flex items-center justify-center shadow-lg text-slate-400 hover:text-white hover:bg-slate-700 transition-colors active:scale-95"
+            className="w-12 h-12 bg-slate-800/90 backdrop-blur border border-slate-600 rounded-full flex items-center justify-center shadow-lg text-slate-400 hover:text-white hover:bg-slate-700 transition-colors active:scale-95 animate-fade-in"
           >
             🐛
           </button>

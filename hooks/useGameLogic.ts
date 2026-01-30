@@ -89,7 +89,7 @@ export const useGameLogic = () => {
       if (!farcasterUser?.fid) return;
 
       const fid = farcasterUser.fid;
-      console.log("Loading player data for FID:", fid);
+      console.log(`[useGameLogic] Starting DB fetch for FID: ${fid}`);
 
       try {
         // 1. Load Equipment
@@ -99,7 +99,9 @@ export const useGameLogic = () => {
           .eq('fid', fid);
 
         if (equipError) {
-            console.error("Equipment load error:", equipError);
+            console.error("[useGameLogic] Equipment load error:", equipError);
+        } else {
+            console.log(`[useGameLogic] Equipment raw data count: ${equipData?.length || 0}`);
         }
 
         const loadedEquipment: Equipment[] = (equipData || []).map((e: any) => {
@@ -122,7 +124,9 @@ export const useGameLogic = () => {
           .eq('fid', fid);
 
         if (heroError) {
-            console.error("Hero load error:", heroError);
+            console.error("[useGameLogic] Hero load error:", heroError);
+        } else {
+            console.log(`[useGameLogic] Hero raw data count: ${heroData?.length || 0}`);
         }
         
         const drMap: Record<string, number> = { C: 2, UC: 5, R: 10, E: 15, L: 20 };
@@ -157,7 +161,9 @@ export const useGameLogic = () => {
           .eq('fid', fid);
 
         if (partyError) {
-             console.error("Party load error:", partyError);
+             console.error("[useGameLogic] Party load error:", partyError);
+        } else {
+             console.log(`[useGameLogic] Party raw data count: ${partyData?.length || 0}`);
         }
 
         const newPartyPresets: (string | null)[][] = [
@@ -188,7 +194,9 @@ export const useGameLogic = () => {
           .eq('status', 'active');
 
         if (questError) {
-            console.error("Quest load error:", questError);
+            console.error("[useGameLogic] Quest load error:", questError);
+        } else {
+             console.log(`[useGameLogic] Active quests count: ${questData?.length || 0}`);
         }
 
         const loadedQuests: Quest[] = (questData || []).map((q: any) => {
@@ -201,17 +209,9 @@ export const useGameLogic = () => {
             const actualDuration = Math.floor((endTime - startTime) / 1000);
             const duration = base.duration;
 
-            // Resolve Hero IDs based on the party_id snapshot in quest_process
-            // To do this strictly, we need to know which heroes were in that party. 
-            // Currently quest_player_party represents current state. 
-            // Ideally quest_process should snapshot the heroes, but for now we look at current party configuration matches
-            // OR we assume the party_id in `quest_player_party` matches `q.party_id`.
-            
             const questPartyId = q.party_id;
             let heroIds: string[] = [];
             
-            // Find the party configuration that matches this quest's party_id (assuming party_id is persistent key in quest_player_party)
-            // Note: In Supabase table setup, quest_player_party primary key is party_id.
             const matchedParty = partyData?.find((p: any) => p.party_id === questPartyId);
             
             if (matchedParty) {
@@ -221,9 +221,7 @@ export const useGameLogic = () => {
                     matchedParty.hero3_id ? matchedParty.hero3_id.toString() : null
                 ].filter((id): id is string => !!id);
             } else {
-                // Fallback: Try to find which party slot (party_no) this quest might belong to if logic allows,
-                // otherwise empty (visual glitch risk but prevents crash)
-                console.warn("Could not find party config for quest", q.quest_pid);
+                console.warn("[useGameLogic] Could not find party config for quest", q.quest_pid);
             }
 
             return {
@@ -248,10 +246,10 @@ export const useGameLogic = () => {
             activeQuests: loadedQuests
         }));
         
-        console.log(`Loaded: ${loadedHeroes.length} Heroes, ${loadedEquipment.length} Equipment, ${loadedQuests.length} Quests`);
+        console.log(`[useGameLogic] Data Loaded: ${loadedHeroes.length} Heroes, ${loadedEquipment.length} Equipment, ${loadedQuests.length} Quests`);
 
       } catch (e) {
-        console.error("Failed to load player data from DB:", e);
+        console.error("[useGameLogic] Failed to load player data from DB:", e);
       }
     };
 

@@ -20,6 +20,8 @@ import RecoveryView from './components/views/RecoveryView';
 import GachaView from './components/views/GachaView';
 import LightpaperView from './components/views/LightpaperView';
 
+const ADMIN_FIDS = [891963, 159718, 406233, 1379028];
+
 const App: React.FC = () => {
   // 0. Configuration Check - Return early if keys are missing
   if (!isSupabaseConfigured) {
@@ -39,6 +41,14 @@ const App: React.FC = () => {
   const [isConnectionChecked, setIsConnectionChecked] = useState(false);
 
   const { gameState, farcasterUser, onChainBalanceRaw, ui, actions } = useGameLogic();
+
+  // Admin Auto-Debug Mode
+  useEffect(() => {
+    if (farcasterUser && ADMIN_FIDS.includes(farcasterUser.fid)) {
+      setIsDebugMode(true);
+      console.log("Admin detected. Debug mode enabled.");
+    }
+  }, [farcasterUser]);
 
   // Supabase Connection Check
   useEffect(() => {
