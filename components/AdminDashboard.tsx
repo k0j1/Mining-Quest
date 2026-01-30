@@ -25,6 +25,7 @@ const getPKey = (table: string): string => {
   if (table === 'quest_process') return 'quest_pid';
   if (table === 'quest_player_stats') return 'fid';
   if (table === 'quest_player_party') return 'party_id';
+  if (table === 'quest_player_hero_lost') return 'lost_id';
   return 'id';
 };
 
