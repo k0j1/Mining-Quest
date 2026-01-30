@@ -162,9 +162,9 @@ const DepartView: React.FC<DepartViewProps> = ({
 
        {/* Confirmation Modal */}
        {selectedRank && currentRankConfig && (
-         <div className="fixed inset-0 z-50 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
-           <div className="w-full max-w-md bg-slate-900 border border-slate-700 rounded-3xl overflow-hidden flex flex-col max-h-[90vh] shadow-2xl">
-             <div className="p-4 border-b border-slate-800 bg-slate-900 text-center">
+         <div className="fixed inset-0 z-[200] bg-slate-900/80 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in pb-safe">
+           <div className="w-full max-w-md bg-slate-900 border border-slate-700 rounded-3xl overflow-hidden flex flex-col max-h-[80vh] shadow-2xl">
+             <div className="p-4 border-b border-slate-800 bg-slate-900 text-center shrink-0">
                <h2 className="text-lg font-bold text-white">出撃確認</h2>
              </div>
              
@@ -261,7 +261,7 @@ const DepartView: React.FC<DepartViewProps> = ({
                </div>
              </div>
 
-             <div className="p-4 bg-slate-800 border-t border-slate-700 flex gap-3">
+             <div className="p-4 bg-slate-800 border-t border-slate-700 flex gap-3 shrink-0">
                <button 
                  onClick={handleCancel}
                  className="flex-1 py-3 bg-slate-700 text-slate-300 rounded-xl font-bold hover:bg-slate-600 transition-all text-sm"

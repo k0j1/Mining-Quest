@@ -1,4 +1,3 @@
-
 import { Dispatch, SetStateAction } from 'react';
 import { GameState, Quest, Hero, QuestRank } from '../../types';
 import { playClick, playDepart, playError } from '../../utils/sound';
@@ -17,12 +16,8 @@ export const useQuest = ({ gameState, setGameState, showNotification, setReturnR
   const depart = async (rank: QuestRank) => {
     playClick();
 
-    // Check if any quest is already active
-    if (gameState.activeQuests.length > 0) {
-      playError();
-      showNotification("クエストは1つしか同時に進行できません。帰還を待ってください。", 'error');
-      return false;
-    }
+    // REMOVED: Global check "if (gameState.activeQuests.length > 0)"
+    // Instead, we check if the SPECIFIC PARTY is free below.
 
     // Find Config from State (Loaded from DB)
     const config = gameState.questConfigs.find(q => q.rank === rank);
@@ -33,6 +28,18 @@ export const useQuest = ({ gameState, setGameState, showNotification, setReturnR
     }
 
     const currentPreset = gameState.partyPresets[gameState.activePartyIndex];
+    
+    // Check if this party is already busy
+    const isPartyBusy = currentPreset.some(id => 
+        id && gameState.activeQuests.some(q => q.heroIds.includes(id))
+    );
+
+    if (isPartyBusy) {
+        playError();
+        showNotification("このパーティは既に任務中です。別のパーティを選択してください。", 'error');
+        return false;
+    }
+
     const partyHeroes = currentPreset
       .map(id => gameState.heroes.find(h => h.id === id))
       .filter((h): h is Hero => !!h);
