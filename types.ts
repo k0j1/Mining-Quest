@@ -42,9 +42,17 @@ export interface Quest {
   duration: number; // in seconds (original duration)
   actualDuration: number; // in seconds (after boots reduction)
   endTime: number; // timestamp
-  reward: number; // Estimated or minimum reward for display, actual calc on return
+  reward: number; // Estimated reward for display
   status: 'active' | 'completed';
   heroIds: string[]; // IDs of heroes sent on this quest
+  
+  // Pre-calculated Results (Stored in DB at start)
+  results?: {
+    baseReward: number;
+    addHeroReward: number;
+    addEquipmentReward: number;
+    heroDamages: Record<string, number>; // heroId -> damage
+  };
 }
 
 export interface QuestConfig {

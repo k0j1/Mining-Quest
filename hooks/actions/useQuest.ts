@@ -16,9 +16,6 @@ export const useQuest = ({ gameState, setGameState, showNotification, setReturnR
   const depart = async (rank: QuestRank) => {
     playClick();
 
-    // REMOVED: Global check "if (gameState.activeQuests.length > 0)"
-    // Instead, we check if the SPECIFIC PARTY is free below.
-
     // Find Config from State (Loaded from DB)
     const config = gameState.questConfigs.find(q => q.rank === rank);
     if (!config) {
@@ -62,6 +59,51 @@ export const useQuest = ({ gameState, setGameState, showNotification, setReturnR
       return false;
     }
 
+    // --- 1. Calculate Rewards & Bonuses (Pre-calculation) ---
+    // Base Reward
+    const baseReward = Math.floor(Math.random() * (config.maxReward - config.minReward + 1)) + config.minReward;
+
+    // Equipment Bonus (Pickaxe)
+    const partyPickaxeBonusPercent = partyHeroes.reduce((acc, h) => {
+        const equip = gameState.equipment.find(e => e.id === h.equipmentIds[0]);
+        return acc + (equip ? equip.bonus : 0);
+    }, 0);
+    const addEquipmentReward = Math.floor(baseReward * (partyPickaxeBonusPercent / 100));
+
+    // Hero Trait Bonus (Regex Parse)
+    // Example Trait: "チームのクエスト報酬 +10%"
+    const partyHeroBonusPercent = partyHeroes.reduce((acc, h) => {
+        const match = h.trait?.match(/クエスト報酬\s*\+(\d+)%/);
+        return acc + (match ? parseInt(match[1]) : 0);
+    }, 0);
+    const addHeroReward = Math.floor(baseReward * (partyHeroBonusPercent / 100));
+
+    // --- 2. Calculate Damage (Pre-calculation) ---
+    const heroDamages: Record<string, number> = {};
+    const heroDamagesList: number[] = [0, 0, 0];
+
+    partyHeroes.forEach((hero, idx) => {
+        let finalDmg = 0;
+        
+        // Instant Death Logic check
+        if (config.deathChance > 0 && Math.random() < config.deathChance) {
+            finalDmg = 9999; // Fatal damage signal
+        } else {
+            const rawDmg = Math.floor(Math.random() * (config.maxDmg - config.minDmg + 1)) + config.minDmg;
+            const helmetEquip = gameState.equipment.find(e => e.id === hero.equipmentIds[1]);
+            const helmetBonus = helmetEquip ? helmetEquip.bonus : 0;
+            const totalReduction = hero.damageReduction + helmetBonus;
+            
+            finalDmg = rawDmg;
+            if (totalReduction > 0) {
+              finalDmg = Math.max(0, rawDmg - Math.ceil(rawDmg * (totalReduction / 100)));
+            }
+        }
+        heroDamages[hero.id] = finalDmg;
+        heroDamagesList[idx] = finalDmg;
+    });
+
+    // Duration Logic
     const totalBootsBonus = partyHeroes.reduce((acc, hero) => {
       const equipId = hero.equipmentIds[2];
       const equip = gameState.equipment.find(e => e.id === equipId);
@@ -74,9 +116,9 @@ export const useQuest = ({ gameState, setGameState, showNotification, setReturnR
     const startTime = Date.now();
     const endTime = startTime + actualDuration * 1000;
 
-    // Create Local Quest Object
+    // Create Local Quest Object with Results
     const newQuest: Quest = {
-      id: Math.random().toString(), // Temp ID, updated if DB success
+      id: Math.random().toString(), // Temp ID
       name: config.name,
       rank: rank,
       duration: config.duration,
@@ -84,19 +126,18 @@ export const useQuest = ({ gameState, setGameState, showNotification, setReturnR
       endTime: endTime,
       reward: Math.floor((config.minReward + config.maxReward) / 2),
       status: 'active',
-      heroIds: partyHeroes.map(h => h.id)
+      heroIds: partyHeroes.map(h => h.id),
+      results: {
+          baseReward,
+          addHeroReward,
+          addEquipmentReward,
+          heroDamages
+      }
     };
 
     // DB Insert
     if (farcasterUser?.fid) {
-        // Need to find quest_mining.id. We only have rank/name in config. 
-        // We should really store ID in config. Assuming we fetch it or look it up.
-        // Optimization: GameState.questConfigs should include ID.
-        // For now, look up by name/rank or assume `config` has `id` if we modify type.
-        // Let's query based on rank.
         const { data: questMaster } = await supabase.from('quest_mining').select('id').eq('rank', rank).single();
-        
-        // Also need party ID. We can lookup quest_player_party.
         const { data: partyRow } = await supabase.from('quest_player_party')
            .select('party_id')
            .eq('fid', farcasterUser.fid)
@@ -110,7 +151,14 @@ export const useQuest = ({ gameState, setGameState, showNotification, setReturnR
                 party_id: partyRow.party_id,
                 start_time: new Date(startTime).toISOString(),
                 end_time: new Date(endTime).toISOString(),
-                status: 'active'
+                status: 'active',
+                // New Columns
+                base_reward: baseReward,
+                add_hero_reward: addHeroReward,
+                add_equipment_reward: addEquipmentReward,
+                hero1_damage: heroDamagesList[0],
+                hero2_damage: heroDamagesList[1],
+                hero3_damage: heroDamagesList[2]
             }).select('quest_pid').single();
 
             if (!error && inserted) {
@@ -141,7 +189,7 @@ export const useQuest = ({ gameState, setGameState, showNotification, setReturnR
       return false;
     }
 
-    let totalReward = 0;
+    let accumulatedTotalReward = 0;
     const resultList: any[] = [];
     const newHeroes = [...gameState.heroes];
     let deadHeroIds: string[] = [];
@@ -156,54 +204,50 @@ export const useQuest = ({ gameState, setGameState, showNotification, setReturnR
         .map(id => newHeroes.find(h => h.id === id))
         .filter((h): h is Hero => !!h);
 
-      const partyPickaxeBonus = questHeroes.reduce((acc, h) => {
-        const equip = gameState.equipment.find(e => e.id === h.equipmentIds[0]);
-        return acc + (equip ? equip.bonus : 0);
-      }, 0);
-
-      const baseReward = Math.floor(Math.random() * (config.maxReward - config.minReward + 1)) + config.minReward;
-      const bonusReward = Math.floor(baseReward * (partyPickaxeBonus / 100));
+      // Retrieve Pre-calculated Results
+      // If results are missing (old quest or local error), calculate fallback (should not happen with DB flow)
+      const baseReward = quest.results?.baseReward || 0;
+      const bonusReward = (quest.results?.addEquipmentReward || 0) + (quest.results?.addHeroReward || 0);
       let finalReward = baseReward + bonusReward;
+      
+      const heroDamages = quest.results?.heroDamages || {};
 
       let survivors = 0;
-      const damageMap: Record<string, number> = {};
 
       questHeroes.forEach(hero => {
         const idx = newHeroes.findIndex(h => h.id === hero.id);
         if (idx === -1) return;
 
         let isDead = false;
-        let finalDmg = 0;
-
-        if (config.deathChance > 0 && Math.random() < config.deathChance) {
-          deadHeroIds.push(hero.id);
-          logs.push(`💀 悲報: ${hero.name} は帰らぬ犬となりました...`);
-          isDead = true;
-          finalDmg = hero.hp; // All HP lost
-        } else {
-          const rawDmg = Math.floor(Math.random() * (config.maxDmg - config.minDmg + 1)) + config.minDmg;
-          const helmetEquip = gameState.equipment.find(e => e.id === hero.equipmentIds[1]);
-          const helmetBonus = helmetEquip ? helmetEquip.bonus : 0;
-          const totalReduction = hero.damageReduction + helmetBonus;
-          
-          finalDmg = rawDmg;
-          if (totalReduction > 0) {
-            finalDmg = Math.max(0, rawDmg - Math.ceil(rawDmg * (totalReduction / 100)));
-          }
-
-          const newHp = Math.max(0, hero.hp - finalDmg);
-          newHeroes[idx] = { ...hero, hp: newHp };
-          
-          if (newHp === 0) {
-            deadHeroIds.push(hero.id);
-            logs.push(`💀 ${hero.name} は力尽きた... (HP 0)`);
-            isDead = true;
-          } else {
-            logs.push(`💥 ${hero.name}: -${finalDmg} HP (残: ${newHp})`);
-          }
-        }
         
-        damageMap[hero.id] = finalDmg;
+        // Use pre-calculated damage
+        const damageTaken = heroDamages[hero.id] || 0;
+
+        // Check death condition (Damage >= HP or 9999 flag)
+        const currentHp = hero.hp;
+        let newHp = Math.max(0, currentHp - damageTaken);
+
+        if (damageTaken >= 9999) {
+             // Instant Death Flag from Depart
+             newHp = 0;
+             deadHeroIds.push(hero.id);
+             logs.push(`💀 悲報: ${hero.name} は帰らぬ犬となりました...`);
+             isDead = true;
+        } else {
+             newHeroes[idx] = { ...hero, hp: newHp };
+             
+             if (newHp === 0) {
+               deadHeroIds.push(hero.id);
+               logs.push(`💀 ${hero.name} は力尽きた... (HP 0)`);
+               isDead = true;
+             } else {
+               if (damageTaken > 0) {
+                  logs.push(`💥 ${hero.name}: -${damageTaken} HP (残: ${newHp})`);
+               } else {
+                  logs.push(`🛡️ ${hero.name}: 無傷で生還！`);
+               }
+             }
+        }
 
         if (!isDead) {
           survivors++;
@@ -214,7 +258,7 @@ export const useQuest = ({ gameState, setGameState, showNotification, setReturnR
         finalReward = 0;
         logs.push(`❌ パーティ全滅！クエスト失敗。報酬は得られません。`);
       } else {
-        totalReward += finalReward;
+        accumulatedTotalReward += finalReward;
       }
 
       resultList.push({
@@ -230,14 +274,10 @@ export const useQuest = ({ gameState, setGameState, showNotification, setReturnR
       if (farcasterUser?.fid) {
           const questPid = parseInt(quest.id);
 
-          // 1. Update quest_process
+          // 1. Update quest_process status to completed
           await supabase.from('quest_process').update({
               status: 'completed',
-              base_reward: finalReward, // Simplified to store total as base in this prototype or split
-              add_hero_reward: bonusReward, 
-              hero1_damage: damageMap[questHeroes[0]?.id] || 0,
-              hero2_damage: damageMap[questHeroes[1]?.id] || 0,
-              hero3_damage: damageMap[questHeroes[2]?.id] || 0
+              // Note: rewards/damage already stored at start
           }).eq('quest_pid', questPid);
 
           // 2. Update Hero HPs and Handle Deaths
@@ -246,10 +286,6 @@ export const useQuest = ({ gameState, setGameState, showNotification, setReturnR
               const playerHid = parseInt(hero.id);
               
               if (deadHeroIds.includes(hero.id)) {
-                  // Retrieve master hero_id for record keeping (since local hero object might not have raw master ID)
-                  // But wait, we need the master hero_id. 
-                  // In local state, we don't store master ID explicitly in `Hero` type, but we can look it up or assume.
-                  // Best approach: Query the `quest_player_hero` to get `hero_id` before deleting.
                   const { data: currentHeroData } = await supabase
                       .from('quest_player_hero')
                       .select('hero_id')
@@ -257,32 +293,29 @@ export const useQuest = ({ gameState, setGameState, showNotification, setReturnR
                       .single();
 
                   if (currentHeroData) {
-                      // Insert into Lost Table
                       await supabase.from('quest_player_hero_lost').insert({
                           fid: farcasterUser.fid,
                           hero_id: currentHeroData.hero_id,
                           quest_pid: questPid
                       });
-
-                      // Delete from Active Table
                       await supabase.from('quest_player_hero').delete().eq('player_hid', playerHid);
                   }
               } else {
-                  // Just update HP for survivors
                   await supabase.from('quest_player_hero')
                       .update({ hp: newHp })
                       .eq('player_hid', playerHid);
               }
           }
 
-          // 3. Update stats
+          // 3. Update stats (Quest Count)
           const { error: statError } = await supabase.rpc('increment_player_stat', { 
             player_fid: farcasterUser.fid, 
             column_name: 'quest_count', 
             amount: 1 
           });
-
+          
           if (statError) {
+             // Fallback
              const { data } = await supabase.from('quest_player_stats').select('quest_count').eq('fid', farcasterUser.fid).single();
              if (data) {
                 await supabase.from('quest_player_stats').update({ quest_count: (data.quest_count || 0) + 1 }).eq('fid', farcasterUser.fid);
@@ -291,15 +324,31 @@ export const useQuest = ({ gameState, setGameState, showNotification, setReturnR
       }
     }
 
+    // Update Total Reward Stats
+    if (farcasterUser?.fid && accumulatedTotalReward > 0) {
+        const { error: rewardError } = await supabase.rpc('increment_player_stat', { 
+            player_fid: farcasterUser.fid, 
+            column_name: 'total_reward', 
+            amount: accumulatedTotalReward 
+        });
+
+        if (rewardError) {
+             const { data } = await supabase.from('quest_player_stats').select('total_reward').eq('fid', farcasterUser.fid).single();
+             if (data) {
+                await supabase.from('quest_player_stats').update({ total_reward: (data.total_reward || 0) + accumulatedTotalReward }).eq('fid', farcasterUser.fid);
+             }
+        }
+    }
+
     setGameState(prev => ({
       ...prev,
-      tokens: prev.tokens + totalReward,
+      tokens: prev.tokens + accumulatedTotalReward,
       heroes: newHeroes.filter(h => !deadHeroIds.includes(h.id)),
       activeQuests: prev.activeQuests.filter(q => q.endTime > now),
       partyPresets: prev.partyPresets.map(p => p.map(id => (id && deadHeroIds.includes(id)) ? null : id))
     }));
 
-    setReturnResult({ results: resultList, totalTokens: totalReward });
+    setReturnResult({ results: resultList, totalTokens: accumulatedTotalReward });
     return true;
   };
 

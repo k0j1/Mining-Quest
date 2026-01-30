@@ -218,7 +218,6 @@ export const useGameLogic = () => {
             const matchedParty = partyData?.find((p: any) => p.party_id === questPartyId);
             
             if (matchedParty) {
-                // CHANGED: Using herox_hid columns
                 heroIds = [
                     matchedParty.hero1_hid ? matchedParty.hero1_hid.toString() : null,
                     matchedParty.hero2_hid ? matchedParty.hero2_hid.toString() : null,
@@ -227,6 +226,12 @@ export const useGameLogic = () => {
             } else {
                 console.warn("[useGameLogic] Could not find party config for quest", q.quest_pid);
             }
+
+            // Map Pre-calculated Results
+            const damages: Record<string, number> = {};
+            if (heroIds[0]) damages[heroIds[0]] = q.hero1_damage || 0;
+            if (heroIds[1]) damages[heroIds[1]] = q.hero2_damage || 0;
+            if (heroIds[2]) damages[heroIds[2]] = q.hero3_damage || 0;
 
             return {
                 id: q.quest_pid.toString(),
@@ -237,7 +242,13 @@ export const useGameLogic = () => {
                 endTime: endTime,
                 reward: Math.floor((base.min_reward + base.max_reward) / 2),
                 status: 'active',
-                heroIds: heroIds
+                heroIds: heroIds,
+                results: {
+                    baseReward: q.base_reward || 0,
+                    addHeroReward: q.add_hero_reward || 0,
+                    addEquipmentReward: q.add_equipment_reward || 0,
+                    heroDamages: damages
+                }
             };
         }).filter((q): q is Quest => q !== null);
 
