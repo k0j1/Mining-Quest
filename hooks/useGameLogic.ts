@@ -202,7 +202,7 @@ export const useGameLogic = () => {
              console.log(`[useGameLogic] Active quests count: ${questData?.length || 0}`);
         }
 
-        const loadedQuests: Quest[] = (questData || []).map((q: any) => {
+        const loadedQuests: Quest[] = (questData || []).map((q: any): Quest | null => {
             const base = Array.isArray(q.quest_mining) ? q.quest_mining[0] : q.quest_mining;
             if (!base) return null;
 
@@ -319,8 +319,8 @@ export const useGameLogic = () => {
       switchParty, 
       unlockParty, 
       assignHeroToParty, 
-      swapPartyPositions,
-      usePotion,
+      swapPartyPositions, 
+      usePotion, 
       useElixir,
       debugCompleteQuest,
       debugAddTokens
