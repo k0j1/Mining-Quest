@@ -103,6 +103,16 @@ const DebugConsole: React.FC<DebugConsoleProps> = ({ isEnabled }) => {
     }
   }, [logs, isExpanded]);
 
+  const handleCopyLogs = async () => {
+    const text = logs.map(l => `[${l.timestamp}] [${l.type.toUpperCase()}] ${l.message}`).join('\n');
+    try {
+      await navigator.clipboard.writeText(text);
+      alert('Logs copied to clipboard!');
+    } catch (err) {
+      console.error('Failed to copy logs:', err);
+    }
+  };
+
   const getTypeColor = (type: string) => {
     switch (type) {
       case 'error': return 'text-red-400 bg-red-900/20';
@@ -133,8 +143,16 @@ const DebugConsole: React.FC<DebugConsoleProps> = ({ isEnabled }) => {
               <span className="font-bold text-slate-400">Debug Console</span>
               <div className="flex gap-2">
                 <button 
+                  onClick={handleCopyLogs} 
+                  className="text-slate-500 hover:text-white p-1 hover:bg-slate-800 rounded flex items-center gap-1"
+                  title="Copy logs"
+                >
+                  📋
+                </button>
+                <button 
                   onClick={() => setLogs([])} 
                   className="text-slate-500 hover:text-white p-1 hover:bg-slate-800 rounded"
+                  title="Clear logs"
                 >
                   Clear
                 </button>
