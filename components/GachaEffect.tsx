@@ -60,7 +60,7 @@ const GachaEffect: React.FC<GachaEffectProps> = ({ result, onClose }) => {
   const color = rarityColors[rarity] || '#94a3b8';
   
   return (
-    <div className="fixed inset-0 z-[300] flex items-center justify-center bg-slate-950 overflow-hidden">
+    <div className="fixed inset-0 z-[500] flex items-center justify-center bg-slate-950 overflow-hidden">
       {/* 1. Background God Rays - Enhanced for Special Pull */}
       <div className={`absolute inset-0 flex items-center justify-center transition-opacity duration-1000 ${phase === 'reveal' ? 'opacity-60' : 'opacity-0'}`}>
         <div 
@@ -108,10 +108,10 @@ const GachaEffect: React.FC<GachaEffectProps> = ({ result, onClose }) => {
 
       {/* 5. Reveal Phase: Card Animation */}
       {phase === 'reveal' && (
-        <div className={`relative flex flex-col items-center animate-card-reveal z-50 w-full ${isSpecialPull ? 'animate-shake-entry' : ''}`} key={currentIndex}>
+        <div className={`relative flex flex-col items-center justify-center animate-card-reveal z-50 w-full h-full pb-10 ${isSpecialPull ? 'animate-shake-entry' : ''}`} key={currentIndex}>
            {/* Multi-pull Indicator */}
            {result.data.length > 1 && (
-             <div className="absolute -top-16 bg-slate-800/80 text-white px-4 py-1 rounded-full text-xs font-bold border border-slate-600 backdrop-blur-sm">
+             <div className="absolute top-10 bg-slate-800/80 text-white px-4 py-1 rounded-full text-xs font-bold border border-slate-600 backdrop-blur-sm z-50">
                 Result {currentIndex + 1} / {result.data.length}
              </div>
            )}
@@ -125,7 +125,7 @@ const GachaEffect: React.FC<GachaEffectProps> = ({ result, onClose }) => {
           />
           
           <div 
-            className={`w-72 aspect-[3/4.5] relative group mx-auto transition-all duration-300 ${isSpecialPull ? 'scale-105' : ''}`}
+            className={`w-60 aspect-[3/4.5] relative group mx-auto transition-all duration-300 ${isSpecialPull ? 'scale-105' : ''}`}
           >
             {/* Special Pull Animated Border & Glow */}
             {isSpecialPull && (
@@ -172,30 +172,30 @@ const GachaEffect: React.FC<GachaEffectProps> = ({ result, onClose }) => {
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-slate-950 from-15% via-transparent to-transparent" />
                   </div>
-                  <div className="absolute bottom-10 left-0 right-0 text-center px-6 z-30">
-                    <div className="inline-block px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest mb-3 border border-white/20" style={{ backgroundColor: `${color}cc`, color: '#fff' }}>
+                  <div className="absolute bottom-6 left-0 right-0 text-center px-4 z-30">
+                    <div className="inline-block px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-widest mb-2 border border-white/20" style={{ backgroundColor: `${color}cc`, color: '#fff' }}>
                       {currentItem.rarity}
                     </div>
-                    <h3 className="text-2xl font-orbitron font-bold text-white mb-2 drop-shadow-lg">{currentItem.name}</h3>
-                    <div className="h-0.5 w-12 bg-white/30 mx-auto mb-4" />
-                    <p className="text-[10px] text-slate-300 font-bold tracking-widest uppercase">New Hero Unlocked</p>
+                    <h3 className="text-lg font-orbitron font-bold text-white mb-1 drop-shadow-lg leading-tight">{currentItem.name}</h3>
+                    <div className="h-0.5 w-8 bg-white/30 mx-auto mb-2" />
+                    <p className="text-[9px] text-slate-300 font-bold tracking-widest uppercase">New Hero Unlocked</p>
                   </div>
                 </>
               ) : (
-                <div className="w-full h-full flex flex-col items-center justify-center p-8 space-y-6 bg-slate-900/40">
-                  <div className="text-8xl drop-shadow-[0_0_20px_rgba(255,255,255,0.3)]">
+                <div className="w-full h-full flex flex-col items-center justify-center p-6 space-y-4 bg-slate-900/40">
+                  <div className="text-7xl drop-shadow-[0_0_20px_rgba(255,255,255,0.3)]">
                     {currentItem.type === 'Pickaxe' ? '⛏️' : currentItem.type === 'Helmet' ? '🪖' : '👢'}
                   </div>
                   <div className="text-center">
-                    <div className="inline-block px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest mb-4 border border-white/20" style={{ backgroundColor: `${color}cc`, color: '#fff' }}>
+                    <div className="inline-block px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-widest mb-3 border border-white/20" style={{ backgroundColor: `${color}cc`, color: '#fff' }}>
                       {currentItem.rarity}
                     </div>
-                    <h3 className="text-2xl font-orbitron font-bold text-white mb-2">{currentItem.name}</h3>
+                    <h3 className="text-lg font-orbitron font-bold text-white mb-1 leading-tight">{currentItem.name}</h3>
                     <div className="flex items-center justify-center space-x-2 text-indigo-400">
-                      <span className="text-xs font-black uppercase">
+                      <span className="text-[10px] font-black uppercase">
                         {currentItem.type === 'Pickaxe' ? 'Reward' : currentItem.type === 'Helmet' ? 'Def' : 'Speed'}
                       </span>
-                      <span className="text-lg font-orbitron font-bold">
+                      <span className="text-base font-orbitron font-bold">
                         {currentItem.type === 'Pickaxe' ? '+' : '-'}{currentItem.bonus}%
                       </span>
                     </div>
@@ -207,7 +207,7 @@ const GachaEffect: React.FC<GachaEffectProps> = ({ result, onClose }) => {
 
           <button 
             onClick={handleNext}
-            className={`mt-16 px-16 py-4 bg-white text-slate-950 font-black rounded-2xl hover:scale-110 active:scale-95 transition-all shadow-[0_0_30px_rgba(255,255,255,0.4)] border-b-4 border-slate-300 z-50 ${isSpecialPull ? 'ring-4 ring-opacity-50' : ''}`}
+            className={`mt-6 px-12 py-3 bg-white text-slate-950 font-black rounded-xl hover:scale-110 active:scale-95 transition-all shadow-[0_0_30px_rgba(255,255,255,0.4)] border-b-4 border-slate-300 z-50 ${isSpecialPull ? 'ring-4 ring-opacity-50' : ''}`}
             style={isSpecialPull ? { '--tw-ring-color': color } as React.CSSProperties : undefined}
           >
             {isLastItem ? '素晴らしい！' : '次へ'}
