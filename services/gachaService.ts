@@ -2,35 +2,33 @@ import { supabase } from "../lib/supabase";
 import { QuestRank } from "../types";
 
 // Rarity Logic
-export const HERO_RATES = { C: 50, UC: 30, R: 15, E: 4, L: 1 };
-export const EQUIPMENT_RATES = { C: 55, UC: 28, R: 12, E: 4, L: 1 };
+// Updated Rates: L:0.1%, E:1.9%, R:16%, UC:32%, C:50%
+export const HERO_RATES = { C: 50, UC: 32, R: 16, E: 1.9, L: 0.1 };
+export const EQUIPMENT_RATES = { C: 50, UC: 32, R: 16, E: 1.9, L: 0.1 };
 
 const determineRarity = (type: 'Hero' | 'Equipment', minRarity: QuestRank = 'C'): QuestRank => {
   const rand = Math.random() * 100;
   
-  // If minRarity is 'R', we only roll for R, E, L
+  // If minRarity is 'R', we only roll for R, E, L (Guaranteed Pull)
   if (minRarity === 'R') {
-    // Weights: R: 75%, E: 20%, L: 5%
+    // Weights: R: 75%, E: 20%, L: 5% (Maintained generous rates for special pull)
     if (rand < 75) return 'R';
     if (rand < 95) return 'E';
     return 'L';
   }
 
-  if (type === 'Hero') {
-    // Hero: C 50% / UC 30% / R 15% / E 4% / L 1%
-    if (rand < 50) return 'C';
-    if (rand < 80) return 'UC';
-    if (rand < 95) return 'R';
-    if (rand < 99) return 'E';
-    return 'L';
-  } else {
-    // Equipment: C 55% / UC 28% / R 12% / E 4% / L 1%
-    if (rand < 55) return 'C';
-    if (rand < 83) return 'UC';
-    if (rand < 95) return 'R';
-    if (rand < 99) return 'E';
-    return 'L';
-  }
+  // Normal Pull Rates
+  // C: 50%  (0   - 49.9)
+  // UC: 32% (50  - 81.9)
+  // R: 16%  (82  - 97.9)
+  // E: 1.9% (98  - 99.89)
+  // L: 0.1% (99.9 - 100)
+  
+  if (rand < 50) return 'C';
+  if (rand < 82) return 'UC';
+  if (rand < 98) return 'R';
+  if (rand < 99.9) return 'E';
+  return 'L';
 };
 
 export const rollGachaItem = async (type: 'Hero' | 'Equipment', forceRarity?: QuestRank) => {
