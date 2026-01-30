@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { GameState, QuestRank } from '../../types';
 import PartySlotGrid from '../PartySlotGrid';
-import { playClick } from '../../utils/sound';
+import { playClick, playError } from '../../utils/sound';
 import Header from '../Header';
+import { IS_TEST_MODE } from '../../constants';
 
 interface DepartViewProps {
   gameState: GameState;
@@ -60,6 +61,11 @@ const DepartView: React.FC<DepartViewProps> = ({
   const canAfford = currentRankConfig ? gameState.tokens >= currentRankConfig.burnCost : false;
   const hasDeadHeroes = mainParty.some(h => h.hp <= 0);
 
+  // Check if current active party is already questing (though redundant with selector check, good for safety)
+  const isCurrentPartyQuesting = activePresetIds.some(id => 
+    id && gameState.activeQuests.some(q => q.heroIds.includes(id))
+  );
+
   // Rarity styling maps
   const rankColors: Record<string, string> = {
     C: 'border-slate-700 bg-slate-800',
@@ -92,12 +98,19 @@ const DepartView: React.FC<DepartViewProps> = ({
        <div className="flex-1 overflow-y-auto p-4 space-y-4 pb-24 bg-slate-900">
           
           {/* Banner for QUEST */}
-          <div className="mb-2">
+          <div className="mb-2 relative rounded-2xl overflow-hidden shadow-md border border-slate-700">
             <img 
               src="https://miningquest.k0j1.v2002.coreserver.jp/images/B_Quest.png" 
               alt="Quest Banner" 
-              className="w-full h-auto rounded-2xl shadow-md border border-slate-700"
+              className="w-full h-auto"
             />
+            {IS_TEST_MODE && (
+               <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-20 bg-black/10">
+                  <span className="text-3xl font-black text-white/30 -rotate-12 border-4 border-white/30 px-4 py-2 rounded-xl uppercase tracking-widest backdrop-blur-[1px]">
+                     TEST MODE
+                  </span>
+               </div>
+            )}
           </div>
 
           <p className="text-xs text-slate-500 mb-2 font-bold">難易度を選択してクエストに出発します</p>
@@ -149,7 +162,7 @@ const DepartView: React.FC<DepartViewProps> = ({
 
        {/* Confirmation Modal */}
        {selectedRank && currentRankConfig && (
-         <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
+         <div className="fixed inset-0 z-50 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
            <div className="w-full max-w-md bg-slate-900 border border-slate-700 rounded-3xl overflow-hidden flex flex-col max-h-[90vh] shadow-2xl">
              <div className="p-4 border-b border-slate-800 bg-slate-900 text-center">
                <h2 className="text-lg font-bold text-white">出撃確認</h2>
@@ -185,24 +198,34 @@ const DepartView: React.FC<DepartViewProps> = ({
                     {[0, 1, 2].map(idx => {
                       const isUnlocked = gameState.unlockedParties[idx];
                       const isActive = gameState.activePartyIndex === idx;
+                      
+                      // Check if this party is busy
+                      const partyHeroIds = gameState.partyPresets[idx].filter(id => id !== null);
+                      const isQuesting = partyHeroIds.length > 0 && partyHeroIds.some(id => 
+                          gameState.activeQuests.some(q => q.heroIds.includes(id as string))
+                      );
+
                       return (
                         <button
                           key={idx}
                           onClick={() => {
-                            if (isUnlocked) {
+                            if (isUnlocked && !isQuesting) {
                                 playClick();
                                 onSwitchParty(idx);
+                            } else if (isQuesting) {
+                                playError();
                             }
                           }}
-                          className={`flex-1 py-2 rounded-lg font-bold text-[10px] uppercase tracking-wider transition-all border ${
+                          className={`flex-1 py-2 rounded-lg font-bold text-[10px] uppercase tracking-wider transition-all border flex flex-col items-center justify-center gap-0.5 ${
                             isActive 
                               ? 'bg-indigo-600 text-white border-indigo-500 shadow-sm'
-                              : isUnlocked 
+                              : isUnlocked && !isQuesting
                                 ? 'bg-slate-800 text-slate-400 border-slate-700 hover:bg-slate-700'
                                 : 'bg-slate-900 text-slate-600 border-slate-800 cursor-not-allowed opacity-50'
                           }`}
                         >
                           {isUnlocked ? `Party ${idx + 1}` : '🔒'}
+                          {isQuesting && <span className="text-[8px] text-emerald-500">任務中</span>}
                         </button>
                       );
                     })}
@@ -212,6 +235,11 @@ const DepartView: React.FC<DepartViewProps> = ({
                     <div className="text-center p-4 border border-dashed border-rose-800/50 bg-rose-900/10 rounded-xl">
                       <p className="text-rose-400 font-bold text-sm">メンバーが足りません</p>
                       <p className="text-xs text-rose-300/70 mt-1">クエストには3名のヒーローが必要です</p>
+                    </div>
+                 ) : isCurrentPartyQuesting ? (
+                    <div className="text-center p-4 border border-dashed border-emerald-800/50 bg-emerald-900/10 rounded-xl">
+                      <p className="text-emerald-400 font-bold text-sm">このパーティは任務中です</p>
+                      <p className="text-xs text-emerald-300/70 mt-1">別のパーティを選択してください</p>
                     </div>
                  ) : (
                     <div className="pointer-events-none transform scale-95">
@@ -242,16 +270,16 @@ const DepartView: React.FC<DepartViewProps> = ({
                </button>
                <button 
                  onClick={handleConfirm}
-                 disabled={!isPartyFull || isProcessing}
+                 disabled={!isPartyFull || isProcessing || isCurrentPartyQuesting || hasDeadHeroes}
                  className={`flex-1 py-3 text-white rounded-xl font-bold shadow-md transition-all text-sm ${
-                    !isPartyFull || isProcessing
+                    !isPartyFull || isProcessing || isCurrentPartyQuesting || hasDeadHeroes
                       ? 'bg-slate-700 opacity-50 cursor-not-allowed'
                       : !canAfford 
                         ? 'bg-rose-600 hover:bg-rose-500' // Red for unaffordable but clickable
                         : 'bg-indigo-600 hover:bg-indigo-500'
                  }`}
                >
-                 {isProcessing ? '処理中...' : !isPartyFull ? 'メンバー不足 (3名必要)' : (!canAfford ? '出発する (資金不足)' : '出発する')}
+                 {isProcessing ? '処理中...' : !isPartyFull ? 'メンバー不足' : isCurrentPartyQuesting ? '出撃中' : (!canAfford ? '資金不足' : '出発する')}
                </button>
              </div>
            </div>

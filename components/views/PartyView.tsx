@@ -5,6 +5,7 @@ import EquipmentSelector from '../EquipmentSelector';
 import PartySlotGrid from '../PartySlotGrid';
 import { playClick, playError } from '../../utils/sound';
 import Header from '../Header';
+import { IS_TEST_MODE } from '../../constants';
 
 interface PartyViewProps {
   gameState: GameState;
@@ -166,11 +167,20 @@ const PartyView: React.FC<PartyViewProps> = ({
           onAccountClick={onAccountClick}
         >
           <div className="px-5 pt-4 pb-3">
-            <img 
-              src="https://miningquest.k0j1.v2002.coreserver.jp/images/B_Team.png" 
-              alt="Team Banner" 
-              className="w-full h-auto rounded-2xl shadow-md border border-slate-700"
-            />
+            <div className="relative rounded-2xl overflow-hidden shadow-md border border-slate-700">
+                <img 
+                src="https://miningquest.k0j1.v2002.coreserver.jp/images/B_Team.png" 
+                alt="Team Banner" 
+                className="w-full h-auto"
+                />
+                {IS_TEST_MODE && (
+                <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-20 bg-black/10">
+                    <span className="text-3xl font-black text-white/30 -rotate-12 border-4 border-white/30 px-4 py-2 rounded-xl uppercase tracking-widest backdrop-blur-[1px]">
+                        TEST MODE
+                    </span>
+                </div>
+                )}
+            </div>
           </div>
 
           <div className="px-5 mb-3">

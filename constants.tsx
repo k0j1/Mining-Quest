@@ -2,6 +2,9 @@ import React from 'react';
 import { Hero, Equipment, QuestRank } from './types';
 import { HERO_DEFINITIONS } from './data/hero_data';
 
+// Toggle this to show/hide "TEST MODE" overlay on banners
+export const IS_TEST_MODE = true;
+
 // Equipment Stats Configuration
 export const EQUIPMENT_STATS = {
   Pickaxe: { C: 3, UC: 6, R: 10, E: 15, L: 25 }, // Reward Increase %

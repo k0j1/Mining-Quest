@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { GameState, View, QuestRank, QuestConfig } from '../types';
+import { GameState, View, QuestConfig } from '../types';
 import { playClick } from '../utils/sound';
 import Header from './Header';
 import PartySlotGrid from './PartySlotGrid';
+import { IS_TEST_MODE } from '../constants';
 
 interface StatusBoardProps {
   state: GameState;
@@ -37,11 +38,6 @@ const QuestItem: React.FC<{ quest: any; config?: QuestConfig; farcasterUser?: an
   }, [quest.endTime]);
 
   const handleDebugClick = () => {
-    // Only allow debug cheat if NOT connected to Farcaster OR if explicitly an admin (though this handles local cheat logic mainly)
-    // For admins, we might want to enable this too, but let's stick to existing logic + explicit admin IDs later if needed.
-    // Existing logic: if (farcasterUser) return; (Disabled for FC users to prevent easy cheating)
-    // We will keep it strictly disabled for normal gameplay even for admins to avoid accidental clicks, 
-    // relying on the dedicated debug console for advanced stuff if needed.
     if (farcasterUser) return;
     
     // Only allow if onDebugComplete is provided
@@ -123,12 +119,19 @@ const StatusBoard: React.FC<StatusBoardProps> = ({
 
       <div className="flex-1 overflow-y-auto pb-6 custom-scrollbar bg-slate-900">
         <div className="px-5 pt-5 mb-8">
-          <div className="relative">
+          <div className="relative rounded-2xl overflow-hidden shadow-md border border-slate-700">
             <img 
               src={view === View.RETURN ? "https://miningquest.k0j1.v2002.coreserver.jp/images/B_Result.png" : "https://miningquest.k0j1.v2002.coreserver.jp/images/B_Home.png"} 
               alt="Banner" 
-              className="w-full h-auto rounded-2xl shadow-md border border-slate-700"
+              className="w-full h-auto"
             />
+            {IS_TEST_MODE && (
+               <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-20 bg-black/10">
+                  <span className="text-3xl font-black text-white/30 -rotate-12 border-4 border-white/30 px-4 py-2 rounded-xl uppercase tracking-widest backdrop-blur-[1px]">
+                     TEST MODE
+                  </span>
+               </div>
+            )}
           </div>
           
           <div className="mt-3 flex justify-end gap-2">
