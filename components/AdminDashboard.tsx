@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { playClick } from '../utils/sound';
@@ -15,6 +16,7 @@ const TABLES = [
   'quest_player_equipment',
   'quest_player_party',
   'quest_process',
+  'quest_process_complete',
   'quest_player_hero_lost'
 ];
 
@@ -26,6 +28,7 @@ const getPKey = (table: string): string => {
   if (table === 'quest_player_stats') return 'fid';
   if (table === 'quest_player_party') return 'party_id';
   if (table === 'quest_player_hero_lost') return 'lost_id';
+  // quest_process_complete usually defaults to 'id'
   return 'id';
 };
 
