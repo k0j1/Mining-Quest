@@ -52,7 +52,7 @@ const createHero = (id: string, name: string, level: number, equipmentIds: strin
     species: def.species,
     rarity: def.rarity,
     trait: def.ability,
-    damageReduction: drMap[def.rarity] || 0,
+    damageReduction: 0, // Base Damage Reduction is always 0, relies on skill/equip
     level,
     hp: def.hp,
     maxHp: def.hp,

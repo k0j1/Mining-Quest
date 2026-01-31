@@ -127,7 +127,8 @@ export const useQuest = ({ gameState, setGameState, showNotification, setReturnR
           }
 
           // Total Reduction per Hero
-          const totalReduction = h.damageReduction + helmetBonus + teamDamageReduction + selfSkillMitigation;
+          // ヒーロー自身の基礎値(damageReduction)は計算から除外
+          const totalReduction = helmetBonus + teamDamageReduction + selfSkillMitigation;
           
           return {
               id: h.id,
@@ -208,7 +209,8 @@ export const useQuest = ({ gameState, setGameState, showNotification, setReturnR
             }
 
             // Total Reduction
-            const totalReduction = hero.damageReduction + helmetBonus + teamDamageReduction + selfSkillMitigation;
+            // ヒーロー自身の基礎値(damageReduction)は計算から除外
+            const totalReduction = helmetBonus + teamDamageReduction + selfSkillMitigation;
             
             finalDmg = rawDmg;
             if (totalReduction > 0) {

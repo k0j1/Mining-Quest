@@ -54,12 +54,14 @@ const HeroCard: React.FC<HeroCardProps> = ({
 
   const slotIcons = ['⛏️', '🪖', '👢'];
 
-  // Calculate Total Damage Reduction (Base + Helmet)
+  // Calculate Total Damage Reduction (Skill + Helmet)
+  // ヒーロー自身の基礎値(damageReduction)は0として扱い、特性(スキル)と装備品のみで計算
   const helmetId = hero.equipmentIds[1];
   const helmetBonus = (helmetId && equipment) 
     ? (equipment.find(e => e.id === helmetId)?.bonus || 0) 
     : 0;
-  const totalDamageReduction = hero.damageReduction + helmetBonus;
+  const skillBonus = hero.skillDamage || 0;
+  const totalDamageReduction = skillBonus + helmetBonus;
 
   // Error Placeholder Component
   const ErrorPlaceholder = () => (
