@@ -19,12 +19,18 @@ export interface Hero {
   species: Species;
   rarity: QuestRank;
   trait: string; // e.g. "厚い毛皮"
-  damageReduction: number; // Percentage e.g. 5 for -5%
+  damageReduction: number; // Percentage e.g. 5 for -5% (Base/Old)
   level: number;
   hp: number;
   maxHp: number; // Fixed at 100 usually
   imageUrl: string;
   equipmentIds: string[]; // [0]: Pickaxe, [1]: Helmet, [2]: Boots
+  
+  // New Skill Columns
+  skillQuest?: number;  // Reward increase %
+  skillDamage?: number; // Damage reduction %
+  skillTime?: number;   // Duration reduction %
+  skillType?: number;   // Logic definition (XY1, etc.)
 }
 
 export interface Equipment {

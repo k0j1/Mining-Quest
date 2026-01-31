@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { GameState, QuestConfig, QuestRank, Hero, Equipment, Quest } from '../types';
 import { INITIAL_HEROES, INITIAL_EQUIPMENT } from '../constants';
@@ -152,7 +153,12 @@ export const useGameLogic = () => {
               h.pickaxe_player_eid ? h.pickaxe_player_eid.toString() : '',
               h.helmet_player_eid ? h.helmet_player_eid.toString() : '',
               h.boots_player_eid ? h.boots_player_eid.toString() : ''
-            ]
+            ],
+            // Map New Skill Columns
+            skillQuest: base.skill_quest || 0,
+            skillDamage: base.skill_damage || 0,
+            skillTime: base.skill_time || 0,
+            skillType: base.skill_type || 0
           };
         }).filter((h): h is Hero => h !== null);
 

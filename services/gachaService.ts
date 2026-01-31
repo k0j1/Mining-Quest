@@ -1,3 +1,4 @@
+
 import { supabase } from "../lib/supabase";
 import { QuestRank } from "../types";
 
@@ -68,7 +69,12 @@ export const rollGachaItem = async (type: 'Hero' | 'Equipment', forceRarity?: Qu
       trait: selectedHero.ability,
       damageReduction: drMap[selectedHero.rarity] || 0,
       hp: selectedHero.hp,
-      imageUrl: `https://miningquest.k0j1.v2002.coreserver.jp/images/Hero/s/${selectedHero.name}_s.png`
+      imageUrl: `https://miningquest.k0j1.v2002.coreserver.jp/images/Hero/s/${selectedHero.name}_s.png`,
+      // Map New Skill Columns
+      skillQuest: selectedHero.skill_quest || 0,
+      skillDamage: selectedHero.skill_damage || 0,
+      skillTime: selectedHero.skill_time || 0,
+      skillType: selectedHero.skill_type || 0
     };
   }
 

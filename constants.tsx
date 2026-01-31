@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Hero, Equipment, QuestRank } from './types';
 import { HERO_DEFINITIONS } from './data/hero_data';
@@ -31,7 +32,11 @@ const createHero = (id: string, name: string, level: number, equipmentIds: strin
         hp: 50,
         maxHp: 50,
         imageUrl: "https://placehold.co/300x400/1e293b/475569?text=Unknown",
-        equipmentIds
+        equipmentIds,
+        skillQuest: 0,
+        skillDamage: 0,
+        skillTime: 0,
+        skillType: 0
     };
   }
 
@@ -52,7 +57,11 @@ const createHero = (id: string, name: string, level: number, equipmentIds: strin
     hp: def.hp,
     maxHp: def.hp,
     imageUrl: `https://miningquest.k0j1.v2002.coreserver.jp/images/Hero/s/${def.name}_s.png`,
-    equipmentIds
+    equipmentIds,
+    skillQuest: def.skillQuest || 0,
+    skillDamage: def.skillDamage || 0,
+    skillTime: def.skillTime || 0,
+    skillType: def.skillType || 0
   };
 };
 

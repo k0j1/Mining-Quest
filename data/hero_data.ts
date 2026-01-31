@@ -7,6 +7,11 @@ export interface HeroDefinition {
   hp: number;
   ability: string;
   species: Species;
+  // Optional skill fields for local definition fallback
+  skillQuest?: number;
+  skillDamage?: number;
+  skillTime?: number;
+  skillType?: number;
 }
 
 export const HERO_DEFINITIONS: HeroDefinition[] = [
