@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Hero } from '../types';
 
@@ -153,13 +154,25 @@ const HeroCard: React.FC<HeroCardProps> = ({
 
            {/* Name & HP Overlay at bottom of Image Area */}
            <div className="absolute bottom-2 left-2 right-2 z-20 pointer-events-none">
-              <div className="flex justify-between items-end mb-1">
-                 <span className="text-[9px] font-bold text-white bg-slate-900/60 px-1.5 py-0.5 rounded truncate max-w-[70%] backdrop-blur-sm border border-white/10">
+              <div className="flex items-center justify-between gap-1 mb-1">
+                 {/* Name: Truncate with min-w-0 to force shrinking */}
+                 <span className="text-[9px] font-bold text-white bg-slate-900/60 px-1.5 py-0.5 rounded truncate min-w-0 flex-1 backdrop-blur-sm border border-white/10">
                    {hero.name}
                  </span>
-                 <span className={`text-[8px] font-black bg-slate-900/80 px-1.5 py-0.5 rounded backdrop-blur-sm border border-white/10 ${hero.hp < 30 ? 'text-rose-400' : 'text-emerald-400'}`}>
-                   HP {hero.hp}
-                 </span>
+                 
+                 {/* Right Side Info: Flex row for DR and HP, shrink-0 to prevent wrapping/shrinking */}
+                 <div className="flex items-center gap-1 shrink-0">
+                    {/* Damage Reduction Badge */}
+                    {hero.damageReduction > 0 && (
+                        <span className="text-[8px] font-bold text-indigo-300 bg-indigo-900/80 px-1.5 py-0.5 rounded backdrop-blur-sm border border-indigo-500/30">
+                            🛡️-{hero.damageReduction}%
+                        </span>
+                    )}
+                    {/* HP Badge */}
+                    <span className={`text-[8px] font-black bg-slate-900/80 px-1.5 py-0.5 rounded backdrop-blur-sm border border-white/10 whitespace-nowrap ${hero.hp < 30 ? 'text-rose-400' : 'text-emerald-400'}`}>
+                    HP {hero.hp}
+                    </span>
+                 </div>
               </div>
               {/* HP Bar */}
               <div className="w-full bg-slate-900/80 h-1.5 rounded-full overflow-hidden border border-white/10 shadow-sm">

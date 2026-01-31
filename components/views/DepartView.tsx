@@ -19,6 +19,7 @@ interface PredictionResult {
       reward: { hero: number; equip: number; };
       time: { hero: number; equip: number; };
     };
+    heroDamageReductions: { id: string; name: string; totalReduction: number }[];
 }
 
 interface DepartViewProps {
@@ -242,17 +243,30 @@ const DepartView: React.FC<DepartViewProps> = ({
                         </div>
 
                         {/* Damage Forecast */}
-                        <div className="flex justify-between items-center">
-                            <span className="text-xs font-bold text-slate-400">被ダメージ予測</span>
-                            <div className="text-right">
-                                <span className="text-rose-400 font-bold text-sm">
-                                    {prediction.minDmg} - {prediction.maxDmg}
-                                </span>
-                                {prediction.avgDamageReduction > 0 && (
-                                    <span className="ml-2 text-[9px] font-bold text-emerald-400 bg-emerald-900/30 px-1.5 py-0.5 rounded">
-                                        -{prediction.avgDamageReduction}%
+                        <div className="flex flex-col">
+                            <div className="flex justify-between items-center">
+                                <span className="text-xs font-bold text-slate-400">被ダメージ予測 (平均)</span>
+                                <div className="text-right">
+                                    <span className="text-rose-400 font-bold text-sm">
+                                        {prediction.minDmg} - {prediction.maxDmg}
                                     </span>
-                                )}
+                                    {prediction.avgDamageReduction > 0 && (
+                                        <span className="ml-2 text-[9px] font-bold text-emerald-400 bg-emerald-900/30 px-1.5 py-0.5 rounded">
+                                            -{prediction.avgDamageReduction}%
+                                        </span>
+                                    )}
+                                </div>
+                            </div>
+                            {/* Per Hero Breakdown */}
+                            <div className="mt-1 space-y-0.5">
+                                {prediction.heroDamageReductions.map(hero => (
+                                    <div key={hero.id} className="flex justify-between text-[8px] text-slate-500 font-bold pl-2 border-l border-slate-700/50">
+                                        <span className="truncate max-w-[150px]">{hero.name}</span>
+                                        <span className={hero.totalReduction > 0 ? "text-emerald-500" : "text-slate-600"}>
+                                            -{hero.totalReduction}%
+                                        </span>
+                                    </div>
+                                ))}
                             </div>
                         </div>
 

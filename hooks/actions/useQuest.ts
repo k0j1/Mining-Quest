@@ -112,26 +112,32 @@ export const useQuest = ({ gameState, setGameState, showNotification, setReturnR
       const reductionMultiplier = Math.max(0.1, 1 - (totalTimeBonus / 100));
       const estimatedDuration = Math.floor(config.duration * reductionMultiplier);
 
-      // 3. Damage Range (Per Hero Estimate - Average case for display)
-      // Since damage is per-hero, we calculate a range representing the "Typical" reduction for the party leader (slot 0) or average
-      // For display simplicity, let's show the range applied to a hypothetical hero with average personal reduction (e.g. 0) + team reduction + helmet average
+      // 3. Damage Range (Per Hero Estimate)
       
-      // Calculate Average Helmet Bonus
-      const avgHelmet = partyHeroes.reduce((acc, h) => {
-          const e = gameState.equipment.find(eq => eq.id === h.equipmentIds[1]);
-          return acc + (e ? e.bonus : 0);
-      }, 0) / (partyHeroes.length || 1);
-
-      // Calculate Average Self Reduction
-      const avgSelfRed = partyHeroes.reduce((acc, h) => {
-          let selfBuff = 0;
+      // Calculate Individual Reductions for breakdown
+      const heroDamageReductions = partyHeroes.map(h => {
+          // Equipment Mitigation (Helmet)
+          const helmetEquip = gameState.equipment.find(e => e.id === h.equipmentIds[1]);
+          const helmetBonus = helmetEquip ? helmetEquip.bonus : 0;
+          
+          // Skill Mitigation (Self)
+          let selfSkillMitigation = 0;
           if (isSkillActive(h) && (h.skillType || 0) % 10 !== 1) {
-              selfBuff = (h.skillDamage || 0);
+              selfSkillMitigation = (h.skillDamage || 0);
           }
-          return acc + h.damageReduction + selfBuff;
-      }, 0) / (partyHeroes.length || 1);
 
-      const avgTotalRed = avgHelmet + avgSelfRed + teamDamageReduction;
+          // Total Reduction per Hero
+          const totalReduction = h.damageReduction + helmetBonus + teamDamageReduction + selfSkillMitigation;
+          
+          return {
+              id: h.id,
+              name: h.name,
+              totalReduction: totalReduction
+          };
+      });
+
+      // Calculate Average for general display
+      const avgTotalRed = heroDamageReductions.reduce((acc, curr) => acc + curr.totalReduction, 0) / (partyHeroes.length || 1);
       
       const minDmgRaw = config.minDmg;
       const maxDmgRaw = config.maxDmg;
@@ -153,7 +159,8 @@ export const useQuest = ({ gameState, setGameState, showNotification, setReturnR
           breakdown: {
               reward: { hero: skillRewardBonus, equip: pickaxeBonus },
               time: { hero: skillTimeBonus, equip: bootsBonus }
-          }
+          },
+          heroDamageReductions // Include individual stats
       };
   };
 
