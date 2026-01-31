@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { View } from './types';
 import StatusBoard from './components/StatusBoard';
@@ -220,6 +221,7 @@ const App: React.FC = () => {
               return success;
             }}
             onSwitchParty={actions.switchParty}
+            getQuestPrediction={actions.getQuestPrediction}
             {...commonProps}
           />
         );

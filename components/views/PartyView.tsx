@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
-import { GameState } from '../../types';
+
+import React, { useState, useMemo } from 'react';
+import { GameState, Hero } from '../../types';
 import HeroCard from '../HeroCard';
 import EquipmentSelector from '../EquipmentSelector';
 import PartySlotGrid from '../PartySlotGrid';
@@ -48,6 +49,80 @@ const PartyView: React.FC<PartyViewProps> = ({
   const isPartyLocked = currentPreset.some(id => id && activeQuestHeroIds.includes(id));
 
   const allAssignedHeroIds = gameState.partyPresets.flat().filter((id): id is string => !!id);
+
+  // --- Stats Calculation Logic ---
+
+  // Helper: Check if skill is active (Simplified version of useQuest logic for display)
+  const isSkillActive = (hero: Hero): boolean => {
+      const type = hero.skillType || 0;
+      if (type === 0) return true; 
+
+      const conditionMode = Math.floor(type / 100); 
+      const thresholdVal = Math.floor((type % 100) / 10) * 10; 
+
+      if (conditionMode === 0) return true;
+
+      const hpPercent = (hero.hp / hero.maxHp) * 100;
+
+      if (conditionMode === 1) return hpPercent >= thresholdVal; // HP >= X
+      if (conditionMode === 2) return hpPercent <= thresholdVal; // HP <= X
+      
+      return true;
+  };
+
+  const partyStats = useMemo(() => {
+    const activeHeroes = currentPreset
+      .map(id => gameState.heroes.find(h => h.id === id))
+      .filter((h): h is Hero => !!h);
+
+    const totalHp = activeHeroes.reduce((acc, h) => acc + h.hp, 0);
+    const maxHp = activeHeroes.reduce((acc, h) => acc + h.maxHp, 0);
+
+    // Reward Bonus (Pickaxe + Skills)
+    const rewardBonus = activeHeroes.reduce((acc, h) => {
+        const pickaxe = gameState.equipment.find(e => e.id === h.equipmentIds[0]);
+        const equipBonus = pickaxe ? pickaxe.bonus : 0;
+        
+        let skillBonus = 0;
+        if (isSkillActive(h)) {
+             skillBonus = h.skillQuest || 0;
+             // Regex fallback
+             if (skillBonus === 0 && h.trait) {
+                 const match = h.trait.match(/クエスト報酬\s*\+(\d+)%/);
+                 if (match) skillBonus = parseInt(match[1]);
+             }
+        }
+        return acc + equipBonus + skillBonus;
+    }, 0);
+
+    // Time Bonus (Boots + Skills)
+    const timeBonus = activeHeroes.reduce((acc, h) => {
+        const boots = gameState.equipment.find(e => e.id === h.equipmentIds[2]);
+        const equipBonus = boots ? boots.bonus : 0;
+
+        let skillBonus = 0;
+        if (isSkillActive(h)) {
+            skillBonus = h.skillTime || 0;
+             // Regex fallback
+             if (skillBonus === 0 && h.trait) {
+                 const match = h.trait.match(/採掘時間\s*-(\d+)%/);
+                 if (match) skillBonus = parseInt(match[1]);
+             }
+        }
+        return acc + equipBonus + skillBonus;
+    }, 0);
+
+    // Team Defense Buff (Skills only) - Individual helmet stats are local
+    const teamDefBonus = activeHeroes.reduce((acc, h) => {
+        if (isSkillActive(h) && (h.skillType || 0) % 10 === 1) {
+            return acc + (h.skillDamage || 0);
+        }
+        return acc;
+    }, 0);
+
+    return { totalHp, maxHp, rewardBonus, timeBonus, teamDefBonus };
+  }, [currentPreset, gameState.heroes, gameState.equipment]);
+
 
   const handleTabClick = (idx: number) => {
     const isUnlocked = gameState.unlockedParties[idx];
@@ -215,9 +290,9 @@ const PartyView: React.FC<PartyViewProps> = ({
           </div>
         </Header>
 
-        <div className="flex-1 overflow-y-auto px-5 pb-32 pt-6 bg-slate-900">
+        <div className="flex-1 overflow-y-auto px-5 pb-32 pt-6 bg-slate-900 custom-scrollbar">
           
-          <div className="mb-12">
+          <div className="mb-6">
             <PartySlotGrid
               heroIds={currentPreset}
               heroes={gameState.heroes}
@@ -230,6 +305,62 @@ const PartyView: React.FC<PartyViewProps> = ({
               onRemoveClick={handleRemoveHero}
               onEquipClick={handleEquipClick}
             />
+          </div>
+
+          {/* Team Status Dashboard */}
+          <div className="mb-8 bg-slate-800/60 rounded-xl border border-slate-700 p-4 shadow-sm relative overflow-hidden">
+            <div className="absolute top-0 right-0 p-2 opacity-5 text-4xl pointer-events-none">📊</div>
+            <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 flex items-center">
+              <span className="w-1.5 h-1.5 bg-indigo-500 rounded-full mr-2"></span>
+              Team Status
+            </h3>
+            
+            <div className="grid grid-cols-2 gap-3 mb-3">
+               {/* Reward */}
+               <div className="bg-slate-900/50 rounded-lg p-2 border border-slate-700/50 flex items-center gap-3">
+                  <div className="text-xl">⛏️</div>
+                  <div>
+                    <div className="text-[9px] text-slate-500 font-bold uppercase">Reward Bonus</div>
+                    <div className="text-sm font-black text-amber-500">+{partyStats.rewardBonus}%</div>
+                  </div>
+               </div>
+               
+               {/* Time */}
+               <div className="bg-slate-900/50 rounded-lg p-2 border border-slate-700/50 flex items-center gap-3">
+                  <div className="text-xl">👢</div>
+                  <div>
+                    <div className="text-[9px] text-slate-500 font-bold uppercase">Time Reduction</div>
+                    <div className="text-sm font-black text-emerald-400">-{partyStats.timeBonus}%</div>
+                  </div>
+               </div>
+
+               {/* Team Defense */}
+               <div className="bg-slate-900/50 rounded-lg p-2 border border-slate-700/50 flex items-center gap-3">
+                  <div className="text-xl">🛡️</div>
+                  <div>
+                    <div className="text-[9px] text-slate-500 font-bold uppercase">Team Def Buff</div>
+                    <div className="text-sm font-black text-indigo-400">-{partyStats.teamDefBonus}%</div>
+                  </div>
+               </div>
+
+               {/* Total HP */}
+               <div className="bg-slate-900/50 rounded-lg p-2 border border-slate-700/50 flex items-center gap-3">
+                  <div className="text-xl">❤️</div>
+                  <div>
+                    <div className="text-[9px] text-slate-500 font-bold uppercase">Total HP</div>
+                    <div className="text-sm font-black text-white">
+                        <span className={partyStats.totalHp < partyStats.maxHp * 0.3 ? 'text-rose-500' : 'text-white'}>
+                          {partyStats.totalHp}
+                        </span>
+                        <span className="text-slate-600 text-[10px]">/{partyStats.maxHp}</span>
+                    </div>
+                  </div>
+               </div>
+            </div>
+            
+            <p className="text-[9px] text-slate-500 text-right opacity-70">
+              * Based on active skills & equipment
+            </p>
           </div>
 
           <div className="mt-4 border-t border-slate-800 pt-6">

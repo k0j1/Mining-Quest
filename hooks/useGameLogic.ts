@@ -285,7 +285,7 @@ export const useGameLogic = () => {
   // --- 2. Action Hooks ---
   
   // Quest Logic
-  const { depart, returnFromQuest, debugCompleteQuest } = useQuest({
+  const { depart, returnFromQuest, debugCompleteQuest, getQuestPrediction } = useQuest({
     gameState, setGameState, showNotification, setReturnResult, farcasterUser
   });
 
@@ -333,7 +333,8 @@ export const useGameLogic = () => {
       usePotion, 
       useElixir,
       debugCompleteQuest,
-      debugAddTokens
+      debugAddTokens,
+      getQuestPrediction
     }
   };
 };

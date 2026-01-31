@@ -1,14 +1,27 @@
+
 import React, { useState } from 'react';
-import { GameState, QuestRank } from '../../types';
+import { GameState, QuestRank, QuestConfig, Hero } from '../../types';
 import PartySlotGrid from '../PartySlotGrid';
 import { playClick, playError } from '../../utils/sound';
 import Header from '../Header';
 import { IS_TEST_MODE } from '../../constants';
 
+interface PredictionResult {
+    minReward: number;
+    maxReward: number;
+    estimatedDuration: number;
+    minDmg: number;
+    maxDmg: number;
+    bonusPercent: number;
+    timeReductionPercent: number;
+    avgDamageReduction: number;
+}
+
 interface DepartViewProps {
   gameState: GameState;
   onDepart: (rank: QuestRank) => Promise<boolean>;
   onSwitchParty: (index: number) => void;
+  getQuestPrediction?: (config: QuestConfig, partyHeroes: Hero[]) => PredictionResult;
   isSoundOn: boolean;
   onToggleSound: () => void;
   onDebugAddTokens?: () => void;
@@ -21,6 +34,7 @@ const DepartView: React.FC<DepartViewProps> = ({
   gameState, 
   onDepart, 
   onSwitchParty, 
+  getQuestPrediction,
   isSoundOn, 
   onToggleSound, 
   onDebugAddTokens,
@@ -54,7 +68,7 @@ const DepartView: React.FC<DepartViewProps> = ({
   const activePresetIds = gameState.partyPresets[gameState.activePartyIndex];
   const mainParty = activePresetIds
     .map(id => gameState.heroes.find(h => h.id === id))
-    .filter((h): h is any => !!h);
+    .filter((h): h is Hero => !!h);
 
   const isPartyFull = mainParty.length === 3;
   const currentRankConfig = selectedRank ? gameState.questConfigs.find(q => q.rank === selectedRank) : null;
@@ -65,6 +79,12 @@ const DepartView: React.FC<DepartViewProps> = ({
   const isCurrentPartyQuesting = activePresetIds.some(id => 
     id && gameState.activeQuests.some(q => q.heroIds.includes(id))
   );
+
+  // Calculate Prediction
+  let prediction: PredictionResult | null = null;
+  if (currentRankConfig && isPartyFull && getQuestPrediction) {
+      prediction = getQuestPrediction(currentRankConfig, mainParty);
+  }
 
   // Rarity styling maps
   const rankColors: Record<string, string> = {
@@ -163,7 +183,7 @@ const DepartView: React.FC<DepartViewProps> = ({
        {/* Confirmation Modal - Adjusted z-index and padding to avoid bottom nav overlap */}
        {selectedRank && currentRankConfig && (
          <div className="fixed inset-0 z-[1000] bg-slate-900/80 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in pb-[calc(env(safe-area-inset-bottom)+6rem)]">
-           <div className="w-full max-w-md bg-slate-900 border border-slate-700 rounded-3xl overflow-hidden flex flex-col max-h-[75vh] shadow-2xl">
+           <div className="w-full max-w-md bg-slate-900 border border-slate-700 rounded-3xl overflow-hidden flex flex-col max-h-[85vh] shadow-2xl">
              <div className="p-4 border-b border-slate-800 bg-slate-900 text-center shrink-0">
                <h2 className="text-lg font-bold text-white">出撃確認</h2>
              </div>
@@ -185,6 +205,63 @@ const DepartView: React.FC<DepartViewProps> = ({
                    </span>
                  </div>
                </div>
+               
+               {/* --- PREDICTION PANEL --- */}
+               {prediction && (
+                 <div className="mb-6 bg-slate-800/50 rounded-xl border border-slate-700 p-4 relative overflow-hidden">
+                    <div className="absolute top-0 right-0 p-2 opacity-10 text-4xl">🔮</div>
+                    <h4 className="text-[10px] font-black text-indigo-400 uppercase tracking-widest mb-3 border-b border-slate-700 pb-2">
+                        Mission Forecast (Bonus Active)
+                    </h4>
+                    
+                    <div className="grid grid-cols-1 gap-3">
+                        {/* Reward Forecast */}
+                        <div className="flex justify-between items-center">
+                            <span className="text-xs font-bold text-slate-400">報酬予測</span>
+                            <div className="text-right">
+                                <span className="text-amber-500 font-bold text-sm">
+                                    {prediction.minReward} - {prediction.maxReward}
+                                </span>
+                                {prediction.bonusPercent > 0 && (
+                                    <span className="ml-2 text-[9px] font-bold text-emerald-400 bg-emerald-900/30 px-1.5 py-0.5 rounded">
+                                        +{prediction.bonusPercent}%
+                                    </span>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Damage Forecast */}
+                        <div className="flex justify-between items-center">
+                            <span className="text-xs font-bold text-slate-400">被ダメージ予測</span>
+                            <div className="text-right">
+                                <span className="text-rose-400 font-bold text-sm">
+                                    {prediction.minDmg} - {prediction.maxDmg}
+                                </span>
+                                {prediction.avgDamageReduction > 0 && (
+                                    <span className="ml-2 text-[9px] font-bold text-emerald-400 bg-emerald-900/30 px-1.5 py-0.5 rounded">
+                                        -{prediction.avgDamageReduction}%
+                                    </span>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Duration Forecast */}
+                        <div className="flex justify-between items-center">
+                            <span className="text-xs font-bold text-slate-400">所要時間</span>
+                            <div className="text-right">
+                                <span className="text-blue-400 font-bold text-sm">
+                                    {Math.floor(prediction.estimatedDuration / 60)} min
+                                </span>
+                                {prediction.timeReductionPercent > 0 && (
+                                    <span className="ml-2 text-[9px] font-bold text-emerald-400 bg-emerald-900/30 px-1.5 py-0.5 rounded">
+                                        -{prediction.timeReductionPercent}%
+                                    </span>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                 </div>
+               )}
 
                <div className="mb-6">
                  <div className="flex justify-between items-end mb-3">
