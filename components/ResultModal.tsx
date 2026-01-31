@@ -8,6 +8,8 @@ interface QuestResult {
   totalReward: number;
   baseReward: number;
   bonusReward: number;
+  heroBonus: number;
+  equipmentBonus: number;
   logs: string[];
 }
 
@@ -51,11 +53,22 @@ const ResultModal: React.FC<ResultModalProps> = ({ results, totalTokens, onClose
                 </div>
               </div>
               
-              <div className="grid grid-cols-2 gap-2 text-[10px] text-slate-500 mb-3">
-                <div>基本報酬: {res.baseReward}</div>
-                <div>装備ボーナス: +{res.bonusReward}</div>
+              {/* Rewards Breakdown */}
+              <div className="grid grid-cols-2 gap-y-1 gap-x-4 text-[10px] text-slate-500 mb-4 bg-slate-950/30 p-2.5 rounded-lg border border-slate-800/30">
+                <div className="text-slate-400">基本報酬:</div>
+                <div className="text-right font-mono font-bold text-slate-300">{res.baseReward}</div>
+                
+                <div className="text-emerald-400 font-bold mt-1">ボーナス合計:</div>
+                <div className="text-right font-mono text-emerald-400 font-bold mt-1">+{res.bonusReward}</div>
+                
+                <div className="text-[9px] pl-2 border-l border-slate-700 ml-1 text-slate-500">└ ヒーロー特性</div>
+                <div className="text-[9px] text-right font-mono text-slate-500">+{res.heroBonus}</div>
+                
+                <div className="text-[9px] pl-2 border-l border-slate-700 ml-1 text-slate-500">└ 装備品効果</div>
+                <div className="text-[9px] text-right font-mono text-slate-500">+{res.equipmentBonus}</div>
               </div>
 
+              {/* Action Logs */}
               <div className="space-y-1 bg-slate-950/50 p-3 rounded-lg border border-slate-800/50">
                 {res.logs.map((log, i) => (
                   <p key={i} className="text-[10px] leading-relaxed">

@@ -447,6 +447,8 @@ export const useQuest = ({ gameState, setGameState, showNotification, setReturnR
         totalReward: finalReward,
         baseReward: finalReward === 0 ? 0 : baseReward,
         bonusReward: finalReward === 0 ? 0 : bonusReward,
+        heroBonus: finalReward === 0 ? 0 : addHeroReward,
+        equipmentBonus: finalReward === 0 ? 0 : addEquipmentReward,
         logs: logs
       });
 
