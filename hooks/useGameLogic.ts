@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from 'react';
-import { GameState, QuestConfig, QuestRank, Hero, Equipment, Quest } from '../types';
+import { GameState, QuestConfig, QuestRank, Hero, Equipment, Quest, Species } from '../types';
 import { INITIAL_HEROES, INITIAL_EQUIPMENT } from '../constants';
 import { supabase } from '../lib/supabase';
 
@@ -106,18 +106,20 @@ export const useGameLogic = () => {
             console.log(`[useGameLogic] Equipment raw data count: ${equipData?.length || 0}`);
         }
 
-        const loadedEquipment: Equipment[] = (equipData || []).map((e: any) => {
+        const loadedEquipment = ((equipData || []) as any[]).reduce<Equipment[]>((acc, e: any) => {
           // Handle Join: quest_equipment is usually an object here due to FK
           const base = Array.isArray(e.quest_equipment) ? e.quest_equipment[0] : e.quest_equipment;
-          if (!base) return null;
-          return {
+          if (!base) return acc;
+          
+          acc.push({
             id: e.player_eid.toString(),
             name: base.name,
             type: base.type,
             bonus: base.bonus,
             rarity: base.rarity
-          };
-        }).filter((e): e is Equipment => e !== null);
+          });
+          return acc;
+        }, []);
 
         // --- 2. Load Heroes (Join) ---
         // Fetch Player Heroes with Inner Join to Master Data
@@ -134,15 +136,15 @@ export const useGameLogic = () => {
         
         const drMap: Record<string, number> = { C: 2, UC: 5, R: 10, E: 15, L: 20 };
 
-        const loadedHeroes: Hero[] = (heroData || []).map((h: any) => {
+        const loadedHeroes = ((heroData || []) as any[]).reduce<Hero[]>((acc, h: any) => {
           const base = Array.isArray(h.quest_hero) ? h.quest_hero[0] : h.quest_hero;
-          if (!base) return null;
+          if (!base) return acc;
 
-          return {
+          acc.push({
             id: h.player_hid.toString(),
             name: base.name,
-            species: base.species,
-            rarity: base.rarity,
+            species: base.species as Species,
+            rarity: base.rarity as QuestRank,
             trait: base.ability,
             damageReduction: drMap[base.rarity] || 0,
             level: 1,
@@ -159,8 +161,9 @@ export const useGameLogic = () => {
             skillDamage: base.skill_damage || 0,
             skillTime: base.skill_time || 0,
             skillType: base.skill_type || 0
-          };
-        }).filter((h): h is Hero => h !== null);
+          });
+          return acc;
+        }, []);
 
         // --- 3. Load Party ---
         const { data: partyData, error: partyError } = await supabase
@@ -208,9 +211,9 @@ export const useGameLogic = () => {
              console.log(`[useGameLogic] Active quests count: ${questData?.length || 0}`);
         }
 
-        const loadedQuests: Quest[] = (questData || []).map((q: any): Quest | null => {
+        const loadedQuests = ((questData || []) as any[]).reduce<Quest[]>((acc, q: any) => {
             const base = Array.isArray(q.quest_mining) ? q.quest_mining[0] : q.quest_mining;
-            if (!base) return null;
+            if (!base) return acc;
 
             const startTime = new Date(q.start_time).getTime();
             const endTime = new Date(q.end_time).getTime();
@@ -239,7 +242,7 @@ export const useGameLogic = () => {
             if (heroIds[1]) damages[heroIds[1]] = q.hero2_damage || 0;
             if (heroIds[2]) damages[heroIds[2]] = q.hero3_damage || 0;
 
-            return {
+            acc.push({
                 id: q.quest_pid.toString(),
                 name: base.name,
                 rank: base.rank as QuestRank,
@@ -255,8 +258,9 @@ export const useGameLogic = () => {
                     addEquipmentReward: q.add_equipment_reward || 0,
                     heroDamages: damages
                 }
-            };
-        }).filter((q): q is Quest => q !== null);
+            });
+            return acc;
+        }, []);
 
         setGameState(prev => ({
             ...prev,
