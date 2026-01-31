@@ -160,15 +160,15 @@ const DepartView: React.FC<DepartViewProps> = ({
           })}
        </div>
 
-       {/* Confirmation Modal */}
+       {/* Confirmation Modal - Adjusted z-index and padding to avoid bottom nav overlap */}
        {selectedRank && currentRankConfig && (
-         <div className="fixed inset-0 z-[200] bg-slate-900/80 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in pb-safe">
-           <div className="w-full max-w-md bg-slate-900 border border-slate-700 rounded-3xl overflow-hidden flex flex-col max-h-[80vh] shadow-2xl">
+         <div className="fixed inset-0 z-[1000] bg-slate-900/80 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in pb-[calc(env(safe-area-inset-bottom)+6rem)]">
+           <div className="w-full max-w-md bg-slate-900 border border-slate-700 rounded-3xl overflow-hidden flex flex-col max-h-[75vh] shadow-2xl">
              <div className="p-4 border-b border-slate-800 bg-slate-900 text-center shrink-0">
                <h2 className="text-lg font-bold text-white">出撃確認</h2>
              </div>
              
-             <div className="p-6 overflow-y-auto">
+             <div className="p-6 overflow-y-auto custom-scrollbar">
                <div className="text-center mb-6">
                  <p className="text-slate-500 text-[10px] font-bold uppercase tracking-wider mb-2">Target Destination</p>
                  <h3 className="text-xl font-bold text-white mb-3">{currentRankConfig.name}</h3>
