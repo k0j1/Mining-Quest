@@ -106,7 +106,7 @@ const LightpaperView: React.FC<LightpaperViewProps> = ({
               </div>
               <div className="p-3 bg-slate-800 rounded-lg border border-slate-700">
                 <div className="font-bold text-slate-200 mb-1">👢 ブーツ (Boots)</div>
-                <p className="text-xs text-slate-400">クエストの所要時間を短縮します。<br/>パーティ全員の合計値が適用されます。</p>
+                <p className="text-xs text-slate-400">採掘速度を上昇させます。<br/>例: 速度+100%なら、所要時間は半分になります。</p>
               </div>
             </div>
           </section>
@@ -123,7 +123,7 @@ const LightpaperView: React.FC<LightpaperViewProps> = ({
                   <tr>
                     <th className="py-2 pr-4">Rank</th>
                     <th className="py-2 pr-4">Cost</th>
-                    <th className="py-2 pr-4">Time</th>
+                    <th className="py-2 pr-4">Base Time</th>
                     <th className="py-2">Risk</th>
                   </tr>
                 </thead>

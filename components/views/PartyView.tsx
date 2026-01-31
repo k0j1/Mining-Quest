@@ -100,26 +100,26 @@ const PartyView: React.FC<PartyViewProps> = ({
     const rewardBonus = rewardHero + rewardEquip;
 
 
-    // Time Bonus Breakdown
-    const timeHero = activeHeroes.reduce((acc, h) => {
+    // Speed Bonus Breakdown (Previously Time Bonus)
+    const speedHero = activeHeroes.reduce((acc, h) => {
         let skillBonus = 0;
         if (isSkillActive(h)) {
             skillBonus = h.skillTime || 0;
              // Regex fallback
              if (skillBonus === 0 && h.trait) {
-                 const match = h.trait.match(/採掘時間\s*-(\d+)%/);
+                 const match = h.trait.match(/採掘速度\s*\+(\d+)%/);
                  if (match) skillBonus = parseInt(match[1]);
              }
         }
         return acc + skillBonus;
     }, 0);
 
-    const timeEquip = activeHeroes.reduce((acc, h) => {
+    const speedEquip = activeHeroes.reduce((acc, h) => {
         const boots = gameState.equipment.find(e => e.id === h.equipmentIds[2]);
         return acc + (boots ? boots.bonus : 0);
     }, 0);
 
-    const timeBonus = timeHero + timeEquip;
+    const speedBonus = speedHero + speedEquip;
 
     // Team Defense Buff (Skills only) - Individual helmet stats are local
     const teamDefBonus = activeHeroes.reduce((acc, h) => {
@@ -132,7 +132,7 @@ const PartyView: React.FC<PartyViewProps> = ({
     return { 
         totalHp, maxHp, 
         rewardBonus, rewardHero, rewardEquip,
-        timeBonus, timeHero, timeEquip,
+        speedBonus, speedHero, speedEquip,
         teamDefBonus 
     };
   }, [currentPreset, gameState.heroes, gameState.equipment]);
@@ -346,22 +346,21 @@ const PartyView: React.FC<PartyViewProps> = ({
                   </div>
                </div>
                
-               {/* Time */}
+               {/* Speed (Was Time) */}
                <div className="bg-slate-900/50 rounded-lg p-2 border border-slate-700/50">
                   <div className="flex items-center gap-3">
                     <div className="text-xl">👢</div>
                     <div>
-                        <div className="text-[9px] text-slate-500 font-bold uppercase">Time Reduction</div>
-                        <div className="text-sm font-black text-emerald-400">-{partyStats.timeBonus}%</div>
+                        <div className="text-[9px] text-slate-500 font-bold uppercase">Speed Boost</div>
+                        <div className="text-sm font-black text-emerald-400">+{partyStats.speedBonus}%</div>
                     </div>
                   </div>
                   <div className="mt-1 flex justify-between text-[8px] text-slate-500 font-bold bg-black/20 px-1.5 py-0.5 rounded">
-                    <span>Hero: -{partyStats.timeHero}%</span>
-                    <span>Equip: -{partyStats.timeEquip}%</span>
+                    <span>Hero: +{partyStats.speedHero}%</span>
+                    <span>Equip: +{partyStats.speedEquip}%</span>
                   </div>
                </div>
                
-               {/* Deleted 2nd row (Team Def & Total HP) as requested */}
             </div>
             
             <p className="text-[9px] text-slate-500 text-right opacity-70">

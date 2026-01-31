@@ -96,7 +96,7 @@ const EquipmentSelector: React.FC<EquipmentSelectorProps> = ({
                   <p className="text-[10px] text-slate-400">
                     {item.type === 'Pickaxe' ? `報酬 +${item.bonus}%` : 
                      item.type === 'Helmet' ? `被ダメ -${item.bonus}%` : 
-                     `時間 -${item.bonus}%`}
+                     `速度 +${item.bonus}%`}
                   </p>
                 </div>
                 {isEquippedElsewhere && (

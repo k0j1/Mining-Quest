@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { GameState } from '../../types';
 import GachaEffect from '../GachaEffect';
@@ -276,7 +277,7 @@ const EquipmentListItem: React.FC<{
            <h3 className="text-sm font-bold text-slate-200 truncate">{item.name}</h3>
         </div>
         <div className="text-[10px] font-bold text-indigo-400 mb-1.5">
-          {item.type === 'Pickaxe' ? `Reward +${item.bonus}%` : item.type === 'Helmet' ? `Damage -${item.bonus}%` : `Duration -${item.bonus}%`}
+          {item.type === 'Pickaxe' ? `Reward +${item.bonus}%` : item.type === 'Helmet' ? `Damage -${item.bonus}%` : `Speed +${item.bonus}%`}
         </div>
         <p className="text-[10px] text-slate-400 leading-relaxed bg-slate-900/40 p-2 rounded border border-slate-800">
           {item.ability}

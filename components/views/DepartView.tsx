@@ -13,11 +13,11 @@ interface PredictionResult {
     minDmg: number;
     maxDmg: number;
     bonusPercent: number;
-    timeReductionPercent: number;
+    speedBonusPercent: number; // Changed from timeReductionPercent
     avgDamageReduction: number;
     breakdown: {
       reward: { hero: number; equip: number; };
-      time: { hero: number; equip: number; };
+      speed: { hero: number; equip: number; }; // Changed from time
     };
     heroDamageReductions: { id: string; name: string; totalReduction: number }[];
 }
@@ -270,24 +270,24 @@ const DepartView: React.FC<DepartViewProps> = ({
                             </div>
                         </div>
 
-                        {/* Duration Forecast */}
+                        {/* Duration Forecast (Speed Logic) */}
                         <div className="flex flex-col">
                             <div className="flex justify-between items-center">
-                                <span className="text-xs font-bold text-slate-400">所要時間</span>
+                                <span className="text-xs font-bold text-slate-400">所要時間 (速度上昇)</span>
                                 <div className="text-right">
                                     <span className="text-blue-400 font-bold text-sm">
                                         {Math.floor(prediction.estimatedDuration / 60)} min
                                     </span>
-                                    {prediction.timeReductionPercent > 0 && (
+                                    {prediction.speedBonusPercent > 0 && (
                                         <span className="ml-2 text-[9px] font-bold text-emerald-400 bg-emerald-900/30 px-1.5 py-0.5 rounded">
-                                            -{prediction.timeReductionPercent}%
+                                            Speed +{prediction.speedBonusPercent}%
                                         </span>
                                     )}
                                 </div>
                             </div>
-                            {prediction.timeReductionPercent > 0 && (
+                            {prediction.speedBonusPercent > 0 && (
                                 <div className="text-right text-[8px] text-slate-500 font-bold mt-0.5">
-                                    (Hero: -{prediction.breakdown?.time.hero}% / Equip: -{prediction.breakdown?.time.equip}%)
+                                    (Hero: +{prediction.breakdown?.speed.hero}% / Equip: +{prediction.breakdown?.speed.equip}%)
                                 </div>
                             )}
                         </div>

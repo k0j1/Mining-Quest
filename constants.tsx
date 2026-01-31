@@ -10,7 +10,7 @@ export const IS_TEST_MODE = true;
 export const EQUIPMENT_STATS = {
   Pickaxe: { C: 3, UC: 6, R: 10, E: 15, L: 25 }, // Reward Increase %
   Helmet: { C: 5, UC: 10, R: 15, E: 20, L: 30 }, // Damage Reduction %
-  Boots: { C: 3, UC: 6, R: 10, E: 15, L: 25 }    // Duration Reduction %
+  Boots: { C: 3, UC: 6, R: 10, E: 15, L: 25 }    // Speed Increase %
 };
 
 // Re-export GACHA_HERO_DATA for GachaView compatibility
