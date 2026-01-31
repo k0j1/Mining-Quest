@@ -453,28 +453,44 @@ export const useQuest = ({ gameState, setGameState, showNotification, setReturnR
       // Update DB for this quest
       if (farcasterUser?.fid) {
           const questPid = parseInt(quest.id);
+          console.log(`[Quest Return] Processing DB update for Quest PID: ${questPid}`);
 
           try {
               // 1. Get Quest Mining Master Data
-              const { data: questMaster } = await supabase.from('quest_mining').select('id').eq('rank', quest.rank).single();
+              console.log(`[Quest Return] Fetching master data for rank: ${quest.rank}`);
+              const { data: questMaster, error: masterError } = await supabase.from('quest_mining').select('id').eq('rank', quest.rank).single();
+
+              if (masterError) {
+                 console.error(`[Quest Return] Error fetching master data for rank ${quest.rank}:`, masterError);
+              } else if (!questMaster) {
+                 console.error(`[Quest Return] Quest master data not found for rank: ${quest.rank}`);
+              }
 
               if (questMaster) {
+                  console.log(`[Quest Return] Master Quest ID: ${questMaster.id}`);
+
                   // 2. Insert into quest_process_complete (Archive)
-                  const { error: completeError } = await supabase.from('quest_process_complete').insert({
+                  const { data: completeData, error: completeError } = await supabase.from('quest_process_complete').insert({
                       fid: farcasterUser.fid,
                       quest_id: questMaster.id,
                       reward: finalReward
-                  });
-                  if (completeError) console.error("Error archiving to quest_process_complete:", completeError);
+                  }).select();
+
+                  if (completeError) {
+                      console.error("[Quest Return] Error archiving to quest_process_complete:", completeError);
+                  } else {
+                      console.log("[Quest Return] Successfully archived to quest_process_complete:", completeData);
+                  }
 
                   // 3. Update Hero HPs (Survivors)
                   const aliveInThisQuest = questHeroes.filter(h => !deadHeroIds.includes(h.id));
                   for (const hero of aliveInThisQuest) {
                       const newHp = newHeroes.find(h => h.id === hero.id)?.hp || 0;
                       const playerHid = parseInt(hero.id);
-                      await supabase.from('quest_player_hero')
+                      const { error: hpError } = await supabase.from('quest_player_hero')
                           .update({ hp: newHp })
                           .eq('player_hid', playerHid);
+                      if (hpError) console.error(`[Quest Return] Error updating HP for hero ${hero.id}:`, hpError);
                   }
 
                   // 4. Handle Deaths
@@ -488,7 +504,7 @@ export const useQuest = ({ gameState, setGameState, showNotification, setReturnR
                           .select('player_hid, hero_id')
                           .in('player_hid', deadPids);
                       
-                      if (fetchError) console.error("Error fetching dead heroes for log:", fetchError);
+                      if (fetchError) console.error("[Quest Return] Error fetching dead heroes for log:", fetchError);
 
                       if (deadRows && deadRows.length > 0) {
                           const lostRecords = deadRows.map(row => ({
@@ -502,7 +518,11 @@ export const useQuest = ({ gameState, setGameState, showNotification, setReturnR
                               .from('quest_player_hero_lost')
                               .insert(lostRecords);
                           
-                          if (insertError) console.error("Error inserting lost heroes:", insertError);
+                          if (insertError) {
+                              console.error("[Quest Return] Error inserting lost heroes:", insertError);
+                          } else {
+                              console.log("[Quest Return] Successfully logged lost heroes.");
+                          }
 
                           // Delete from Active Hero Table
                           const { error: deleteError } = await supabase
@@ -510,13 +530,21 @@ export const useQuest = ({ gameState, setGameState, showNotification, setReturnR
                               .delete()
                               .in('player_hid', deadPids);
                               
-                          if (deleteError) console.error("Error deleting dead heroes:", deleteError);
+                          if (deleteError) {
+                              console.error("[Quest Return] Error deleting dead heroes:", deleteError);
+                          } else {
+                              console.log("[Quest Return] Successfully deleted dead heroes from active roster.");
+                          }
                       }
                   }
 
                   // 5. Delete from quest_process (Active) - DO THIS LAST to ensure FK constraints don't break earlier inserts if any
                   const { error: deleteProcessError } = await supabase.from('quest_process').delete().eq('quest_pid', questPid);
-                  if (deleteProcessError) console.error("Error deleting from quest_process:", deleteProcessError);
+                  if (deleteProcessError) {
+                      console.error("[Quest Return] Error deleting from quest_process:", deleteProcessError);
+                  } else {
+                      console.log(`[Quest Return] Successfully deleted quest_process record (PID: ${questPid})`);
+                  }
 
                   // 6. Update stats (Quest Count)
                   const { error: statError } = await supabase.rpc('increment_player_stat', { 
@@ -531,6 +559,8 @@ export const useQuest = ({ gameState, setGameState, showNotification, setReturnR
                         await supabase.from('quest_player_stats').update({ quest_count: (data.quest_count || 0) + 1 }).eq('fid', farcasterUser.fid);
                      }
                   }
+              } else {
+                  console.warn(`[Quest Return] Skipping DB updates because questMaster was not found for rank ${quest.rank}`);
               }
           } catch (e) {
               console.error(`Error processing quest completion for ${quest.id}:`, e);
