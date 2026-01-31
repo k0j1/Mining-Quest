@@ -163,35 +163,39 @@ const HeroCard: React.FC<HeroCardProps> = ({
            {/* Gradient for Text Visibility */}
            <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-transparent to-transparent opacity-80 z-10 pointer-events-none"></div>
 
-           {/* Name & HP Overlay at bottom of Image Area */}
+           {/* Stats & Name Overlay at bottom of Image Area */}
            <div className="absolute bottom-2 left-2 right-2 z-20 pointer-events-none">
-              <div className="flex items-center justify-between gap-1 mb-1">
-                 {/* Name: Truncate with min-w-0 to force shrinking */}
-                 <span className="text-[9px] font-bold text-white bg-slate-900/60 px-1.5 py-0.5 rounded truncate min-w-0 flex-1 backdrop-blur-sm border border-white/10">
-                   {hero.name}
-                 </span>
-                 
-                 {/* Right Side Info: Flex row for DR and HP, shrink-0 to prevent wrapping/shrinking */}
-                 <div className="flex items-center gap-1 shrink-0">
-                    {/* Damage Reduction Badge */}
-                    {totalDamageReduction > 0 && (
-                        <span className="text-[8px] font-bold text-indigo-300 bg-indigo-900/80 px-1.5 py-0.5 rounded backdrop-blur-sm border border-indigo-500/30">
-                            🛡️-{totalDamageReduction}%
-                        </span>
-                    )}
-                    {/* HP Badge */}
-                    <span className={`text-[8px] font-black bg-slate-900/80 px-1.5 py-0.5 rounded backdrop-blur-sm border border-white/10 whitespace-nowrap ${hero.hp < 30 ? 'text-rose-400' : 'text-emerald-400'}`}>
+              
+              {/* Row 1: HP Value (Left) vs DR Badge (Right) */}
+              <div className="flex items-center justify-between mb-1 px-0.5">
+                 {/* HP Badge */}
+                 <span className={`text-[9px] font-black drop-shadow-md ${hero.hp < 30 ? 'text-rose-400' : 'text-emerald-400'}`}>
                     HP {hero.hp}
+                 </span>
+
+                 {/* Damage Reduction Badge (Far Right) */}
+                 {totalDamageReduction > 0 ? (
+                    <span className="text-[8px] font-bold text-indigo-200 bg-indigo-900/80 px-1.5 py-0.5 rounded backdrop-blur-sm border border-indigo-500/30">
+                        🛡️-{totalDamageReduction}%
                     </span>
-                 </div>
+                 ) : <span></span>}
               </div>
-              {/* HP Bar */}
-              <div className="w-full bg-slate-900/80 h-1.5 rounded-full overflow-hidden border border-white/10 shadow-sm">
+
+              {/* Row 2: HP Bar */}
+              <div className="w-full bg-slate-900/80 h-1.5 rounded-full overflow-hidden border border-white/10 shadow-sm mb-1.5">
                 <div 
                   className={`h-full rounded-full ${hero.hp < 30 ? 'bg-rose-500' : 'bg-emerald-500'}`}
                   style={{ width: `${(hero.hp / hero.maxHp) * 100}%` }}
                 />
               </div>
+
+              {/* Row 3: Name (Centered below bar) */}
+              <div className="flex justify-center">
+                 <span className="text-[9px] font-bold text-white bg-slate-900/70 px-3 py-0.5 rounded-full truncate min-w-0 backdrop-blur-sm border border-white/10 shadow-sm tracking-tight">
+                   {hero.name}
+                 </span>
+              </div>
+
            </div>
 
            {/* Locked Overlay (Image Area Only) */}

@@ -450,85 +450,86 @@ export const useQuest = ({ gameState, setGameState, showNotification, setReturnR
       if (farcasterUser?.fid) {
           const questPid = parseInt(quest.id);
 
-          // 1. Get Quest Mining ID needed for quest_process_complete
-          const { data: questMaster } = await supabase.from('quest_mining').select('id').eq('rank', quest.rank).single();
+          try {
+              // 1. Get Quest Mining Master Data
+              const { data: questMaster } = await supabase.from('quest_mining').select('id').eq('rank', quest.rank).single();
 
-          if (questMaster) {
-              // 2. Insert into quest_process_complete (Archive)
-              const { error: completeError } = await supabase.from('quest_process_complete').insert({
-                  fid: farcasterUser.fid,
-                  quest_id: questMaster.id,
-                  reward: finalReward
-                  // archived_at is auto-set to NOW()
-              });
-              if (completeError) console.error("Error archiving to quest_process_complete:", completeError);
-              
-              // 3. Delete from quest_process (Active)
-              const { error: deleteProcessError } = await supabase.from('quest_process').delete().eq('quest_pid', questPid);
-              if (deleteProcessError) console.error("Error deleting from quest_process:", deleteProcessError);
-          }
-
-          // 4. Update Hero HPs and Handle Deaths (Batch Processing)
-          const deadInThisQuest = questHeroes.filter(h => deadHeroIds.includes(h.id));
-          const aliveInThisQuest = questHeroes.filter(h => !deadHeroIds.includes(h.id));
-
-          // A. Handle Survivors
-          for (const hero of aliveInThisQuest) {
-              const newHp = newHeroes.find(h => h.id === hero.id)?.hp || 0;
-              const playerHid = parseInt(hero.id);
-              await supabase.from('quest_player_hero')
-                  .update({ hp: newHp })
-                  .eq('player_hid', playerHid);
-          }
-
-          // B. Handle Deaths (Batch)
-          if (deadInThisQuest.length > 0) {
-              const deadPids = deadInThisQuest.map(h => parseInt(h.id));
-              
-              // Fetch Master IDs needed for the lost log
-              const { data: deadRows, error: fetchError } = await supabase
-                  .from('quest_player_hero')
-                  .select('player_hid, hero_id')
-                  .in('player_hid', deadPids);
-              
-              if (fetchError) console.error("Error fetching dead heroes for log:", fetchError);
-
-              if (deadRows && deadRows.length > 0) {
-                  const lostRecords = deadRows.map(row => ({
+              if (questMaster) {
+                  // 2. Insert into quest_process_complete (Archive)
+                  const { error: completeError } = await supabase.from('quest_process_complete').insert({
                       fid: farcasterUser.fid,
-                      hero_id: row.hero_id,
-                      quest_pid: questPid
-                  }));
+                      quest_id: questMaster.id,
+                      reward: finalReward
+                  });
+                  if (completeError) console.error("Error archiving to quest_process_complete:", completeError);
 
-                  // Insert into Lost Table
-                  const { error: insertError } = await supabase
-                      .from('quest_player_hero_lost')
-                      .insert(lostRecords);
-                  
-                  if (insertError) console.error("Error inserting lost heroes:", insertError);
+                  // 3. Update Hero HPs (Survivors)
+                  const aliveInThisQuest = questHeroes.filter(h => !deadHeroIds.includes(h.id));
+                  for (const hero of aliveInThisQuest) {
+                      const newHp = newHeroes.find(h => h.id === hero.id)?.hp || 0;
+                      const playerHid = parseInt(hero.id);
+                      await supabase.from('quest_player_hero')
+                          .update({ hp: newHp })
+                          .eq('player_hid', playerHid);
+                  }
 
-                  // Delete from Active Table
-                  const { error: deleteError } = await supabase
-                      .from('quest_player_hero')
-                      .delete()
-                      .in('player_hid', deadPids);
+                  // 4. Handle Deaths
+                  const deadInThisQuest = questHeroes.filter(h => deadHeroIds.includes(h.id));
+                  if (deadInThisQuest.length > 0) {
+                      const deadPids = deadInThisQuest.map(h => parseInt(h.id));
                       
-                  if (deleteError) console.error("Error deleting dead heroes:", deleteError);
-              }
-          }
+                      // Fetch Master IDs needed for the lost log
+                      const { data: deadRows, error: fetchError } = await supabase
+                          .from('quest_player_hero')
+                          .select('player_hid, hero_id')
+                          .in('player_hid', deadPids);
+                      
+                      if (fetchError) console.error("Error fetching dead heroes for log:", fetchError);
 
-          // 5. Update stats (Quest Count)
-          const { error: statError } = await supabase.rpc('increment_player_stat', { 
-            player_fid: farcasterUser.fid, 
-            column_name: 'quest_count', 
-            amount: 1 
-          });
-          
-          if (statError) {
-             const { data } = await supabase.from('quest_player_stats').select('quest_count').eq('fid', farcasterUser.fid).single();
-             if (data) {
-                await supabase.from('quest_player_stats').update({ quest_count: (data.quest_count || 0) + 1 }).eq('fid', farcasterUser.fid);
-             }
+                      if (deadRows && deadRows.length > 0) {
+                          const lostRecords = deadRows.map(row => ({
+                              fid: farcasterUser.fid,
+                              hero_id: row.hero_id,
+                              quest_id: questMaster.id // Store the MASTER Quest ID, not the process ID which will be deleted
+                          }));
+
+                          // Insert into Lost Table
+                          const { error: insertError } = await supabase
+                              .from('quest_player_hero_lost')
+                              .insert(lostRecords);
+                          
+                          if (insertError) console.error("Error inserting lost heroes:", insertError);
+
+                          // Delete from Active Hero Table
+                          const { error: deleteError } = await supabase
+                              .from('quest_player_hero')
+                              .delete()
+                              .in('player_hid', deadPids);
+                              
+                          if (deleteError) console.error("Error deleting dead heroes:", deleteError);
+                      }
+                  }
+
+                  // 5. Delete from quest_process (Active) - DO THIS LAST to ensure FK constraints don't break earlier inserts if any
+                  const { error: deleteProcessError } = await supabase.from('quest_process').delete().eq('quest_pid', questPid);
+                  if (deleteProcessError) console.error("Error deleting from quest_process:", deleteProcessError);
+
+                  // 6. Update stats (Quest Count)
+                  const { error: statError } = await supabase.rpc('increment_player_stat', { 
+                    player_fid: farcasterUser.fid, 
+                    column_name: 'quest_count', 
+                    amount: 1 
+                  });
+                  
+                  if (statError) {
+                     const { data } = await supabase.from('quest_player_stats').select('quest_count').eq('fid', farcasterUser.fid).single();
+                     if (data) {
+                        await supabase.from('quest_player_stats').update({ quest_count: (data.quest_count || 0) + 1 }).eq('fid', farcasterUser.fid);
+                     }
+                  }
+              }
+          } catch (e) {
+              console.error(`Error processing quest completion for ${quest.id}:`, e);
           }
       }
     }
