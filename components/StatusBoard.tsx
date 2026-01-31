@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { GameState, View, QuestConfig } from '../types';
 import { playClick } from '../utils/sound';
@@ -240,6 +241,7 @@ const StatusBoard: React.FC<StatusBoardProps> = ({
                         readOnly={true}
                         showSlotLabels={true}
                         className="grid grid-cols-3 gap-4"
+                        equipment={state.equipment}
                       />
                     </div>
                   );

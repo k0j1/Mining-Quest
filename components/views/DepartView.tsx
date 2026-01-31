@@ -359,6 +359,7 @@ const DepartView: React.FC<DepartViewProps> = ({
                         showSlotLabels={false}
                         className="grid grid-cols-3 gap-3"
                         compactEmpty={true}
+                        equipment={gameState.equipment}
                       />
                     </div>
                  )}

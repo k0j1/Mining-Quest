@@ -318,6 +318,7 @@ const PartyView: React.FC<PartyViewProps> = ({
               onSlotClick={handleSlotClick}
               onRemoveClick={handleRemoveHero}
               onEquipClick={handleEquipClick}
+              equipment={gameState.equipment}
             />
           </div>
 
@@ -359,30 +360,8 @@ const PartyView: React.FC<PartyViewProps> = ({
                     <span>Equip: -{partyStats.timeEquip}%</span>
                   </div>
                </div>
-
-               {/* Team Defense */}
-               <div className="bg-slate-900/50 rounded-lg p-2 border border-slate-700/50 flex items-center gap-3">
-                  <div className="text-xl">🛡️</div>
-                  <div>
-                    <div className="text-[9px] text-slate-500 font-bold uppercase">Team Def Buff</div>
-                    <div className="text-sm font-black text-indigo-400">-{partyStats.teamDefBonus}%</div>
-                    <div className="text-[8px] text-slate-600 mt-0.5">*Leader Passive</div>
-                  </div>
-               </div>
-
-               {/* Total HP */}
-               <div className="bg-slate-900/50 rounded-lg p-2 border border-slate-700/50 flex items-center gap-3">
-                  <div className="text-xl">❤️</div>
-                  <div>
-                    <div className="text-[9px] text-slate-500 font-bold uppercase">Total HP</div>
-                    <div className="text-sm font-black text-white">
-                        <span className={partyStats.totalHp < partyStats.maxHp * 0.3 ? 'text-rose-500' : 'text-white'}>
-                          {partyStats.totalHp}
-                        </span>
-                        <span className="text-slate-600 text-[10px]">/{partyStats.maxHp}</span>
-                    </div>
-                  </div>
-               </div>
+               
+               {/* Deleted 2nd row (Team Def & Total HP) as requested */}
             </div>
             
             <p className="text-[9px] text-slate-500 text-right opacity-70">
@@ -411,6 +390,7 @@ const PartyView: React.FC<PartyViewProps> = ({
                         isLocked={isQuesting}
                         isSelected={isHeroSelected}
                         onClick={() => handleHeroListClick(hero.id)} 
+                        equipment={gameState.equipment}
                       />
                     </div>
                   );

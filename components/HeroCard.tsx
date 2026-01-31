@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { Hero } from '../types';
+import { Hero, Equipment } from '../types';
 
 interface HeroCardProps {
   hero: Hero;
@@ -11,6 +11,7 @@ interface HeroCardProps {
   onClick?: () => void;
   onEquipClick?: (heroId: string, slotIndex: number) => void;
   isMainSlot?: boolean;
+  equipment?: Equipment[];
 }
 
 const HeroCard: React.FC<HeroCardProps> = ({ 
@@ -21,7 +22,8 @@ const HeroCard: React.FC<HeroCardProps> = ({
   isLocked,
   onClick,
   onEquipClick,
-  isMainSlot
+  isMainSlot,
+  equipment
 }) => {
   const [hasError, setHasError] = useState(false);
 
@@ -51,6 +53,13 @@ const HeroCard: React.FC<HeroCardProps> = ({
   };
 
   const slotIcons = ['⛏️', '🪖', '👢'];
+
+  // Calculate Total Damage Reduction (Base + Helmet)
+  const helmetId = hero.equipmentIds[1];
+  const helmetBonus = (helmetId && equipment) 
+    ? (equipment.find(e => e.id === helmetId)?.bonus || 0) 
+    : 0;
+  const totalDamageReduction = hero.damageReduction + helmetBonus;
 
   // Error Placeholder Component
   const ErrorPlaceholder = () => (
@@ -163,9 +172,9 @@ const HeroCard: React.FC<HeroCardProps> = ({
                  {/* Right Side Info: Flex row for DR and HP, shrink-0 to prevent wrapping/shrinking */}
                  <div className="flex items-center gap-1 shrink-0">
                     {/* Damage Reduction Badge */}
-                    {hero.damageReduction > 0 && (
+                    {totalDamageReduction > 0 && (
                         <span className="text-[8px] font-bold text-indigo-300 bg-indigo-900/80 px-1.5 py-0.5 rounded backdrop-blur-sm border border-indigo-500/30">
-                            🛡️-{hero.damageReduction}%
+                            🛡️-{totalDamageReduction}%
                         </span>
                     )}
                     {/* HP Badge */}

@@ -1,5 +1,6 @@
+
 import React from 'react';
-import { Hero } from '../types';
+import { Hero, Equipment } from '../types';
 import HeroCard from './HeroCard';
 
 interface PartySlotGridProps {
@@ -15,6 +16,7 @@ interface PartySlotGridProps {
   onEquipClick?: (heroId: string, slotIndex: number) => void;
   className?: string;
   compactEmpty?: boolean; // For tighter spaces like DepartView
+  equipment?: Equipment[];
 }
 
 const PartySlotGrid: React.FC<PartySlotGridProps> = ({
@@ -29,7 +31,8 @@ const PartySlotGrid: React.FC<PartySlotGridProps> = ({
   onRemoveClick,
   onEquipClick,
   className = "grid grid-cols-3 gap-4",
-  compactEmpty = false
+  compactEmpty = false,
+  equipment
 }) => {
   return (
     <div className={className}>
@@ -67,6 +70,7 @@ const PartySlotGrid: React.FC<PartySlotGridProps> = ({
                   onClick={() => !readOnly && onSlotClick?.(slotIdx)}
                   onEquipClick={!readOnly ? onEquipClick : undefined}
                   isMainSlot
+                  equipment={equipment}
                 />
                 {!readOnly && !isLocked && onRemoveClick && (
                   <button 
