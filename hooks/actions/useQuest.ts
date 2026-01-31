@@ -512,7 +512,7 @@ export const useQuest = ({ gameState, setGameState, showNotification, setReturnR
                           const lostRecords = deadRows.map(row => ({
                               fid: farcasterUser.fid,
                               hero_id: row.hero_id,
-                              quest_id: questMaster.id // Store the MASTER Quest ID, not the process ID which will be deleted
+                              quest_id: questMaster.id // Using quest_id (Master ID) as per DB update
                           }));
 
                           // Insert into Lost Table
