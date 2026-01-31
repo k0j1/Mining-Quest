@@ -85,12 +85,24 @@ export const useQuest = ({ gameState, setGameState, showNotification, setReturnR
         }
     });
 
-    return { totalRewardBonus, totalTimeBonus, teamDamageReduction };
+    return { 
+        totalRewardBonus, 
+        totalTimeBonus, 
+        teamDamageReduction,
+        // Breakdowns
+        pickaxeBonus,
+        skillRewardBonus,
+        bootsBonus,
+        skillTimeBonus
+    };
   };
 
   // Exposed Helper: Calculate Prediction for UI
   const getQuestPrediction = (config: QuestConfig, partyHeroes: Hero[]) => {
-      const { totalRewardBonus, totalTimeBonus, teamDamageReduction } = getBonuses(partyHeroes);
+      const { 
+          totalRewardBonus, totalTimeBonus, teamDamageReduction,
+          pickaxeBonus, skillRewardBonus, bootsBonus, skillTimeBonus
+      } = getBonuses(partyHeroes);
 
       // 1. Reward Range
       const minReward = Math.floor(config.minReward * (1 + totalRewardBonus / 100));
@@ -137,7 +149,11 @@ export const useQuest = ({ gameState, setGameState, showNotification, setReturnR
           maxDmg: predictDmg(maxDmgRaw),
           bonusPercent: totalRewardBonus,
           timeReductionPercent: totalTimeBonus,
-          avgDamageReduction: Math.floor(avgTotalRed)
+          avgDamageReduction: Math.floor(avgTotalRed),
+          breakdown: {
+              reward: { hero: skillRewardBonus, equip: pickaxeBonus },
+              time: { hero: skillTimeBonus, equip: bootsBonus }
+          }
       };
   };
 

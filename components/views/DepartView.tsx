@@ -15,6 +15,10 @@ interface PredictionResult {
     bonusPercent: number;
     timeReductionPercent: number;
     avgDamageReduction: number;
+    breakdown: {
+      reward: { hero: number; equip: number; };
+      time: { hero: number; equip: number; };
+    };
 }
 
 interface DepartViewProps {
@@ -216,18 +220,25 @@ const DepartView: React.FC<DepartViewProps> = ({
                     
                     <div className="grid grid-cols-1 gap-3">
                         {/* Reward Forecast */}
-                        <div className="flex justify-between items-center">
-                            <span className="text-xs font-bold text-slate-400">報酬予測</span>
-                            <div className="text-right">
-                                <span className="text-amber-500 font-bold text-sm">
-                                    {prediction.minReward} - {prediction.maxReward}
-                                </span>
-                                {prediction.bonusPercent > 0 && (
-                                    <span className="ml-2 text-[9px] font-bold text-emerald-400 bg-emerald-900/30 px-1.5 py-0.5 rounded">
-                                        +{prediction.bonusPercent}%
+                        <div className="flex flex-col">
+                            <div className="flex justify-between items-center">
+                                <span className="text-xs font-bold text-slate-400">報酬予測</span>
+                                <div className="text-right">
+                                    <span className="text-amber-500 font-bold text-sm">
+                                        {prediction.minReward} - {prediction.maxReward}
                                     </span>
-                                )}
+                                    {prediction.bonusPercent > 0 && (
+                                        <span className="ml-2 text-[9px] font-bold text-emerald-400 bg-emerald-900/30 px-1.5 py-0.5 rounded">
+                                            +{prediction.bonusPercent}%
+                                        </span>
+                                    )}
+                                </div>
                             </div>
+                            {prediction.bonusPercent > 0 && (
+                                <div className="text-right text-[8px] text-slate-500 font-bold mt-0.5">
+                                    (Hero: +{prediction.breakdown?.reward.hero}% / Equip: +{prediction.breakdown?.reward.equip}%)
+                                </div>
+                            )}
                         </div>
 
                         {/* Damage Forecast */}
@@ -246,18 +257,25 @@ const DepartView: React.FC<DepartViewProps> = ({
                         </div>
 
                         {/* Duration Forecast */}
-                        <div className="flex justify-between items-center">
-                            <span className="text-xs font-bold text-slate-400">所要時間</span>
-                            <div className="text-right">
-                                <span className="text-blue-400 font-bold text-sm">
-                                    {Math.floor(prediction.estimatedDuration / 60)} min
-                                </span>
-                                {prediction.timeReductionPercent > 0 && (
-                                    <span className="ml-2 text-[9px] font-bold text-emerald-400 bg-emerald-900/30 px-1.5 py-0.5 rounded">
-                                        -{prediction.timeReductionPercent}%
+                        <div className="flex flex-col">
+                            <div className="flex justify-between items-center">
+                                <span className="text-xs font-bold text-slate-400">所要時間</span>
+                                <div className="text-right">
+                                    <span className="text-blue-400 font-bold text-sm">
+                                        {Math.floor(prediction.estimatedDuration / 60)} min
                                     </span>
-                                )}
+                                    {prediction.timeReductionPercent > 0 && (
+                                        <span className="ml-2 text-[9px] font-bold text-emerald-400 bg-emerald-900/30 px-1.5 py-0.5 rounded">
+                                            -{prediction.timeReductionPercent}%
+                                        </span>
+                                    )}
+                                </div>
                             </div>
+                            {prediction.timeReductionPercent > 0 && (
+                                <div className="text-right text-[8px] text-slate-500 font-bold mt-0.5">
+                                    (Hero: -{prediction.breakdown?.time.hero}% / Equip: -{prediction.breakdown?.time.equip}%)
+                                </div>
+                            )}
                         </div>
                     </div>
                  </div>

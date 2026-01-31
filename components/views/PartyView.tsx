@@ -78,11 +78,8 @@ const PartyView: React.FC<PartyViewProps> = ({
     const totalHp = activeHeroes.reduce((acc, h) => acc + h.hp, 0);
     const maxHp = activeHeroes.reduce((acc, h) => acc + h.maxHp, 0);
 
-    // Reward Bonus (Pickaxe + Skills)
-    const rewardBonus = activeHeroes.reduce((acc, h) => {
-        const pickaxe = gameState.equipment.find(e => e.id === h.equipmentIds[0]);
-        const equipBonus = pickaxe ? pickaxe.bonus : 0;
-        
+    // Reward Bonus Breakdown
+    const rewardHero = activeHeroes.reduce((acc, h) => {
         let skillBonus = 0;
         if (isSkillActive(h)) {
              skillBonus = h.skillQuest || 0;
@@ -92,14 +89,19 @@ const PartyView: React.FC<PartyViewProps> = ({
                  if (match) skillBonus = parseInt(match[1]);
              }
         }
-        return acc + equipBonus + skillBonus;
+        return acc + skillBonus;
     }, 0);
 
-    // Time Bonus (Boots + Skills)
-    const timeBonus = activeHeroes.reduce((acc, h) => {
-        const boots = gameState.equipment.find(e => e.id === h.equipmentIds[2]);
-        const equipBonus = boots ? boots.bonus : 0;
+    const rewardEquip = activeHeroes.reduce((acc, h) => {
+        const pickaxe = gameState.equipment.find(e => e.id === h.equipmentIds[0]);
+        return acc + (pickaxe ? pickaxe.bonus : 0);
+    }, 0);
 
+    const rewardBonus = rewardHero + rewardEquip;
+
+
+    // Time Bonus Breakdown
+    const timeHero = activeHeroes.reduce((acc, h) => {
         let skillBonus = 0;
         if (isSkillActive(h)) {
             skillBonus = h.skillTime || 0;
@@ -109,8 +111,15 @@ const PartyView: React.FC<PartyViewProps> = ({
                  if (match) skillBonus = parseInt(match[1]);
              }
         }
-        return acc + equipBonus + skillBonus;
+        return acc + skillBonus;
     }, 0);
+
+    const timeEquip = activeHeroes.reduce((acc, h) => {
+        const boots = gameState.equipment.find(e => e.id === h.equipmentIds[2]);
+        return acc + (boots ? boots.bonus : 0);
+    }, 0);
+
+    const timeBonus = timeHero + timeEquip;
 
     // Team Defense Buff (Skills only) - Individual helmet stats are local
     const teamDefBonus = activeHeroes.reduce((acc, h) => {
@@ -120,7 +129,12 @@ const PartyView: React.FC<PartyViewProps> = ({
         return acc;
     }, 0);
 
-    return { totalHp, maxHp, rewardBonus, timeBonus, teamDefBonus };
+    return { 
+        totalHp, maxHp, 
+        rewardBonus, rewardHero, rewardEquip,
+        timeBonus, timeHero, timeEquip,
+        teamDefBonus 
+    };
   }, [currentPreset, gameState.heroes, gameState.equipment]);
 
 
@@ -317,20 +331,32 @@ const PartyView: React.FC<PartyViewProps> = ({
             
             <div className="grid grid-cols-2 gap-3 mb-3">
                {/* Reward */}
-               <div className="bg-slate-900/50 rounded-lg p-2 border border-slate-700/50 flex items-center gap-3">
-                  <div className="text-xl">⛏️</div>
-                  <div>
-                    <div className="text-[9px] text-slate-500 font-bold uppercase">Reward Bonus</div>
-                    <div className="text-sm font-black text-amber-500">+{partyStats.rewardBonus}%</div>
+               <div className="bg-slate-900/50 rounded-lg p-2 border border-slate-700/50">
+                  <div className="flex items-center gap-3">
+                    <div className="text-xl">⛏️</div>
+                    <div>
+                        <div className="text-[9px] text-slate-500 font-bold uppercase">Reward Bonus</div>
+                        <div className="text-sm font-black text-amber-500">+{partyStats.rewardBonus}%</div>
+                    </div>
+                  </div>
+                  <div className="mt-1 flex justify-between text-[8px] text-slate-500 font-bold bg-black/20 px-1.5 py-0.5 rounded">
+                    <span>Hero: +{partyStats.rewardHero}%</span>
+                    <span>Equip: +{partyStats.rewardEquip}%</span>
                   </div>
                </div>
                
                {/* Time */}
-               <div className="bg-slate-900/50 rounded-lg p-2 border border-slate-700/50 flex items-center gap-3">
-                  <div className="text-xl">👢</div>
-                  <div>
-                    <div className="text-[9px] text-slate-500 font-bold uppercase">Time Reduction</div>
-                    <div className="text-sm font-black text-emerald-400">-{partyStats.timeBonus}%</div>
+               <div className="bg-slate-900/50 rounded-lg p-2 border border-slate-700/50">
+                  <div className="flex items-center gap-3">
+                    <div className="text-xl">👢</div>
+                    <div>
+                        <div className="text-[9px] text-slate-500 font-bold uppercase">Time Reduction</div>
+                        <div className="text-sm font-black text-emerald-400">-{partyStats.timeBonus}%</div>
+                    </div>
+                  </div>
+                  <div className="mt-1 flex justify-between text-[8px] text-slate-500 font-bold bg-black/20 px-1.5 py-0.5 rounded">
+                    <span>Hero: -{partyStats.timeHero}%</span>
+                    <span>Equip: -{partyStats.timeEquip}%</span>
                   </div>
                </div>
 
@@ -340,6 +366,7 @@ const PartyView: React.FC<PartyViewProps> = ({
                   <div>
                     <div className="text-[9px] text-slate-500 font-bold uppercase">Team Def Buff</div>
                     <div className="text-sm font-black text-indigo-400">-{partyStats.teamDefBonus}%</div>
+                    <div className="text-[8px] text-slate-600 mt-0.5">*Leader Passive</div>
                   </div>
                </div>
 
