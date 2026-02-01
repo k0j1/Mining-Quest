@@ -78,14 +78,15 @@ const HeroCard: React.FC<HeroCardProps> = ({
   const skillBonus = hero.skillDamage || 0;
   const totalDamageReduction = skillBonus + helmetBonus;
 
-  // Determine font size based on name length
-  const getNameSizeClass = (name: string) => {
-    if (name.length > 16) return 'text-[7px] leading-[9px]';
-    if (name.length > 12) return 'text-[8px] leading-[10px]';
-    return 'text-[9px] leading-[11px]';
+  // Determine font size and padding based on name length more aggressively
+  const getNameStyles = (name: string) => {
+    if (name.length > 16) return 'text-[6px] leading-[8px] px-1 tracking-tighter';
+    if (name.length > 12) return 'text-[7px] leading-[9px] px-1 tracking-tight';
+    if (name.length > 10) return 'text-[8px] leading-[10px] px-1.5';
+    return 'text-[9px] leading-[11px] px-2';
   };
 
-  const nameSizeClass = getNameSizeClass(hero.name);
+  const nameStyles = getNameStyles(hero.name);
 
   // Error Placeholder Component
   const ErrorPlaceholder = () => (
@@ -208,7 +209,7 @@ const HeroCard: React.FC<HeroCardProps> = ({
               </div>
 
               <div className="flex justify-center w-full">
-                 <span className={`${nameSizeClass} font-bold text-white bg-slate-900/70 px-2 py-0.5 rounded-full backdrop-blur-sm border border-white/10 shadow-sm tracking-tight text-center max-w-full truncate`}>
+                 <span className={`${nameStyles} font-bold text-white bg-slate-900/70 py-0.5 rounded-full backdrop-blur-sm border border-white/10 shadow-sm text-center max-w-full truncate`}>
                    {hero.name}
                  </span>
               </div>

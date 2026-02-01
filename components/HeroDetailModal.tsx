@@ -46,8 +46,8 @@ const HeroDetailModal: React.FC<HeroDetailModalProps> = ({ hero, equipment, onCl
                 ✕
             </button>
 
-            {/* Hero Image Area */}
-            <div className="relative aspect-[4/5] w-full bg-slate-800">
+            {/* Hero Image Area - Changed to object-contain with dark bg to prevent cropping */}
+            <div className="relative aspect-[4/5] w-full bg-slate-950">
                 <img 
                     src={hero.imageUrl.replace('_s.png', '.png').replace('/s/', '/l/')} // Try to use L size if available logic exists, else fallback works due to CSS
                     onError={(e) => {
@@ -55,7 +55,7 @@ const HeroDetailModal: React.FC<HeroDetailModalProps> = ({ hero, equipment, onCl
                         e.currentTarget.src = hero.imageUrl;
                     }}
                     alt={hero.name} 
-                    className="w-full h-full object-cover"
+                    className="w-full h-full object-contain"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-transparent to-transparent opacity-90"></div>
                 
@@ -63,13 +63,7 @@ const HeroDetailModal: React.FC<HeroDetailModalProps> = ({ hero, equipment, onCl
                 <div className="absolute bottom-0 left-0 right-0 p-6 pt-12">
                     <h2 className="text-2xl font-black text-white font-orbitron drop-shadow-md leading-none mb-2">{hero.name}</h2>
                     <div className="flex items-center gap-3">
-                        <div className="flex items-center gap-1 bg-slate-800/80 px-2 py-1 rounded border border-slate-700 backdrop-blur-sm">
-                            <span className="text-xs">❤️</span>
-                            <span className={`text-sm font-bold ${hero.hp < 30 ? 'text-rose-400' : 'text-emerald-400'}`}>
-                                HP {hero.hp}/{hero.maxHp}
-                            </span>
-                        </div>
-                        <span className="text-xs text-slate-400 font-bold uppercase tracking-wider">{hero.species}</span>
+                        <span className="text-xs text-slate-400 font-bold uppercase tracking-wider bg-slate-800/80 px-2 py-0.5 rounded border border-slate-700/50">{hero.species}</span>
                     </div>
                 </div>
             </div>
@@ -77,15 +71,28 @@ const HeroDetailModal: React.FC<HeroDetailModalProps> = ({ hero, equipment, onCl
             {/* Details Section */}
             <div className="p-6 pt-2 space-y-5 bg-slate-900">
                 
-                {/* Trait / Ability */}
+                {/* Status Row (HP moved here) */}
+                <div className="flex justify-between items-center bg-slate-800/50 p-3 rounded-xl border border-slate-700/50">
+                    <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">Status</span>
+                    <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-1.5">
+                            <span className="text-sm">❤️</span>
+                            <span className={`text-base font-black ${hero.hp < 30 ? 'text-rose-400' : 'text-emerald-400'}`}>
+                                HP {hero.hp}/{hero.maxHp}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Skill (Renamed from Trait) */}
                 <div>
                     <h3 className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2 flex items-center">
                         <span className="w-1.5 h-1.5 bg-indigo-500 rounded-full mr-2"></span>
-                        Unique Trait
+                        Skill
                     </h3>
                     <div className="bg-indigo-900/20 border border-indigo-500/30 p-3 rounded-xl">
                         <p className="text-xs text-indigo-100 leading-relaxed font-medium">
-                            {hero.trait || "No special trait."}
+                            {hero.trait || "No special skill."}
                         </p>
                     </div>
                 </div>
