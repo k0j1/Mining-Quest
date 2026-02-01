@@ -188,15 +188,15 @@ const HeroCard: React.FC<HeroCardProps> = ({
            {/* Stats & Name Overlay */}
            <div className="absolute bottom-2 left-2 right-2 z-20 pointer-events-none">
               
-              <div className="flex items-center justify-between mb-1 px-0.5">
+              <div className="flex items-center justify-between mb-1 gap-1">
                  {/* HP Display with Background */}
-                 <span className={`text-[9px] font-black drop-shadow-md px-2 py-0.5 rounded bg-slate-900/80 backdrop-blur-sm border border-slate-700/50 ${hero.hp < 30 ? 'text-rose-400' : 'text-emerald-400'}`}>
+                 <span className={`text-[8px] font-black drop-shadow-md px-1.5 py-0.5 rounded bg-slate-900/80 backdrop-blur-sm border border-slate-700/50 whitespace-nowrap ${hero.hp < 30 ? 'text-rose-400' : 'text-emerald-400'}`}>
                     HP {hero.hp}
                  </span>
 
                  {totalDamageReduction > 0 ? (
-                    <span className="text-[8px] font-bold text-indigo-200 bg-indigo-900/80 px-1.5 py-0.5 rounded backdrop-blur-sm border border-indigo-500/30">
-                        🛡️-{totalDamageReduction}%
+                    <span className="text-[7px] font-bold text-indigo-200 bg-indigo-900/80 px-1 py-0.5 rounded backdrop-blur-sm border border-indigo-500/30 whitespace-nowrap flex items-center">
+                        <span className="mr-0.5">🛡️</span>-{totalDamageReduction}%
                     </span>
                  ) : <span></span>}
               </div>
