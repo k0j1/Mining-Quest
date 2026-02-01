@@ -39,13 +39,6 @@ const HeroDetailModal: React.FC<HeroDetailModalProps> = ({ hero, equipment, onCl
         {/* Card Container */}
         <div className={`bg-slate-900 rounded-[2rem] border-2 overflow-hidden shadow-2xl relative ${rarityColors[hero.rarity].split(' ')[1]} ${rarityGlow[hero.rarity]}`}>
             
-            {/* Header / Rarity */}
-            <div className="absolute top-4 left-4 z-20">
-                <span className={`inline-block px-3 py-1 rounded-full text-xs font-black border bg-slate-900/80 backdrop-blur-sm ${rarityColors[hero.rarity]}`}>
-                    {hero.rarity}
-                </span>
-            </div>
-
             <button 
                 onClick={() => { playClick(); onClose(); }}
                 className="absolute top-4 right-4 z-20 w-8 h-8 flex items-center justify-center rounded-full bg-slate-900/80 text-white border border-slate-700 hover:bg-slate-800"

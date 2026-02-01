@@ -179,7 +179,8 @@ const HeroCard: React.FC<HeroCardProps> = ({
            <div className="absolute bottom-2 left-2 right-2 z-20 pointer-events-none">
               
               <div className="flex items-center justify-between mb-1 px-0.5">
-                 <span className={`text-[9px] font-black drop-shadow-md ${hero.hp < 30 ? 'text-rose-400' : 'text-emerald-400'}`}>
+                 {/* HP Display with Background */}
+                 <span className={`text-[9px] font-black drop-shadow-md px-2 py-0.5 rounded bg-slate-900/80 backdrop-blur-sm border border-slate-700/50 ${hero.hp < 30 ? 'text-rose-400' : 'text-emerald-400'}`}>
                     HP {hero.hp}
                  </span>
 
