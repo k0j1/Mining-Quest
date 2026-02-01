@@ -1,6 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Hero, Equipment } from '../types';
+import { useLongPress } from '../hooks/useLongPress';
 
 interface HeroCardProps {
   hero: Hero;
@@ -9,6 +10,7 @@ interface HeroCardProps {
   isSelected?: boolean;
   isLocked?: boolean;
   onClick?: () => void;
+  onLongPress?: () => void; // New Prop
   onEquipClick?: (heroId: string, slotIndex: number) => void;
   isMainSlot?: boolean;
   equipment?: Equipment[];
@@ -21,11 +23,25 @@ const HeroCard: React.FC<HeroCardProps> = ({
   isSelected,
   isLocked,
   onClick,
+  onLongPress,
   onEquipClick,
   isMainSlot,
   equipment
 }) => {
   const [hasError, setHasError] = useState(false);
+
+  // Use long press hook to handle clicks vs long presses
+  const longPressProps = useLongPress(
+    (e) => {
+      // Trigger long press callback if provided
+      if (onLongPress) onLongPress();
+    },
+    () => {
+      // Trigger normal click
+      if (onClick) onClick();
+    },
+    { shouldPreventDefault: true, delay: 500 }
+  );
 
   // Reset error state when hero changes
   useEffect(() => {
@@ -55,7 +71,6 @@ const HeroCard: React.FC<HeroCardProps> = ({
   const slotIcons = ['⛏️', '🪖', '👢'];
 
   // Calculate Total Damage Reduction (Skill + Helmet)
-  // ヒーロー自身の基礎値(damageReduction)は0として扱い、特性(スキル)と装備品のみで計算
   const helmetId = hero.equipmentIds[1];
   const helmetBonus = (helmetId && equipment) 
     ? (equipment.find(e => e.id === helmetId)?.bonus || 0) 
@@ -74,7 +89,7 @@ const HeroCard: React.FC<HeroCardProps> = ({
   if (compact) {
     return (
       <div 
-        onClick={onClick}
+        {...longPressProps}
         className={`flex items-center space-x-3 p-3 bg-slate-800 rounded-xl border transition-all duration-200 relative ${
           isLocked ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:bg-slate-750'
         } ${
@@ -128,27 +143,25 @@ const HeroCard: React.FC<HeroCardProps> = ({
     );
   }
 
-  // Standard Card Layout (Modified for separated equipment slots)
+  // Standard Card Layout
   return (
     <div 
-      onClick={onClick}
+      {...longPressProps}
       className={`relative transition-all duration-300 group ${
         isLocked ? 'cursor-not-allowed' : 'cursor-pointer active:scale-95'
       } ${
         isSelected ? 'scale-105 z-30' : 'scale-100 z-10'
       }`}
     >
-      {/* Container with Border - Aspect Ratio changed to accommodate equipment slots below image */}
+      {/* Container with Border */}
       <div className={`relative w-full aspect-[4/5.5] flex flex-col rounded-2xl overflow-hidden border-2 bg-slate-900 transition-all ${
         isSelected 
           ? 'border-amber-400 shadow-lg shadow-amber-900/20' 
           : `${rarityBorders[hero.rarity]} border-opacity-60`
       }`}>
         
-        {/* Top: Image Area (Flex grow) */}
+        {/* Top: Image Area */}
         <div className="relative flex-1 w-full overflow-hidden bg-slate-800">
-           {/* Rarity Badge Removed Here */}
-
            {hasError ? (
              <ErrorPlaceholder />
            ) : (
@@ -160,20 +173,16 @@ const HeroCard: React.FC<HeroCardProps> = ({
              />
            )}
            
-           {/* Gradient for Text Visibility */}
            <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-transparent to-transparent opacity-80 z-10 pointer-events-none"></div>
 
-           {/* Stats & Name Overlay at bottom of Image Area */}
+           {/* Stats & Name Overlay */}
            <div className="absolute bottom-2 left-2 right-2 z-20 pointer-events-none">
               
-              {/* Row 1: HP Value (Left) vs DR Badge (Right) */}
               <div className="flex items-center justify-between mb-1 px-0.5">
-                 {/* HP Badge */}
                  <span className={`text-[9px] font-black drop-shadow-md ${hero.hp < 30 ? 'text-rose-400' : 'text-emerald-400'}`}>
                     HP {hero.hp}
                  </span>
 
-                 {/* Damage Reduction Badge (Far Right) */}
                  {totalDamageReduction > 0 ? (
                     <span className="text-[8px] font-bold text-indigo-200 bg-indigo-900/80 px-1.5 py-0.5 rounded backdrop-blur-sm border border-indigo-500/30">
                         🛡️-{totalDamageReduction}%
@@ -181,7 +190,6 @@ const HeroCard: React.FC<HeroCardProps> = ({
                  ) : <span></span>}
               </div>
 
-              {/* Row 2: HP Bar */}
               <div className="w-full bg-slate-900/80 h-1.5 rounded-full overflow-hidden border border-white/10 shadow-sm mb-1.5">
                 <div 
                   className={`h-full rounded-full ${hero.hp < 30 ? 'bg-rose-500' : 'bg-emerald-500'}`}
@@ -189,7 +197,6 @@ const HeroCard: React.FC<HeroCardProps> = ({
                 />
               </div>
 
-              {/* Row 3: Name (Centered below bar) */}
               <div className="flex justify-center">
                  <span className="text-[9px] font-bold text-white bg-slate-900/70 px-3 py-0.5 rounded-full truncate min-w-0 backdrop-blur-sm border border-white/10 shadow-sm tracking-tight">
                    {hero.name}
@@ -198,7 +205,6 @@ const HeroCard: React.FC<HeroCardProps> = ({
 
            </div>
 
-           {/* Locked Overlay (Image Area Only) */}
            {isLocked && (
              <div className="absolute inset-0 bg-slate-900/70 z-30 flex flex-col items-center justify-center backdrop-blur-[1px]">
                <div className="bg-amber-500 text-white font-bold text-[9px] px-3 py-1 rounded-full shadow-lg tracking-wider border border-white/20 transform -rotate-3">
@@ -208,13 +214,14 @@ const HeroCard: React.FC<HeroCardProps> = ({
            )}
         </div>
 
-        {/* Bottom: Equipment Slots (Fixed Height, Separated) */}
+        {/* Bottom: Equipment Slots */}
         <div className="h-12 bg-slate-950 border-t border-slate-800 p-1.5 flex gap-1.5 justify-between items-center relative z-20">
           {[0, 1, 2].map(i => (
             <button 
               key={i} 
               onClick={(e) => {
                 e.stopPropagation();
+                // We use standard onClick for equipment, no long press logic needed here yet
                 onEquipClick && onEquipClick(hero.id, i);
               }}
               disabled={isLocked}
@@ -228,7 +235,6 @@ const HeroCard: React.FC<HeroCardProps> = ({
                  {slotIcons[i]}
               </span>
               
-              {/* Equipped Indicator Dot */}
               {hero.equipmentIds[i] && (
                  <div className="absolute top-0.5 right-0.5 w-1.5 h-1.5 bg-emerald-500 rounded-full shadow-[0_0_4px_#10b981]"></div>
               )}

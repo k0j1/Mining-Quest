@@ -14,8 +14,9 @@ interface PartySlotGridProps {
   onSlotClick?: (index: number) => void;
   onRemoveClick?: (index: number) => void;
   onEquipClick?: (heroId: string, slotIndex: number) => void;
+  onLongPress?: (heroId: string) => void; // New Prop
   className?: string;
-  compactEmpty?: boolean; // For tighter spaces like DepartView
+  compactEmpty?: boolean;
   equipment?: Equipment[];
 }
 
@@ -30,6 +31,7 @@ const PartySlotGrid: React.FC<PartySlotGridProps> = ({
   onSlotClick,
   onRemoveClick,
   onEquipClick,
+  onLongPress,
   className = "grid grid-cols-3 gap-4",
   compactEmpty = false,
   equipment
@@ -40,9 +42,6 @@ const PartySlotGrid: React.FC<PartySlotGridProps> = ({
         const heroId = heroIds[slotIdx];
         const hero = heroId ? heroes.find(h => h.id === heroId) : null;
         
-        // Determine lock status
-        // 1. If the whole party is locked (e.g. PartyView context)
-        // 2. If the individual hero is on a quest (e.g. StatusBoard context)
         const isLocked = isPartyLocked || (hero ? activeQuestHeroIds.includes(hero.id) : false);
         const isSelected = selectedIndex === slotIdx;
 
@@ -68,6 +67,7 @@ const PartySlotGrid: React.FC<PartySlotGridProps> = ({
                   isSelected={isSelected}
                   isLocked={isLocked} 
                   onClick={() => !readOnly && onSlotClick?.(slotIdx)}
+                  onLongPress={() => onLongPress?.(hero.id)} // Pass long press
                   onEquipClick={!readOnly ? onEquipClick : undefined}
                   isMainSlot
                   equipment={equipment}

@@ -4,7 +4,8 @@ import { GameState, Hero } from '../../types';
 import HeroCard from '../HeroCard';
 import EquipmentSelector from '../EquipmentSelector';
 import PartySlotGrid from '../PartySlotGrid';
-import { playClick, playError } from '../../utils/sound';
+import HeroDetailModal from '../HeroDetailModal';
+import { playClick, playError, playConfirm } from '../../utils/sound';
 import Header from '../Header';
 import { IS_TEST_MODE } from '../../constants';
 
@@ -41,6 +42,7 @@ const PartyView: React.FC<PartyViewProps> = ({
   const [selectedHeroId, setSelectedHeroId] = useState<string | null>(null);
   const [equippingState, setEquippingState] = useState<{ heroId: string, slotIndex: number } | null>(null);
   const [unlockingIndex, setUnlockingIndex] = useState<number | null>(null);
+  const [inspectingHero, setInspectingHero] = useState<Hero | null>(null); // State for detailed view
 
   const activePartyIndex = gameState.activePartyIndex;
   const currentPreset = gameState.partyPresets[activePartyIndex];
@@ -131,7 +133,7 @@ const PartyView: React.FC<PartyViewProps> = ({
 
     return { 
         totalHp, maxHp, 
-        rewardBonus, rewardHero, rewardEquip,
+        rewardBonus, rewardHero, rewardEquip, 
         speedBonus, speedHero, speedEquip,
         teamDefBonus 
     };
@@ -242,6 +244,14 @@ const PartyView: React.FC<PartyViewProps> = ({
     setEquippingState(null);
   };
 
+  const handleHeroLongPress = (heroId: string) => {
+    const hero = gameState.heroes.find(h => h.id === heroId);
+    if (hero) {
+      playConfirm(); // Sound effect for opening detail
+      setInspectingHero(hero);
+    }
+  };
+
   return (
     <>
       <div className="flex flex-col h-full relative bg-slate-900">
@@ -276,7 +286,7 @@ const PartyView: React.FC<PartyViewProps> = ({
             <p className={`text-[10px] py-2 px-3 rounded-lg border text-center font-bold tracking-widest uppercase transition-all ${
               isPartyLocked ? 'text-rose-400 bg-rose-900/20 border-rose-800' : 'text-indigo-400 bg-indigo-900/20 border-indigo-800'
             }`}>
-              {isPartyLocked ? "PARTY LOCKED ON MISSION" : (selectedSlotIndex !== null ? "SELECT TARGET SLOT TO SWAP" : selectedHeroId !== null ? "ASSIGNING UNIT..." : "SELECT SLOT TO EDIT")}
+              {isPartyLocked ? "PARTY LOCKED ON MISSION" : (selectedSlotIndex !== null ? "SELECT TARGET SLOT TO SWAP" : selectedHeroId !== null ? "ASSIGNING UNIT..." : "SELECT SLOT TO EDIT / HOLD FOR INFO")}
             </p>
           </div>
 
@@ -318,6 +328,7 @@ const PartyView: React.FC<PartyViewProps> = ({
               onSlotClick={handleSlotClick}
               onRemoveClick={handleRemoveHero}
               onEquipClick={handleEquipClick}
+              onLongPress={handleHeroLongPress} // Pass handler
               equipment={gameState.equipment}
             />
           </div>
@@ -390,6 +401,7 @@ const PartyView: React.FC<PartyViewProps> = ({
                         isSelected={isHeroSelected}
                         onClick={() => handleHeroListClick(hero.id)} 
                         equipment={gameState.equipment}
+                        onLongPress={() => handleHeroLongPress(hero.id)} // Enable long press in barracks too
                       />
                     </div>
                   );
@@ -407,6 +419,14 @@ const PartyView: React.FC<PartyViewProps> = ({
           allHeroes={gameState.heroes}
           onSelect={handleSelectEquipment}
           onClose={() => { playClick(); setEquippingState(null); }}
+        />
+      )}
+
+      {inspectingHero && (
+        <HeroDetailModal 
+          hero={inspectingHero}
+          equipment={gameState.equipment}
+          onClose={() => { playClick(); setInspectingHero(null); }}
         />
       )}
 
