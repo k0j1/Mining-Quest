@@ -78,6 +78,15 @@ const HeroCard: React.FC<HeroCardProps> = ({
   const skillBonus = hero.skillDamage || 0;
   const totalDamageReduction = skillBonus + helmetBonus;
 
+  // Determine font size based on name length
+  const getNameSizeClass = (name: string) => {
+    if (name.length > 16) return 'text-[7px] leading-[9px]';
+    if (name.length > 12) return 'text-[8px] leading-[10px]';
+    return 'text-[9px] leading-[11px]';
+  };
+
+  const nameSizeClass = getNameSizeClass(hero.name);
+
   // Error Placeholder Component
   const ErrorPlaceholder = () => (
     <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-800 text-slate-500 z-20">
@@ -198,8 +207,8 @@ const HeroCard: React.FC<HeroCardProps> = ({
                 />
               </div>
 
-              <div className="flex justify-center">
-                 <span className="text-[9px] font-bold text-white bg-slate-900/70 px-3 py-0.5 rounded-full truncate min-w-0 backdrop-blur-sm border border-white/10 shadow-sm tracking-tight">
+              <div className="flex justify-center w-full">
+                 <span className={`${nameSizeClass} font-bold text-white bg-slate-900/70 px-2 py-0.5 rounded-full backdrop-blur-sm border border-white/10 shadow-sm tracking-tight text-center max-w-full truncate`}>
                    {hero.name}
                  </span>
               </div>

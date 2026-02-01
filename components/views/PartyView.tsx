@@ -338,18 +338,10 @@ const PartyView: React.FC<PartyViewProps> = ({
           {/* Team Status Dashboard */}
           <div className="mb-8 bg-slate-800/60 rounded-xl border border-slate-700 p-4 shadow-sm relative overflow-hidden">
             <div className="absolute top-0 right-0 p-2 opacity-5 text-4xl pointer-events-none">📊</div>
-            <div className="flex justify-between items-center mb-3">
-              <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center">
-                <span className="w-1.5 h-1.5 bg-indigo-500 rounded-full mr-2"></span>
-                Team Status
-              </h3>
-              <button 
-                onClick={() => { playClick(); setShowTeamStatus(true); }}
-                className="text-[9px] font-bold bg-slate-700 hover:bg-slate-600 text-white px-2 py-1 rounded transition-colors flex items-center gap-1"
-              >
-                <span>🔍</span> DETAILS
-              </button>
-            </div>
+            <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 flex items-center">
+              <span className="w-1.5 h-1.5 bg-indigo-500 rounded-full mr-2"></span>
+              Team Status
+            </h3>
             
             <div className="grid grid-cols-2 gap-3 mb-3">
                {/* Reward */}
