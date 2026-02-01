@@ -32,6 +32,14 @@ const HeroDetailModal: React.FC<HeroDetailModalProps> = ({ hero, equipment, onCl
     L: 'shadow-amber-500/60'
   };
 
+  // Dynamic Font Size logic for Modal
+  const getNameStyles = (name: string) => {
+    if (name.length > 16) return 'text-lg tracking-tight';
+    if (name.length > 12) return 'text-xl tracking-normal';
+    return 'text-2xl tracking-wide';
+  };
+  const nameSizeClass = getNameStyles(hero.name);
+
   return (
     <div className="fixed inset-0 z-[1200] flex items-center justify-center bg-slate-950/90 backdrop-blur-md p-4 animate-fade-in">
       <div className="w-full max-w-sm relative flex flex-col max-h-[90vh]">
@@ -46,32 +54,39 @@ const HeroDetailModal: React.FC<HeroDetailModalProps> = ({ hero, equipment, onCl
                 ✕
             </button>
 
-            {/* Hero Image Area - Changed to object-contain with dark bg to prevent cropping */}
+            {/* Hero Image Area */}
             <div className="relative aspect-[4/5] w-full bg-slate-950">
                 <img 
-                    src={hero.imageUrl.replace('_s.png', '.png').replace('/s/', '/l/')} // Try to use L size if available logic exists, else fallback works due to CSS
+                    src={hero.imageUrl.replace('_s.png', '.png').replace('/s/', '/l/')} 
                     onError={(e) => {
-                        // Fallback to small image if large fails or logic is complex
                         e.currentTarget.src = hero.imageUrl;
                     }}
                     alt={hero.name} 
                     className="w-full h-full object-contain"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-transparent to-transparent opacity-90"></div>
                 
-                {/* Name & Basic Stats Overlay */}
-                <div className="absolute bottom-0 left-0 right-0 p-6 pt-12">
-                    <h2 className="text-2xl font-black text-white font-orbitron drop-shadow-md leading-none mb-2">{hero.name}</h2>
-                    <div className="flex items-center gap-3">
-                        <span className="text-xs text-slate-400 font-bold uppercase tracking-wider bg-slate-800/80 px-2 py-0.5 rounded border border-slate-700/50">{hero.species}</span>
-                    </div>
+                {/* Subtle gradient for text readability */}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent pointer-events-none opacity-90"></div>
+                
+                {/* Name Overlay - Centered at bottom to fit text box frame */}
+                <div className="absolute bottom-[12%] left-2 right-2 flex flex-col items-center justify-end z-10 pointer-events-none">
+                    <h2 className={`${nameSizeClass} font-black text-white font-orbitron drop-shadow-[0_2px_3px_rgba(0,0,0,1)] text-center w-full leading-none`}>
+                        {hero.name}
+                    </h2>
+                </div>
+
+                {/* Species Badge - Bottom Right */}
+                <div className="absolute bottom-3 right-3 z-10">
+                    <span className="text-[9px] font-bold text-slate-300/80 uppercase tracking-widest bg-black/50 px-2 py-0.5 rounded border border-white/10 backdrop-blur-[2px]">
+                        {hero.species}
+                    </span>
                 </div>
             </div>
 
             {/* Details Section */}
             <div className="p-6 pt-2 space-y-5 bg-slate-900">
                 
-                {/* Status Row (HP moved here) */}
+                {/* Status Row */}
                 <div className="flex justify-between items-center bg-slate-800/50 p-3 rounded-xl border border-slate-700/50">
                     <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">Status</span>
                     <div className="flex items-center gap-2">
@@ -84,7 +99,7 @@ const HeroDetailModal: React.FC<HeroDetailModalProps> = ({ hero, equipment, onCl
                     </div>
                 </div>
 
-                {/* Skill (Renamed from Trait) */}
+                {/* Skill */}
                 <div>
                     <h3 className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2 flex items-center">
                         <span className="w-1.5 h-1.5 bg-indigo-500 rounded-full mr-2"></span>
