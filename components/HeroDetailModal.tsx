@@ -42,20 +42,18 @@ const HeroDetailModal: React.FC<HeroDetailModalProps> = ({ hero, equipment, onCl
 
   return (
     <div className="fixed inset-0 z-[1200] flex items-center justify-center bg-slate-950/90 backdrop-blur-md p-4 animate-fade-in">
-      <div className="w-full max-w-sm relative flex flex-col max-h-[90vh]">
-        
-        {/* Card Container */}
-        <div className={`bg-slate-900 rounded-[2rem] border-2 overflow-hidden shadow-2xl relative ${rarityColors[hero.rarity].split(' ')[1]} ${rarityGlow[hero.rarity]}`}>
+      {/* Card Container - Added max-h and flex-col for internal scrolling */}
+      <div className={`w-full max-w-sm relative flex flex-col max-h-[85vh] bg-slate-900 rounded-[2rem] border-2 overflow-hidden shadow-2xl ${rarityColors[hero.rarity].split(' ')[1]} ${rarityGlow[hero.rarity]}`}>
             
             <button 
                 onClick={() => { playClick(); onClose(); }}
-                className="absolute top-4 right-4 z-20 w-8 h-8 flex items-center justify-center rounded-full bg-slate-900/80 text-white border border-slate-700 hover:bg-slate-800"
+                className="absolute top-4 right-4 z-30 w-8 h-8 flex items-center justify-center rounded-full bg-slate-900/80 text-white border border-slate-700 hover:bg-slate-800"
             >
                 ✕
             </button>
 
-            {/* Hero Image Area */}
-            <div className="relative aspect-[4/5] w-full bg-slate-950">
+            {/* Hero Image Area - Changed to aspect-square to reduce height */}
+            <div className="relative aspect-square w-full bg-slate-950 shrink-0">
                 <img 
                     src={hero.imageUrl.replace('_s.png', '.png').replace('/s/', '/l/')} 
                     onError={(e) => {
@@ -65,11 +63,11 @@ const HeroDetailModal: React.FC<HeroDetailModalProps> = ({ hero, equipment, onCl
                     className="w-full h-full object-contain"
                 />
                 
-                {/* Subtle gradient for text readability */}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent pointer-events-none opacity-90"></div>
+                {/* Gradient for text readability */}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-transparent to-transparent pointer-events-none opacity-90"></div>
                 
-                {/* Name Overlay - Centered at bottom to fit text box frame */}
-                <div className="absolute bottom-[12%] left-2 right-2 flex flex-col items-center justify-end z-10 pointer-events-none">
+                {/* Name Overlay - Positioned at bottom of image area */}
+                <div className="absolute bottom-4 left-2 right-2 flex flex-col items-center justify-end z-10 pointer-events-none">
                     <h2 className={`${nameSizeClass} font-black text-white font-orbitron drop-shadow-[0_2px_3px_rgba(0,0,0,1)] text-center w-full leading-none`}>
                         {hero.name}
                     </h2>
@@ -83,11 +81,11 @@ const HeroDetailModal: React.FC<HeroDetailModalProps> = ({ hero, equipment, onCl
                 </div>
             </div>
 
-            {/* Details Section */}
-            <div className="p-6 pt-2 space-y-5 bg-slate-900">
+            {/* Details Section - Scrollable and compacted */}
+            <div className="flex-1 overflow-y-auto p-5 space-y-4 bg-slate-900 custom-scrollbar">
                 
                 {/* Status Row */}
-                <div className="flex justify-between items-center bg-slate-800/50 p-3 rounded-xl border border-slate-700/50">
+                <div className="flex justify-between items-center bg-slate-800/50 p-2.5 rounded-xl border border-slate-700/50">
                     <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">Status</span>
                     <div className="flex items-center gap-2">
                         <div className="flex items-center gap-1.5">
@@ -101,11 +99,11 @@ const HeroDetailModal: React.FC<HeroDetailModalProps> = ({ hero, equipment, onCl
 
                 {/* Skill */}
                 <div>
-                    <h3 className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2 flex items-center">
+                    <h3 className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5 flex items-center">
                         <span className="w-1.5 h-1.5 bg-indigo-500 rounded-full mr-2"></span>
                         Skill
                     </h3>
-                    <div className="bg-indigo-900/20 border border-indigo-500/30 p-3 rounded-xl">
+                    <div className="bg-indigo-900/20 border border-indigo-500/30 p-2.5 rounded-xl">
                         <p className="text-xs text-indigo-100 leading-relaxed font-medium">
                             {hero.trait || "No special skill."}
                         </p>
@@ -114,7 +112,7 @@ const HeroDetailModal: React.FC<HeroDetailModalProps> = ({ hero, equipment, onCl
 
                 {/* Equipment Status */}
                 <div>
-                    <h3 className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2 flex items-center">
+                    <h3 className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5 flex items-center">
                         <span className="w-1.5 h-1.5 bg-amber-500 rounded-full mr-2"></span>
                         Equipment
                     </h3>
@@ -153,9 +151,10 @@ const HeroDetailModal: React.FC<HeroDetailModalProps> = ({ hero, equipment, onCl
                         </div>
                     </div>
                 </div>
-
+                
+                {/* Bottom spacer for safe scrolling */}
+                <div className="h-2"></div>
             </div>
-        </div>
       </div>
       
       <style>{`

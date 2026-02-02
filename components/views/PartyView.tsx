@@ -316,8 +316,12 @@ const PartyView: React.FC<PartyViewProps> = ({
           </div>
         </Header>
 
-        <div className="flex-1 overflow-y-auto px-5 pb-32 pt-6 bg-slate-900 custom-scrollbar">
+        <div className="flex-1 overflow-y-auto px-5 pb-32 pt-4 bg-slate-900 custom-scrollbar">
           
+          <p className="text-[10px] text-slate-500 text-center font-bold uppercase tracking-widest mb-3 opacity-70">
+            Long press hero to view details
+          </p>
+
           <div className="mb-6">
             <PartySlotGrid
               heroIds={currentPreset}
