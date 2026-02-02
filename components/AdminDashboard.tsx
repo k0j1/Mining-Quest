@@ -176,28 +176,48 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
     setUserSearch(user.username || '');
     setShowUserDropdown(false); 
     setLoadingDetails(true);
+
+    // Helper to fetch with specific error logging
+    const safeFetch = async (label: string, query: any) => {
+        const { data, error } = await query;
+        if (error) {
+            console.error(`[Admin] Error fetching ${label}:`, error);
+            return []; // Return empty array to prevent crashing other requests
+        }
+        return data || [];
+    };
+
     try {
       const fid = user.fid;
-      const [p, h, e, q, l, c] = await Promise.all([
-        supabase.from('quest_player_party').select('*').eq('fid', fid).order('party_no'),
-        supabase.from('quest_player_hero').select('*, quest_hero(*)').eq('fid', fid).order('player_hid', { ascending: false }),
-        supabase.from('quest_player_equipment').select('*, quest_equipment(*)').eq('fid', fid).order('player_eid', { ascending: false }),
-        supabase.from('quest_process').select('*, quest_mining(*)').eq('fid', fid),
-        supabase.from('quest_player_hero_lost').select('*, quest_hero(*)').eq('fid', fid).order('created_at', { ascending: false }).limit(20),
-        supabase.from('quest_process_complete').select('*, quest_mining(*)').eq('fid', fid).order('created_at', { ascending: false }).limit(20)
+      
+      // Execute queries in parallel but handle errors individually
+      const [parties, heroes, equipment, activeQuests, lostHeroes, completedQuests] = await Promise.all([
+        safeFetch('Parties', supabase.from('quest_player_party').select('*').eq('fid', fid).order('party_no')),
+        
+        safeFetch('Heroes', supabase.from('quest_player_hero').select('*, quest_hero(*)').eq('fid', fid).order('player_hid', { ascending: false })),
+        
+        safeFetch('Equipment', supabase.from('quest_player_equipment').select('*, quest_equipment(*)').eq('fid', fid).order('player_eid', { ascending: false })),
+        
+        safeFetch('Active Quests', supabase.from('quest_process').select('*, quest_mining(*)').eq('fid', fid)),
+        
+        // Changed sort to Primary Key (lost_id) to ensure it works even if created_at is missing/named differently
+        safeFetch('Lost Heroes', supabase.from('quest_player_hero_lost').select('*, quest_hero(*)').eq('fid', fid).order('lost_id', { ascending: false }).limit(20)),
+        
+        // Changed sort to Primary Key (id) for safety
+        safeFetch('Completed Quests', supabase.from('quest_process_complete').select('*, quest_mining(*)').eq('fid', fid).order('id', { ascending: false }).limit(20))
       ]);
 
       setUserDetails({
-        parties: p.data || [],
-        heroes: h.data || [],
-        equipment: e.data || [],
-        activeQuests: q.data || [],
-        lostHeroes: l.data || [],
-        completedQuests: c.data || []
+        parties,
+        heroes,
+        equipment,
+        activeQuests,
+        lostHeroes,
+        completedQuests
       });
     } catch (err) {
       console.error("Error loading user details:", err);
-      alert("Failed to load user details");
+      alert("Failed to load user details. See console for errors.");
     } finally {
       setLoadingDetails(false);
     }
@@ -551,7 +571,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
                                     <div className="text-slate-300">{(q.quest_mining && q.quest_mining.name) || `Quest #${q.quest_id}`}</div>
                                     <div className="flex gap-3 text-slate-500 font-mono">
                                         <span className="text-emerald-500 font-bold">+{q.reward} $CHH</span>
-                                        <span>{new Date(q.created_at).toLocaleDateString()}</span>
+                                        <span>{new Date(q.created_at || q.end_time || 0).toLocaleDateString()}</span>
                                     </div>
                                 </div>
                             ))
@@ -610,7 +630,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
                                 <div key={h.lost_id} className="bg-slate-950 border border-slate-800 p-1.5 rounded text-center grayscale hover:grayscale-0 transition-all">
                                     <div className="text-lg">💀</div>
                                     <div className="text-[8px] font-bold text-slate-400 truncate">{h.quest_hero?.name || 'Unknown'}</div>
-                                    <div className="text-[7px] text-slate-600">{new Date(h.created_at).toLocaleDateString()}</div>
+                                    <div className="text-[7px] text-slate-600">{new Date(h.created_at || h.lost_at || 0).toLocaleDateString()}</div>
                                 </div>
                             ))}
                         </div>
