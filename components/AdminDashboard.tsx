@@ -59,6 +59,14 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
   
   const [loadingDetails, setLoadingDetails] = useState(false);
   const searchTimeout = useRef<any>(null);
+  // Timer for updating "Time Left" displays
+  const [now, setNow] = useState(Date.now());
+
+  // Update timer every second
+  useEffect(() => {
+    const timer = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(timer);
+  }, []);
 
   // --- DB BROWSER FUNCTIONS ---
 
@@ -500,7 +508,13 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
                     </h3>
                     {userDetails?.activeQuests && userDetails.activeQuests.length > 0 ? (
                         <div className="space-y-2">
-                            {userDetails.activeQuests.map((q: any) => (
+                            {userDetails.activeQuests.map((q: any) => {
+                                const endTime = new Date(q.end_time).getTime();
+                                const timeLeftMs = Math.max(0, endTime - now);
+                                const minutes = Math.floor(timeLeftMs / 60000);
+                                const seconds = Math.floor((timeLeftMs % 60000) / 1000);
+                                
+                                return (
                                 <div key={q.quest_pid} className="bg-slate-900 border border-amber-500/30 p-3 rounded-xl flex justify-between items-center relative overflow-hidden">
                                     <div className="absolute left-0 top-0 bottom-0 w-1 bg-amber-500"></div>
                                     <div className="pl-2">
@@ -508,8 +522,9 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
                                         <div className="text-[10px] text-slate-400 mt-0.5">Party: {q.party_id}</div>
                                     </div>
                                     <div className="text-right flex flex-col items-end gap-1">
-                                        <div className="text-[10px] text-amber-500 font-bold">Processing...</div>
-                                        <div className="text-[9px] text-slate-500 font-mono">End: {new Date(q.end_time).toLocaleTimeString()}</div>
+                                        <div className="text-[12px] text-amber-500 font-mono font-bold">
+                                            {minutes}:{seconds.toString().padStart(2, '0')}
+                                        </div>
                                         <button 
                                           onClick={() => handleInstantComplete(q.quest_pid)}
                                           className="bg-indigo-600 hover:bg-indigo-500 text-white text-[8px] font-bold px-2 py-1 rounded shadow-sm border border-indigo-400 transition-all active:scale-95"
@@ -518,7 +533,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
                                         </button>
                                     </div>
                                 </div>
-                            ))}
+                            )})}
                         </div>
                     ) : (
                         <div className="text-xs text-slate-600 italic">No active quests.</div>
