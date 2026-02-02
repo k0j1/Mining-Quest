@@ -347,14 +347,68 @@ const AdminUserInspector: React.FC = () => {
                                 const minutes = Math.floor(timeLeftMs / 60000);
                                 const seconds = Math.floor((timeLeftMs % 60000) / 1000);
                                 
+                                // Find Party Number
+                                const usedParty = userDetails.parties.find((p: any) => p.party_id === q.party_id);
+                                const partyNo = usedParty ? usedParty.party_no : '?';
+                                const qm = q.quest_mining || {};
+
+                                // Display Actual Calculated Values from quest_process
+                                const totalReward = (q.base_reward || 0) + (q.add_hero_reward || 0) + (q.add_equipment_reward || 0);
+
+                                // Collect Hero Damage Details
+                                const heroImpacts: any[] = [];
+                                if (usedParty) {
+                                    const slots = [
+                                        { hid: usedParty.hero1_hid, dmg: q.hero1_damage },
+                                        { hid: usedParty.hero2_hid, dmg: q.hero2_damage },
+                                        { hid: usedParty.hero3_hid, dmg: q.hero3_damage }
+                                    ];
+                                    slots.forEach(slot => {
+                                        if (slot.hid) {
+                                            const h = getHeroInfo(slot.hid);
+                                            if (h) {
+                                                const dmg = slot.dmg || 0;
+                                                heroImpacts.push({
+                                                    name: h.quest_hero?.name || 'Unknown',
+                                                    current: h.hp,
+                                                    damage: dmg,
+                                                    remaining: Math.max(0, h.hp - dmg)
+                                                });
+                                            }
+                                        }
+                                    });
+                                }
+
                                 return (
                                 <div key={q.quest_pid} className="bg-slate-900 border border-amber-500/30 p-3 rounded-xl flex justify-between items-center relative overflow-hidden">
                                     <div className="absolute left-0 top-0 bottom-0 w-1 bg-amber-500"></div>
-                                    <div className="pl-2">
-                                        <div className="text-xs font-bold text-white">{(q.quest_mining && q.quest_mining.name) || 'Unknown Quest'}</div>
-                                        <div className="text-[10px] text-slate-400 mt-0.5">Party: {q.party_id}</div>
+                                    <div className="pl-2 min-w-0 flex-1">
+                                        <div className="text-xs font-bold text-white truncate">{qm.name || 'Unknown Quest'}</div>
+                                        
+                                        <div className="mt-1">
+                                            <div className="flex items-center gap-2 text-[10px]">
+                                                <span className="font-bold text-indigo-400">Party {partyNo}</span>
+                                                <span className="text-amber-500 font-mono font-bold">💰+{totalReward}</span>
+                                            </div>
+                                            
+                                            {heroImpacts.length > 0 && (
+                                              <div className="mt-1 space-y-0.5 bg-slate-950/30 p-1.5 rounded border border-slate-800/50 inline-block w-full">
+                                                  {heroImpacts.map((h, idx) => (
+                                                      <div key={idx} className="flex items-center gap-2 text-[9px] font-mono leading-tight">
+                                                          <span className="text-slate-400 w-24 truncate">{h.name}</span>
+                                                          <div className="flex items-center gap-1">
+                                                              <span className={`${h.current < 20 ? 'text-orange-400' : 'text-slate-300'}`}>{h.current}</span>
+                                                              <span className="text-slate-600">→</span>
+                                                              <span className={`${h.remaining === 0 ? 'text-red-500 font-bold' : h.remaining < 20 ? 'text-orange-400' : 'text-emerald-400'}`}>{h.remaining}</span>
+                                                          </div>
+                                                          <span className="text-rose-500/70 text-[8px]">(-{h.damage})</span>
+                                                      </div>
+                                                  ))}
+                                              </div>
+                                            )}
+                                        </div>
                                     </div>
-                                    <div className="text-right flex flex-col items-end gap-1">
+                                    <div className="text-right flex flex-col items-end gap-1 ml-2 shrink-0 self-start">
                                         <div className="text-[12px] text-amber-500 font-mono font-bold">
                                             {minutes}:{seconds.toString().padStart(2, '0')}
                                         </div>
