@@ -226,13 +226,19 @@ const HeroCard: React.FC<HeroCardProps> = ({
         </div>
 
         {/* Bottom: Equipment Slots */}
-        <div className="h-12 bg-slate-950 border-t border-slate-800 p-1.5 flex gap-1.5 justify-between items-center relative z-20">
+        <div 
+          className="h-12 bg-slate-950 border-t border-slate-800 p-1.5 flex gap-1.5 justify-between items-center relative z-20"
+          // Stop propagation here to prevent parent Card's longPress/click handlers
+          onMouseDown={(e) => e.stopPropagation()}
+          onTouchStart={(e) => e.stopPropagation()}
+          onClick={(e) => e.stopPropagation()}
+        >
           {[0, 1, 2].map(i => (
             <button 
               key={i} 
               onClick={(e) => {
                 e.stopPropagation();
-                // We use standard onClick for equipment, no long press logic needed here yet
+                // We use standard onClick for equipment
                 onEquipClick && onEquipClick(hero.id, i);
               }}
               disabled={isLocked}
