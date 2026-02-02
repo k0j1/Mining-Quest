@@ -143,14 +143,10 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
     
     if (searchTimeout.current) clearTimeout(searchTimeout.current);
 
-    if (userSearch.length > 0) {
-        searchTimeout.current = setTimeout(() => {
-            fetchUserList();
-        }, 500);
-    } else {
-        setUserList([]);
-        setShowUserDropdown(false);
-    }
+    // デバウンス処理だが、空文字でもリストを取得するように変更
+    searchTimeout.current = setTimeout(() => {
+        fetchUserList();
+    }, 300);
   }, [userSearch]);
 
   const fetchUserList = async () => {
@@ -158,14 +154,17 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
       let query = supabase
         .from('quest_player_stats')
         .select('*')
-        .ilike('username', `%${userSearch}%`)
         .order('last_active', { ascending: false })
         .limit(10);
+      
+      if (userSearch.length > 0) {
+        query = query.ilike('username', `%${userSearch}%`);
+      }
       
       const { data, error } = await query;
       if (error) throw error;
       setUserList(data || []);
-      setShowUserDropdown(true);
+      // 検索結果がある場合はドロップダウンを表示（フォーカス時など）
     } catch (e) {
       console.error(e);
     }
@@ -184,7 +183,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
         supabase.from('quest_player_hero').select('*, quest_hero(*)').eq('fid', fid).order('player_hid', { ascending: false }),
         supabase.from('quest_player_equipment').select('*, quest_equipment(*)').eq('fid', fid).order('player_eid', { ascending: false }),
         supabase.from('quest_process').select('*, quest_mining(*)').eq('fid', fid),
-        supabase.from('quest_player_hero_lost').select('*, quest_hero(*)').eq('fid', fid).order('id', { ascending: false }).limit(20),
+        supabase.from('quest_player_hero_lost').select('*, quest_hero(*)').eq('fid', fid).order('created_at', { ascending: false }).limit(20),
         supabase.from('quest_process_complete').select('*, quest_mining(*)').eq('fid', fid).order('created_at', { ascending: false }).limit(20)
       ]);
 
@@ -367,7 +366,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
                     placeholder="Search User by Name..." 
                     value={userSearch}
                     onChange={(e) => setUserSearch(e.target.value)}
-                    onFocus={() => { if (userList.length > 0) setShowUserDropdown(true); }}
+                    onFocus={() => { fetchUserList(); setShowUserDropdown(true); }} // Focusでリスト更新＆表示
                     className="w-full bg-slate-950 border border-slate-700 rounded-xl pl-10 pr-4 py-3 text-sm text-white focus:border-indigo-500 outline-none shadow-sm"
                 />
             </div>
@@ -611,7 +610,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
                                 <div key={h.lost_id} className="bg-slate-950 border border-slate-800 p-1.5 rounded text-center grayscale hover:grayscale-0 transition-all">
                                     <div className="text-lg">💀</div>
                                     <div className="text-[8px] font-bold text-slate-400 truncate">{h.quest_hero?.name || 'Unknown'}</div>
-                                    <div className="text-[7px] text-slate-600">{new Date(h.lost_at).toLocaleDateString()}</div>
+                                    <div className="text-[7px] text-slate-600">{new Date(h.created_at).toLocaleDateString()}</div>
                                 </div>
                             ))}
                         </div>
