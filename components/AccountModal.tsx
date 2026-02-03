@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import AdminDashboard from './AdminDashboard';
 
@@ -8,7 +9,7 @@ interface AccountModalProps {
 }
 
 // Allowed Admin FIDs for Admin Dashboard
-const ADMIN_FIDS = [406233, 137908]; 
+const ADMIN_FIDS = [406233, 137908, 1379028]; 
 
 const AccountModal: React.FC<AccountModalProps> = ({ user, balance, onClose }) => {
   const [showAdmin, setShowAdmin] = useState(false);
