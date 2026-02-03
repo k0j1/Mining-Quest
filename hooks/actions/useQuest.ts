@@ -441,160 +441,158 @@ export const useQuest = ({ gameState, setGameState, showNotification, setReturnR
         accumulatedTotalReward += finalReward;
       }
 
-      resultList.push({
-        questName: quest.name,
-        rank: quest.rank,
-        totalReward: finalReward,
-        baseReward: finalReward === 0 ? 0 : baseReward,
-        bonusReward: finalReward === 0 ? 0 : bonusReward,
-        heroBonus: finalReward === 0 ? 0 : addHeroReward,
-        equipmentBonus: finalReward === 0 ? 0 : addEquipmentReward,
-        logs: logs
-      });
-
       // Update DB for this quest
+      let isDuplicate = false;
+
       if (farcasterUser?.fid) {
           const questPid = parseInt(quest.id);
           console.log(`[Quest Return] Processing DB update for Quest PID: ${questPid}`);
 
           try {
-              // 1. Get Quest Mining Master Data
-              console.log(`[Quest Return] Fetching master data for rank: ${quest.rank}`);
-              const { data: questMaster, error: masterError } = await supabase.from('quest_mining').select('id').eq('rank', quest.rank).single();
+              // 1. Integrity Check: Verify active record exists in DB
+              const { data: activeCheck, error: activeCheckError } = await supabase
+                .from('quest_process')
+                .select('quest_pid')
+                .eq('quest_pid', questPid)
+                .single();
+              
+              if (activeCheckError || !activeCheck) {
+                console.warn(`[Quest Return] Quest ${questPid} not found in active table. Skipping processing.`);
+                isDuplicate = true; // Mark as processed/duplicate so we don't add rewards locally again
+              } else {
+                  // 2. Get Quest Mining Master Data
+                  const { data: questMaster } = await supabase.from('quest_mining').select('id').eq('rank', quest.rank).single();
 
-              if (masterError) {
-                 console.error(`[Quest Return] Error fetching master data for rank ${quest.rank}:`, masterError);
-              } else if (!questMaster) {
-                 console.error(`[Quest Return] Quest master data not found for rank: ${quest.rank}`);
-              }
-
-              if (questMaster) {
-                  console.log(`[Quest Return] Master Quest ID: ${questMaster.id}`);
-
-                  // 2. Insert into quest_process_complete (Archive)
-                  const { data: completeData, error: completeError } = await supabase.from('quest_process_complete').insert({
-                      fid: farcasterUser.fid,
-                      quest_id: questMaster.id,
-                      reward: finalReward
-                  }).select();
-
-                  if (completeError) {
-                      console.error("[Quest Return] Error archiving to quest_process_complete:", completeError);
-                  } else {
-                      console.log("[Quest Return] Successfully archived to quest_process_complete:", completeData);
-                  }
-
-                  // 3. Update Hero HPs (Survivors)
-                  const aliveInThisQuest = questHeroes.filter(h => !deadHeroIds.includes(h.id));
-                  for (const hero of aliveInThisQuest) {
-                      const newHp = newHeroes.find(h => h.id === hero.id)?.hp || 0;
-                      const playerHid = parseInt(hero.id);
-                      const { error: hpError } = await supabase.from('quest_player_hero')
-                          .update({ hp: newHp })
-                          .eq('player_hid', playerHid);
-                      if (hpError) console.error(`[Quest Return] Error updating HP for hero ${hero.id}:`, hpError);
-                  }
-
-                  // 4. Handle Deaths
-                  const deadInThisQuest = questHeroes.filter(h => deadHeroIds.includes(h.id));
-                  if (deadInThisQuest.length > 0) {
-                      const deadPids = deadInThisQuest.map(h => parseInt(h.id));
+                  if (questMaster) {
+                      // 3. Duplicate Prevention: Check for identical completion record in last 10 seconds
+                      const timeWindow = new Date(Date.now() - 10000).toISOString();
+                      const { data: recentDups } = await supabase
+                          .from('quest_process_complete')
+                          .select('id')
+                          .eq('fid', farcasterUser.fid)
+                          .eq('quest_id', questMaster.id)
+                          .eq('reward', finalReward)
+                          .gt('created_at', timeWindow);
                       
-                      // Fetch Master IDs needed for the lost log
-                      const { data: deadRows, error: fetchError } = await supabase
-                          .from('quest_player_hero')
-                          .select('player_hid, hero_id')
-                          .in('player_hid', deadPids);
-                      
-                      if (fetchError) console.error("[Quest Return] Error fetching dead heroes for log:", fetchError);
-
-                      if (deadRows && deadRows.length > 0) {
-                          const lostRecords = deadRows.map(row => ({
+                      if (recentDups && recentDups.length > 0) {
+                          console.warn(`[Quest Return] Detected duplicate completion for Quest ${questPid}. Skipping insert.`);
+                          // Cleanup active row just in case it stuck
+                          await supabase.from('quest_process').delete().eq('quest_pid', questPid);
+                          isDuplicate = true;
+                      } else {
+                          // 4. Insert into quest_process_complete (Archive)
+                          const { error: completeError } = await supabase.from('quest_process_complete').insert({
                               fid: farcasterUser.fid,
-                              hero_id: row.hero_id,
-                              quest_id: questMaster.id // Using quest_id (Master ID) as per DB update
-                          }));
+                              quest_id: questMaster.id,
+                              reward: finalReward
+                          });
 
-                          // Insert into Lost Table
-                          const { error: insertError } = await supabase
-                              .from('quest_player_hero_lost')
-                              .insert(lostRecords);
-                          
-                          if (insertError) {
-                              console.error("[Quest Return] Error inserting lost heroes:", insertError);
+                          if (completeError) {
+                              console.error("[Quest Return] Error archiving to quest_process_complete:", completeError);
+                              // If insert fails, we stop to prevent partial state, unless it's a constraint violation
                           } else {
-                              console.log("[Quest Return] Successfully logged lost heroes.");
-                          }
+                              // 5. CRITICAL: Delete from quest_process (Active) IMMEDIATELY to prevent double-processing
+                              const { error: deleteProcessError } = await supabase.from('quest_process').delete().eq('quest_pid', questPid);
+                              if (deleteProcessError) {
+                                  console.error("[Quest Return] Error deleting from quest_process:", deleteProcessError);
+                              }
 
-                          // Delete from Active Hero Table
-                          const { error: deleteError } = await supabase
-                              .from('quest_player_hero')
-                              .delete()
-                              .in('player_hid', deadPids);
-                              
-                          if (deleteError) {
-                              console.error("[Quest Return] Error deleting dead heroes:", deleteError);
-                          } else {
-                              console.log("[Quest Return] Successfully deleted dead heroes from active roster.");
+                              // 6. Update Hero HPs (Survivors)
+                              const aliveInThisQuest = questHeroes.filter(h => !deadHeroIds.includes(h.id));
+                              for (const hero of aliveInThisQuest) {
+                                  const newHp = newHeroes.find(h => h.id === hero.id)?.hp || 0;
+                                  const playerHid = parseInt(hero.id);
+                                  await supabase.from('quest_player_hero')
+                                      .update({ hp: newHp })
+                                      .eq('player_hid', playerHid);
+                              }
+
+                              // 7. Handle Deaths
+                              const deadInThisQuest = questHeroes.filter(h => deadHeroIds.includes(h.id));
+                              if (deadInThisQuest.length > 0) {
+                                  const deadPids = deadInThisQuest.map(h => parseInt(h.id));
+                                  const { data: deadRows } = await supabase
+                                      .from('quest_player_hero')
+                                      .select('player_hid, hero_id')
+                                      .in('player_hid', deadPids);
+                                  
+                                  if (deadRows && deadRows.length > 0) {
+                                      const lostRecords = deadRows.map(row => ({
+                                          fid: farcasterUser.fid,
+                                          hero_id: row.hero_id,
+                                          quest_id: questMaster.id
+                                      }));
+                                      await supabase.from('quest_player_hero_lost').insert(lostRecords);
+                                      await supabase.from('quest_player_hero').delete().in('player_hid', deadPids);
+                                  }
+                              }
+
+                              // 8. Update stats (Quest Count)
+                              const { error: statError } = await supabase.rpc('increment_player_stat', { 
+                                player_fid: farcasterUser.fid, 
+                                column_name: 'quest_count', 
+                                amount: 1 
+                              });
+                              if (statError) {
+                                const { data } = await supabase.from('quest_player_stats').select('quest_count').eq('fid', farcasterUser.fid).single();
+                                if (data) {
+                                    await supabase.from('quest_player_stats').update({ quest_count: (data.quest_count || 0) + 1 }).eq('fid', farcasterUser.fid);
+                                }
+                              }
                           }
                       }
                   }
-
-                  // 5. Delete from quest_process (Active) - DO THIS LAST to ensure FK constraints don't break earlier inserts if any
-                  const { error: deleteProcessError } = await supabase.from('quest_process').delete().eq('quest_pid', questPid);
-                  if (deleteProcessError) {
-                      console.error("[Quest Return] Error deleting from quest_process:", deleteProcessError);
-                  } else {
-                      console.log(`[Quest Return] Successfully deleted quest_process record (PID: ${questPid})`);
-                  }
-
-                  // 6. Update stats (Quest Count)
-                  const { error: statError } = await supabase.rpc('increment_player_stat', { 
-                    player_fid: farcasterUser.fid, 
-                    column_name: 'quest_count', 
-                    amount: 1 
-                  });
-                  
-                  if (statError) {
-                     const { data } = await supabase.from('quest_player_stats').select('quest_count').eq('fid', farcasterUser.fid).single();
-                     if (data) {
-                        await supabase.from('quest_player_stats').update({ quest_count: (data.quest_count || 0) + 1 }).eq('fid', farcasterUser.fid);
-                     }
-                  }
-              } else {
-                  console.warn(`[Quest Return] Skipping DB updates because questMaster was not found for rank ${quest.rank}`);
               }
           } catch (e) {
               console.error(`Error processing quest completion for ${quest.id}:`, e);
           }
       }
+
+      if (!isDuplicate) {
+          resultList.push({
+            questName: quest.name,
+            rank: quest.rank,
+            totalReward: finalReward,
+            baseReward: finalReward === 0 ? 0 : baseReward,
+            bonusReward: finalReward === 0 ? 0 : bonusReward,
+            heroBonus: finalReward === 0 ? 0 : addHeroReward,
+            equipmentBonus: finalReward === 0 ? 0 : addEquipmentReward,
+            logs: logs
+          });
+      }
     }
 
-    // Update Total Reward Stats
-    if (farcasterUser?.fid && accumulatedTotalReward > 0) {
+    // Recalculate actually awarded tokens based on non-duplicate results
+    const actualTotalReward = resultList.reduce((acc, r) => acc + r.totalReward, 0);
+
+    // Update Total Reward Stats for valid reward
+    if (farcasterUser?.fid && actualTotalReward > 0) {
         const { error: rewardError } = await supabase.rpc('increment_player_stat', { 
             player_fid: farcasterUser.fid, 
             column_name: 'total_reward', 
-            amount: accumulatedTotalReward 
+            amount: actualTotalReward 
         });
 
         if (rewardError) {
              const { data } = await supabase.from('quest_player_stats').select('total_reward').eq('fid', farcasterUser.fid).single();
              if (data) {
-                await supabase.from('quest_player_stats').update({ total_reward: (data.total_reward || 0) + accumulatedTotalReward }).eq('fid', farcasterUser.fid);
+                await supabase.from('quest_player_stats').update({ total_reward: (data.total_reward || 0) + actualTotalReward }).eq('fid', farcasterUser.fid);
              }
         }
     }
 
     setGameState(prev => ({
       ...prev,
-      tokens: prev.tokens + accumulatedTotalReward,
+      tokens: prev.tokens + actualTotalReward,
       heroes: newHeroes.filter(h => !deadHeroIds.includes(h.id)),
       activeQuests: prev.activeQuests.filter(q => q.endTime > now),
       partyPresets: prev.partyPresets.map(p => p.map(id => (id && deadHeroIds.includes(id)) ? null : id))
     }));
 
-    setReturnResult({ results: resultList, totalTokens: accumulatedTotalReward });
+    if (resultList.length > 0) {
+        setReturnResult({ results: resultList, totalTokens: actualTotalReward });
+    }
+    
     return true;
   };
 
