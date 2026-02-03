@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo } from 'react';
 import { GameState, Hero } from '../../types';
 import HeroCard from '../HeroCard';
@@ -266,8 +265,12 @@ const PartyView: React.FC<PartyViewProps> = ({
           farcasterUser={farcasterUser}
           onChainBalance={onChainBalance}
           onAccountClick={onAccountClick}
-        >
-          <div className="px-5 pt-4 pb-3">
+        />
+
+        <div className="flex-1 overflow-y-auto pb-32 pt-4 bg-slate-900 custom-scrollbar">
+          
+          {/* Banner (Scrollable) */}
+          <div className="px-5 pb-3">
             <div className="relative rounded-2xl overflow-hidden shadow-md border border-slate-700">
                 <img 
                 src="https://miningquest.k0j1.v2002.coreserver.jp/images/B_Team.png" 
@@ -284,6 +287,7 @@ const PartyView: React.FC<PartyViewProps> = ({
             </div>
           </div>
 
+          {/* Status Message (Scrollable) */}
           <div className="px-5 mb-3">
             <p className={`text-[10px] py-2 px-3 rounded-lg border text-center font-bold tracking-widest uppercase transition-all ${
               isPartyLocked ? 'text-rose-400 bg-rose-900/20 border-rose-800' : 'text-indigo-400 bg-indigo-900/20 border-indigo-800'
@@ -292,6 +296,7 @@ const PartyView: React.FC<PartyViewProps> = ({
             </p>
           </div>
 
+          {/* Tabs (Scrollable) */}
           <div className="flex px-5 gap-3 pb-4">
             {[0, 1, 2].map(idx => {
               const isUnlocked = gameState.unlockedParties[idx];
@@ -314,107 +319,105 @@ const PartyView: React.FC<PartyViewProps> = ({
               );
             })}
           </div>
-        </Header>
 
-        <div className="flex-1 overflow-y-auto px-5 pb-32 pt-4 bg-slate-900 custom-scrollbar">
-          
-          <p className="text-[10px] text-slate-500 text-center font-bold uppercase tracking-widest mb-3 opacity-70">
-            Long press hero to view details
-          </p>
-
-          <div className="mb-6">
-            <PartySlotGrid
-              heroIds={currentPreset}
-              heroes={gameState.heroes}
-              activeQuestHeroIds={activeQuestHeroIds}
-              selectedIndex={selectedSlotIndex}
-              isPartyLocked={isPartyLocked}
-              readOnly={false}
-              showSlotLabels={true}
-              onSlotClick={handleSlotClick}
-              onRemoveClick={handleRemoveHero}
-              onEquipClick={handleEquipClick}
-              onLongPress={handleHeroLongPress} // Pass handler
-              equipment={gameState.equipment}
-            />
-          </div>
-
-          {/* Team Status Dashboard */}
-          <div className="mb-8 bg-slate-800/60 rounded-xl border border-slate-700 p-4 shadow-sm relative overflow-hidden">
-            <div className="absolute top-0 right-0 p-2 opacity-5 text-4xl pointer-events-none">📊</div>
-            <div className="flex justify-between items-center mb-3">
-              <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center">
-                <span className="w-1.5 h-1.5 bg-indigo-500 rounded-full mr-2"></span>
-                Team Status
-              </h3>
-              {/* DETAILS Button Removed */}
-            </div>
-            
-            <div className="grid grid-cols-2 gap-3 mb-3">
-               {/* Reward */}
-               <div className="bg-slate-900/50 rounded-lg p-2 border border-slate-700/50">
-                  <div className="flex items-center gap-3">
-                    <div className="text-xl">⛏️</div>
-                    <div>
-                        <div className="text-[9px] text-slate-500 font-bold uppercase">Reward Bonus</div>
-                        <div className="text-sm font-black text-amber-500">+{partyStats.rewardBonus}%</div>
-                    </div>
-                  </div>
-                  <div className="mt-1 flex justify-between text-[8px] text-slate-500 font-bold bg-black/20 px-1.5 py-0.5 rounded">
-                    <span>Hero: +{partyStats.rewardHero}%</span>
-                    <span>Equip: +{partyStats.rewardEquip}%</span>
-                  </div>
-               </div>
-               
-               {/* Speed (Was Time) */}
-               <div className="bg-slate-900/50 rounded-lg p-2 border border-slate-700/50">
-                  <div className="flex items-center gap-3">
-                    <div className="text-xl">👢</div>
-                    <div>
-                        <div className="text-[9px] text-slate-500 font-bold uppercase">Speed Boost</div>
-                        <div className="text-sm font-black text-emerald-400">+{partyStats.speedBonus}%</div>
-                    </div>
-                  </div>
-                  <div className="mt-1 flex justify-between text-[8px] text-slate-500 font-bold bg-black/20 px-1.5 py-0.5 rounded">
-                    <span>Hero: +{partyStats.speedHero}%</span>
-                    <span>Equip: +{partyStats.speedEquip}%</span>
-                  </div>
-               </div>
-               
-            </div>
-            
-            <p className="text-[9px] text-slate-500 text-right opacity-70">
-              * Based on active skills & equipment
+          {/* Main Content Area */}
+          <div className="px-5">
+            <p className="text-[10px] text-slate-500 text-center font-bold uppercase tracking-widest mb-3 opacity-70">
+              Long press hero to view details
             </p>
-          </div>
 
-          <div className="mt-4 border-t border-slate-800 pt-6">
-            <h2 className="text-xs font-bold text-slate-500 mb-6 uppercase tracking-widest flex items-center px-1">
-              <span className="w-1 h-4 bg-slate-700 mr-4 rounded-full"></span>
-              Barracks
-            </h2>
-            <div className="grid grid-cols-2 gap-4 pb-12">
-                {gameState.heroes
-                  .filter(h => !allAssignedHeroIds.includes(h.id))
-                  .map((hero, idx) => {
-                    const isQuesting = activeQuestHeroIds.includes(hero.id);
-                    const isHeroSelected = selectedHeroId === hero.id;
+            <div className="mb-6">
+              <PartySlotGrid
+                heroIds={currentPreset}
+                heroes={gameState.heroes}
+                activeQuestHeroIds={activeQuestHeroIds}
+                selectedIndex={selectedSlotIndex}
+                isPartyLocked={isPartyLocked}
+                readOnly={false}
+                showSlotLabels={true}
+                onSlotClick={handleSlotClick}
+                onRemoveClick={handleRemoveHero}
+                onEquipClick={handleEquipClick}
+                onLongPress={handleHeroLongPress} 
+                equipment={gameState.equipment}
+              />
+            </div>
 
-                    return (
-                    <div key={hero.id} className="relative">
-                      <HeroCard 
-                        hero={hero} 
-                        index={idx}
-                        compact 
-                        isLocked={isQuesting}
-                        isSelected={isHeroSelected}
-                        onClick={() => handleHeroListClick(hero.id)} 
-                        equipment={gameState.equipment}
-                        onLongPress={() => handleHeroLongPress(hero.id)} // Enable long press in barracks too
-                      />
+            {/* Team Status Dashboard */}
+            <div className="mb-8 bg-slate-800/60 rounded-xl border border-slate-700 p-4 shadow-sm relative overflow-hidden">
+              <div className="absolute top-0 right-0 p-2 opacity-5 text-4xl pointer-events-none">📊</div>
+              <div className="flex justify-between items-center mb-3">
+                <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center">
+                  <span className="w-1.5 h-1.5 bg-indigo-500 rounded-full mr-2"></span>
+                  Team Status
+                </h3>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-3 mb-3">
+                 {/* Reward */}
+                 <div className="bg-slate-900/50 rounded-lg p-2 border border-slate-700/50">
+                    <div className="flex items-center gap-3">
+                      <div className="text-xl">⛏️</div>
+                      <div>
+                          <div className="text-[9px] text-slate-500 font-bold uppercase">Reward Bonus</div>
+                          <div className="text-sm font-black text-amber-500">+{partyStats.rewardBonus}%</div>
+                      </div>
                     </div>
-                  );
-                })}
+                    <div className="mt-1 flex justify-between text-[8px] text-slate-500 font-bold bg-black/20 px-1.5 py-0.5 rounded">
+                      <span>Hero: +{partyStats.rewardHero}%</span>
+                      <span>Equip: +{partyStats.rewardEquip}%</span>
+                    </div>
+                 </div>
+                 
+                 {/* Speed */}
+                 <div className="bg-slate-900/50 rounded-lg p-2 border border-slate-700/50">
+                    <div className="flex items-center gap-3">
+                      <div className="text-xl">👢</div>
+                      <div>
+                          <div className="text-[9px] text-slate-500 font-bold uppercase">Speed Boost</div>
+                          <div className="text-sm font-black text-emerald-400">+{partyStats.speedBonus}%</div>
+                      </div>
+                    </div>
+                    <div className="mt-1 flex justify-between text-[8px] text-slate-500 font-bold bg-black/20 px-1.5 py-0.5 rounded">
+                      <span>Hero: +{partyStats.speedHero}%</span>
+                      <span>Equip: +{partyStats.speedEquip}%</span>
+                    </div>
+                 </div>
+              </div>
+              
+              <p className="text-[9px] text-slate-500 text-right opacity-70">
+                * Based on active skills & equipment
+              </p>
+            </div>
+
+            <div className="mt-4 border-t border-slate-800 pt-6">
+              <h2 className="text-xs font-bold text-slate-500 mb-6 uppercase tracking-widest flex items-center px-1">
+                <span className="w-1 h-4 bg-slate-700 mr-4 rounded-full"></span>
+                Barracks
+              </h2>
+              <div className="grid grid-cols-2 gap-4 pb-12">
+                  {gameState.heroes
+                    .filter(h => !allAssignedHeroIds.includes(h.id))
+                    .map((hero, idx) => {
+                      const isQuesting = activeQuestHeroIds.includes(hero.id);
+                      const isHeroSelected = selectedHeroId === hero.id;
+
+                      return (
+                      <div key={hero.id} className="relative">
+                        <HeroCard 
+                          hero={hero} 
+                          index={idx}
+                          compact 
+                          isLocked={isQuesting}
+                          isSelected={isHeroSelected}
+                          onClick={() => handleHeroListClick(hero.id)} 
+                          equipment={gameState.equipment}
+                          onLongPress={() => handleHeroLongPress(hero.id)} 
+                        />
+                      </div>
+                    );
+                  })}
+              </div>
             </div>
           </div>
         </div>
