@@ -70,12 +70,34 @@ const HeroCard: React.FC<HeroCardProps> = ({
 
   const slotIcons = ['⛏️', '🪖', '👢'];
 
+  // Check if skill is active (Logic copied from PartyView/useQuest to reflect accurate state)
+  const isSkillActive = (): boolean => {
+    const type = hero.skillType || 0;
+    if (type === 0) return true;
+
+    const conditionMode = Math.floor(type / 100);
+    const thresholdVal = Math.floor((type % 100) / 10) * 10;
+
+    if (conditionMode === 0) return true;
+
+    const hpPercent = (hero.hp / hero.maxHp) * 100;
+
+    // Mode 1: HP >= X
+    if (conditionMode === 1) return hpPercent >= thresholdVal;
+    // Mode 2: HP <= X
+    if (conditionMode === 2) return hpPercent <= thresholdVal;
+    
+    return true;
+  };
+
   // Calculate Total Damage Reduction (Skill + Helmet)
   const helmetId = hero.equipmentIds[1];
   const helmetBonus = (helmetId && equipment) 
     ? (equipment.find(e => e.id === helmetId)?.bonus || 0) 
     : 0;
-  const skillBonus = hero.skillDamage || 0;
+  
+  // Only apply skill bonus if condition is met
+  const skillBonus = isSkillActive() ? (hero.skillDamage || 0) : 0;
   const totalDamageReduction = skillBonus + helmetBonus;
 
   // Determine font size and padding based on name length more aggressively
