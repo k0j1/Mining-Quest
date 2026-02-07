@@ -295,42 +295,34 @@ const DepartView: React.FC<DepartViewProps> = ({
 
                         {/* Damage Forecast (Updated Layout) */}
                         <div className="flex flex-col">
-                            <div className="flex justify-between items-start">
-                                <span className="text-xs font-bold text-slate-400 mt-1">被ダメージ予測</span>
-                                <div className="text-right flex flex-col items-end">
-                                    <div className="flex items-center gap-2">
-                                        <span className="text-[10px] text-slate-500 line-through font-mono decoration-slate-600">
-                                            Raw: {prediction.rawMinDmg}-{prediction.rawMaxDmg}
-                                        </span>
-                                        <span className="text-rose-400 font-bold text-sm">
-                                            {prediction.minDmg} - {prediction.maxDmg}
-                                        </span>
-                                    </div>
-                                    {/* Average Reduction removed as requested */}
-                                </div>
+                            <div className="flex justify-between items-center mb-1">
+                                <span className="text-xs font-bold text-slate-400">ヒーロー別 被ダメージ予測</span>
                             </div>
                             
-                            {/* Per Hero Breakdown with Danger Highlight */}
-                            <div className="mt-2 space-y-1 bg-black/20 p-2 rounded">
+                            {/* Per Hero Breakdown with Ranges */}
+                            <div className="space-y-1.5 bg-black/20 p-2.5 rounded-lg border border-white/5">
                                 {prediction.heroDamageReductions.map(hero => {
-                                    // Calculate individual risk
-                                    const maxPotentialDmg = Math.floor(prediction!.rawMaxDmg * (1 - hero.totalReduction / 100));
-                                    const currentHp = mainParty.find(h => h.id === hero.id)?.hp || 0;
-                                    const isAtRisk = maxPotentialDmg >= currentHp;
+                                    // Calculate individual risk based on reduction
+                                    const minDmg = Math.max(0, Math.floor(prediction!.rawMinDmg * (1 - hero.totalReduction / 100)));
+                                    const maxDmg = Math.max(0, Math.floor(prediction!.rawMaxDmg * (1 - hero.totalReduction / 100)));
+                                    
+                                    const heroObj = mainParty.find(h => h.id === hero.id);
+                                    const currentHp = heroObj?.hp || 0;
+                                    const isAtRisk = maxDmg >= currentHp;
 
                                     return (
-                                    <div key={hero.id} className="flex justify-between text-[9px] font-bold items-center">
-                                        <div className="flex items-center gap-1.5 max-w-[60%]">
-                                            {isAtRisk && <span className="text-[8px] animate-pulse">💀</span>}
-                                            <span className={`truncate ${isAtRisk ? 'text-red-400' : 'text-slate-400'}`}>{hero.name}</span>
+                                    <div key={hero.id} className="flex justify-between items-center text-[10px]">
+                                        <div className="flex items-center gap-2 flex-1 min-w-0">
+                                            {isAtRisk && <span className="text-xs animate-pulse">💀</span>}
+                                            <span className={`truncate font-bold ${isAtRisk ? 'text-red-400' : 'text-slate-300'}`}>{hero.name}</span>
                                         </div>
-                                        <div className="flex items-center gap-2">
-                                            <span className={hero.totalReduction > 0 ? "text-emerald-500" : "text-slate-600"}>
-                                                -{hero.totalReduction}%
+                                        <div className="flex flex-col items-end">
+                                            <span className={`font-mono font-bold ${isAtRisk ? 'text-red-500' : 'text-rose-400'}`}>
+                                                {minDmg} ~ {maxDmg}
                                             </span>
-                                            {isAtRisk && (
-                                                <span className="bg-red-600 text-white px-1 rounded text-[7px] animate-pulse">DIE?</span>
-                                            )}
+                                            <span className="text-[8px] text-slate-500">
+                                                (軽減: -{hero.totalReduction}%)
+                                            </span>
                                         </div>
                                     </div>
                                 )})}
