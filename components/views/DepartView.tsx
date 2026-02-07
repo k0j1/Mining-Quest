@@ -10,8 +10,11 @@ interface PredictionResult {
     minReward: number;
     maxReward: number;
     estimatedDuration: number;
-    rawMinDmg: number; // Added
-    rawMaxDmg: number; // Added
+    rawMinReward: number; // Added
+    rawMaxReward: number; // Added
+    rawDuration: number;  // Added
+    rawMinDmg: number; 
+    rawMaxDmg: number; 
     minDmg: number;
     maxDmg: number;
     bonusPercent: number;
@@ -265,16 +268,21 @@ const DepartView: React.FC<DepartViewProps> = ({
                     <div className="grid grid-cols-1 gap-3 relative z-10">
                         {/* Reward Forecast */}
                         <div className="flex flex-col">
-                            <div className="flex justify-between items-center">
-                                <span className="text-xs font-bold text-slate-400">報酬予測</span>
-                                <div className="text-right">
-                                    <span className="text-amber-500 font-bold text-sm">
-                                        {prediction.minReward} - {prediction.maxReward}
-                                    </span>
-                                    {prediction.bonusPercent > 0 && (
-                                        <span className="ml-2 text-[9px] font-bold text-emerald-400 bg-emerald-900/30 px-1.5 py-0.5 rounded">
-                                            +{prediction.bonusPercent}%
+                            <div className="flex justify-between items-start">
+                                <span className="text-xs font-bold text-slate-400 mt-1">報酬予測</span>
+                                <div className="text-right flex flex-col items-end">
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-[10px] text-slate-500 line-through font-mono decoration-slate-600">
+                                            Raw: {prediction.rawMinReward}-{prediction.rawMaxReward}
                                         </span>
+                                        <span className="text-amber-500 font-bold text-sm">
+                                            {prediction.minReward} - {prediction.maxReward}
+                                        </span>
+                                    </div>
+                                    {prediction.bonusPercent > 0 && (
+                                        <div className="text-[9px] font-bold text-emerald-400 bg-emerald-900/30 px-1.5 py-0.5 rounded mt-0.5 inline-block">
+                                            Bonus +{prediction.bonusPercent}%
+                                        </div>
                                     )}
                                 </div>
                             </div>
@@ -298,11 +306,7 @@ const DepartView: React.FC<DepartViewProps> = ({
                                             {prediction.minDmg} - {prediction.maxDmg}
                                         </span>
                                     </div>
-                                    {prediction.avgDamageReduction > 0 && (
-                                        <div className="text-[9px] font-bold text-emerald-400 bg-emerald-900/30 px-1.5 py-0.5 rounded mt-0.5 inline-block">
-                                            Avg Reduction -{prediction.avgDamageReduction}%
-                                        </div>
-                                    )}
+                                    {/* Average Reduction removed as requested */}
                                 </div>
                             </div>
                             
@@ -337,14 +341,19 @@ const DepartView: React.FC<DepartViewProps> = ({
                         <div className="flex flex-col">
                             <div className="flex justify-between items-center">
                                 <span className="text-xs font-bold text-slate-400">所要時間 (速度上昇)</span>
-                                <div className="text-right">
-                                    <span className="text-blue-400 font-bold text-sm">
-                                        {Math.floor(prediction.estimatedDuration / 60)} min
-                                    </span>
-                                    {prediction.speedBonusPercent > 0 && (
-                                        <span className="ml-2 text-[9px] font-bold text-emerald-400 bg-emerald-900/30 px-1.5 py-0.5 rounded">
-                                            Speed +{prediction.speedBonusPercent}%
+                                <div className="text-right flex flex-col items-end">
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-[10px] text-slate-500 line-through font-mono decoration-slate-600">
+                                            Raw: {Math.floor(prediction.rawDuration / 60)}m
                                         </span>
+                                        <span className="text-blue-400 font-bold text-sm">
+                                            {Math.floor(prediction.estimatedDuration / 60)} min
+                                        </span>
+                                    </div>
+                                    {prediction.speedBonusPercent > 0 && (
+                                        <div className="text-[9px] font-bold text-emerald-400 bg-emerald-900/30 px-1.5 py-0.5 rounded mt-0.5 inline-block">
+                                            Speed +{prediction.speedBonusPercent}%
+                                        </div>
                                     )}
                                 </div>
                             </div>

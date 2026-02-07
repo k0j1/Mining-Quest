@@ -56,9 +56,12 @@ export const useQuest = ({ gameState, setGameState, showNotification, setReturnR
       return {
           minReward,
           maxReward,
+          rawMinReward: config.minReward, // Added: Raw values
+          rawMaxReward: config.maxReward, // Added: Raw values
           estimatedDuration,
-          rawMinDmg: minDmgRaw, // Added: Raw values
-          rawMaxDmg: maxDmgRaw, // Added: Raw values
+          rawDuration: config.duration,   // Added: Raw values
+          rawMinDmg: minDmgRaw,
+          rawMaxDmg: maxDmgRaw,
           minDmg: predictDmg(minDmgRaw),
           maxDmg: predictDmg(maxDmgRaw),
           bonusPercent: totalRewardBonus,
