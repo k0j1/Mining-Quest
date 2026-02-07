@@ -7,6 +7,7 @@ import Header from '../Header';
 import { supabase } from '../../lib/supabase';
 import { HeroDefinition } from '../../data/hero_data';
 import { HERO_RATES, EQUIPMENT_RATES } from '../../services/gachaService';
+import { getHeroImageUrl } from '../../utils/heroUtils';
 
 interface GachaViewProps {
   gameState: GameState;
@@ -57,7 +58,7 @@ const HeroListItem: React.FC<{
   const [hasError, setHasError] = useState(false);
   
   // Use _s image for both since high-res is removed
-  const imageUrl = `https://miningquest.k0j1.v2002.coreserver.jp/images/Hero/s/${hero.name}_s.png`;
+  const imageUrl = getHeroImageUrl(hero.name, 's');
 
   const handleImageError = () => {
     setHasError(true);

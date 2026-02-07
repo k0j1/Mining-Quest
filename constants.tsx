@@ -2,6 +2,7 @@
 import React from 'react';
 import { Hero, Equipment, QuestRank } from './types';
 import { HERO_DEFINITIONS } from './data/hero_data';
+import { getHeroImageUrl } from './utils/heroUtils';
 
 // Toggle this to show/hide "TEST MODE" overlay on banners
 export const IS_TEST_MODE = true;
@@ -56,7 +57,7 @@ const createHero = (id: string, name: string, level: number, equipmentIds: strin
     level,
     hp: def.hp,
     maxHp: def.hp,
-    imageUrl: `https://miningquest.k0j1.v2002.coreserver.jp/images/Hero/s/${def.name}_s.png`,
+    imageUrl: getHeroImageUrl(def.name, 's'),
     equipmentIds,
     skillQuest: def.skillQuest || 0,
     skillDamage: def.skillDamage || 0,

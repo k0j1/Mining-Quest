@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo } from 'react';
 import { GameState, Hero } from '../../types';
 import HeroCard from '../HeroCard';
@@ -8,6 +9,7 @@ import TeamStatusModal from '../TeamStatusModal';
 import { playClick, playError, playConfirm } from '../../utils/sound';
 import Header from '../Header';
 import { IS_TEST_MODE } from '../../constants';
+import { calculatePartyStats } from '../../utils/mechanics';
 
 interface PartyViewProps {
   gameState: GameState;
@@ -53,90 +55,24 @@ const PartyView: React.FC<PartyViewProps> = ({
 
   const allAssignedHeroIds = gameState.partyPresets.flat().filter((id): id is string => !!id);
 
-  // --- Stats Calculation Logic ---
-
-  // Helper: Check if skill is active (Simplified version of useQuest logic for display)
-  const isSkillActive = (hero: Hero): boolean => {
-      const type = hero.skillType || 0;
-      if (type === 0) return true; 
-
-      const conditionMode = Math.floor(type / 100); 
-      const thresholdVal = Math.floor((type % 100) / 10) * 10; 
-
-      if (conditionMode === 0) return true;
-
-      const hpPercent = (hero.hp / hero.maxHp) * 100;
-
-      if (conditionMode === 1) return hpPercent >= thresholdVal; // HP >= X
-      if (conditionMode === 2) return hpPercent <= thresholdVal; // HP <= X
-      
-      return true;
-  };
-
+  // --- Stats Calculation Logic using Centralized Utility ---
   const partyStats = useMemo(() => {
     const activeHeroes = currentPreset
       .map(id => gameState.heroes.find(h => h.id === id))
       .filter((h): h is Hero => !!h);
 
-    const totalHp = activeHeroes.reduce((acc, h) => acc + h.hp, 0);
-    const maxHp = activeHeroes.reduce((acc, h) => acc + h.maxHp, 0);
-
-    // Reward Bonus Breakdown
-    const rewardHero = activeHeroes.reduce((acc, h) => {
-        let skillBonus = 0;
-        if (isSkillActive(h)) {
-             skillBonus = h.skillQuest || 0;
-             // Regex fallback
-             if (skillBonus === 0 && h.trait) {
-                 const match = h.trait.match(/クエスト報酬\s*\+(\d+)%/);
-                 if (match) skillBonus = parseInt(match[1]);
-             }
-        }
-        return acc + skillBonus;
-    }, 0);
-
-    const rewardEquip = activeHeroes.reduce((acc, h) => {
-        const pickaxe = gameState.equipment.find(e => e.id === h.equipmentIds[0]);
-        return acc + (pickaxe ? pickaxe.bonus : 0);
-    }, 0);
-
-    const rewardBonus = rewardHero + rewardEquip;
-
-
-    // Speed Bonus Breakdown (Previously Time Bonus)
-    const speedHero = activeHeroes.reduce((acc, h) => {
-        let skillBonus = 0;
-        if (isSkillActive(h)) {
-            skillBonus = h.skillTime || 0;
-             // Regex fallback
-             if (skillBonus === 0 && h.trait) {
-                 const match = h.trait.match(/採掘速度\s*\+(\d+)%/);
-                 if (match) skillBonus = parseInt(match[1]);
-             }
-        }
-        return acc + skillBonus;
-    }, 0);
-
-    const speedEquip = activeHeroes.reduce((acc, h) => {
-        const boots = gameState.equipment.find(e => e.id === h.equipmentIds[2]);
-        return acc + (boots ? boots.bonus : 0);
-    }, 0);
-
-    const speedBonus = speedHero + speedEquip;
-
-    // Team Defense Buff (Skills only) - Individual helmet stats are local
-    const teamDefBonus = activeHeroes.reduce((acc, h) => {
-        if (isSkillActive(h) && (h.skillType || 0) % 10 === 1) {
-            return acc + (h.skillDamage || 0);
-        }
-        return acc;
-    }, 0);
+    const stats = calculatePartyStats(activeHeroes, gameState.equipment);
 
     return { 
-        totalHp, maxHp, 
-        rewardBonus, rewardHero, rewardEquip, 
-        speedBonus, speedHero, speedEquip,
-        teamDefBonus 
+        totalHp: stats.totalHp,
+        maxHp: stats.maxHp, 
+        rewardBonus: stats.totalRewardBonus,
+        rewardHero: stats.breakdown.reward.hero,
+        rewardEquip: stats.breakdown.reward.equip, 
+        speedBonus: stats.totalSpeedBonus,
+        speedHero: stats.breakdown.speed.hero,
+        speedEquip: stats.breakdown.speed.equip,
+        teamDefBonus: stats.teamDamageReduction 
     };
   }, [currentPreset, gameState.heroes, gameState.equipment]);
 

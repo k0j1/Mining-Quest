@@ -4,6 +4,7 @@ import { GameState } from '../../types';
 import { rollGachaItem } from '../../services/gachaService';
 import { playConfirm, playError } from '../../utils/sound';
 import { supabase } from '../../lib/supabase';
+import { getHeroImageUrl } from '../../utils/heroUtils';
 
 interface UseGachaProps {
   gameState: GameState;
@@ -111,7 +112,7 @@ export const useGacha = ({ gameState, setGameState, showNotification, farcasterU
             level: 1, 
             hp: maxHp, 
             maxHp: maxHp,
-            imageUrl: result.imageUrl || `https://miningquest.k0j1.v2002.coreserver.jp/images/Hero/s/${result.name}_s.png`,
+            imageUrl: result.imageUrl || getHeroImageUrl(result.name, 's'),
             equipmentIds: ['', '', '']
           };
         });

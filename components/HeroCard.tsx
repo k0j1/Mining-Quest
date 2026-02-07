@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { Hero, Equipment } from '../types';
 import { useLongPress } from '../hooks/useLongPress';
+import { calculateHeroDamageReduction } from '../utils/mechanics';
 
 interface HeroCardProps {
   hero: Hero;
@@ -70,35 +71,10 @@ const HeroCard: React.FC<HeroCardProps> = ({
 
   const slotIcons = ['⛏️', '🪖', '👢'];
 
-  // Check if skill is active (Logic copied from PartyView/useQuest to reflect accurate state)
-  const isSkillActive = (): boolean => {
-    const type = hero.skillType || 0;
-    if (type === 0) return true;
-
-    const conditionMode = Math.floor(type / 100);
-    const thresholdVal = Math.floor((type % 100) / 10) * 10;
-
-    if (conditionMode === 0) return true;
-
-    const hpPercent = (hero.hp / hero.maxHp) * 100;
-
-    // Mode 1: HP >= X
-    if (conditionMode === 1) return hpPercent >= thresholdVal;
-    // Mode 2: HP <= X
-    if (conditionMode === 2) return hpPercent <= thresholdVal;
-    
-    return true;
-  };
-
   // Calculate Total Damage Reduction (Skill + Helmet)
-  const helmetId = hero.equipmentIds[1];
-  const helmetBonus = (helmetId && equipment) 
-    ? (equipment.find(e => e.id === helmetId)?.bonus || 0) 
-    : 0;
-  
-  // Only apply skill bonus if condition is met
-  const skillBonus = isSkillActive() ? (hero.skillDamage || 0) : 0;
-  const totalDamageReduction = skillBonus + helmetBonus;
+  // Note: HeroCard displays individual potential. It doesn't know about team bonuses easily here unless passed.
+  // We assume 0 team bonus for card display to show "Self" stats.
+  const totalDamageReduction = calculateHeroDamageReduction(hero, equipment || [], 0);
 
   // Determine font size and padding based on name length more aggressively
   const getNameStyles = (name: string) => {

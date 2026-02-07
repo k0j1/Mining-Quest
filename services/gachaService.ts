@@ -1,6 +1,7 @@
 
 import { supabase } from "../lib/supabase";
 import { QuestRank } from "../types";
+import { getHeroImageUrl } from "../utils/heroUtils";
 
 // Rarity Logic
 // Updated Rates: L:0.1%, E:1.9%, R:16%, UC:32%, C:50%
@@ -69,7 +70,7 @@ export const rollGachaItem = async (type: 'Hero' | 'Equipment', forceRarity?: Qu
       trait: selectedHero.ability,
       damageReduction: drMap[selectedHero.rarity] || 0,
       hp: selectedHero.hp,
-      imageUrl: `https://miningquest.k0j1.v2002.coreserver.jp/images/Hero/s/${selectedHero.name}_s.png`,
+      imageUrl: getHeroImageUrl(selectedHero.name, 's'),
       // Map New Skill Columns
       skillQuest: selectedHero.skill_quest || 0,
       skillDamage: selectedHero.skill_damage || 0,

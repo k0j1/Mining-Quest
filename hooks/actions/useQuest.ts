@@ -3,6 +3,7 @@ import { Dispatch, SetStateAction } from 'react';
 import { GameState, Quest, Hero, QuestRank, QuestConfig } from '../../types';
 import { playClick, playDepart, playError } from '../../utils/sound';
 import { supabase } from '../../lib/supabase';
+import { calculatePartyStats, calculateHeroDamageReduction } from '../../utils/mechanics';
 
 interface UseQuestProps {
   gameState: GameState;
@@ -14,126 +15,26 @@ interface UseQuestProps {
 
 export const useQuest = ({ gameState, setGameState, showNotification, setReturnResult, farcasterUser }: UseQuestProps) => {
   
-  // Helper: Check if a skill is active based on skillType
-  // skillType definition:
-  // 1st digit (ones): 1 = Team Effect Damage Reduction (Otherwise individual)
-  // 2nd digit (tens): X * 10 = HP Threshold %
-  // 3rd digit (hundreds): 1 = HP >= Threshold, 2 = HP <= Threshold
-  const isSkillActive = (hero: Hero): boolean => {
-      const type = hero.skillType || 0;
-      if (type === 0) return true; // Default always active if no special logic defined
-
-      const conditionMode = Math.floor(type / 100); // Hundreds digit
-      const thresholdVal = Math.floor((type % 100) / 10) * 10; // Tens digit * 10
-
-      // If conditionMode is 0 (e.g. type 0XX), assume no condition (always active)
-      if (conditionMode === 0) return true;
-
-      const hpPercent = (hero.hp / hero.maxHp) * 100;
-
-      if (conditionMode === 1) {
-         // Condition: HP >= Threshold
-         return hpPercent >= thresholdVal;
-      }
-      if (conditionMode === 2) {
-         // Condition: HP <= Threshold
-         return hpPercent <= thresholdVal;
-      }
-      
-      return true;
-  };
-
-  // Helper: Get Bonuses for Prediction
-  const getBonuses = (partyHeroes: Hero[]) => {
-    // Reward Bonus
-    const pickaxeBonus = partyHeroes.reduce((acc, h) => {
-        const equip = gameState.equipment.find(e => e.id === h.equipmentIds[0]);
-        return acc + (equip ? equip.bonus : 0);
-    }, 0);
-
-    const skillRewardBonus = partyHeroes.reduce((acc, h) => {
-        let bonus = 0;
-        if (h.skillQuest && h.skillQuest > 0) {
-            if (isSkillActive(h)) bonus = h.skillQuest;
-        } else {
-            const match = h.trait?.match(/クエスト報酬\s*\+(\d+)%/);
-            bonus = match ? parseInt(match[1]) : 0;
-        }
-        return acc + bonus;
-    }, 0);
-
-    const totalRewardBonus = pickaxeBonus + skillRewardBonus;
-
-    // Speed Bonus (formerly Time Bonus)
-    // NOTE: 'skillTime' in DB represents the magnitude (e.g., 10 for 10%), regardless of whether it's reduction or speed.
-    // We treat it as Speed Increase now.
-    const bootsBonus = partyHeroes.reduce((acc, hero) => {
-      const equipId = hero.equipmentIds[2];
-      const equip = gameState.equipment.find(e => e.id === equipId);
-      return acc + (equip ? equip.bonus : 0);
-    }, 0);
-
-    const skillSpeedBonus = partyHeroes.reduce((acc, hero) => {
-        return acc + (isSkillActive(hero) ? (hero.skillTime || 0) : 0);
-    }, 0);
-
-    const totalSpeedBonus = bootsBonus + skillSpeedBonus;
-
-    // Damage Reduction (Team)
-    let teamDamageReduction = 0;
-    partyHeroes.forEach(h => {
-        if (isSkillActive(h) && (h.skillType || 0) % 10 === 1) {
-            teamDamageReduction += (h.skillDamage || 0);
-        }
-    });
-
-    return { 
-        totalRewardBonus, 
-        totalSpeedBonus, 
-        teamDamageReduction,
-        // Breakdowns
-        pickaxeBonus,
-        skillRewardBonus,
-        bootsBonus,
-        skillSpeedBonus
-    };
-  };
-
   // Exposed Helper: Calculate Prediction for UI
   const getQuestPrediction = (config: QuestConfig, partyHeroes: Hero[]) => {
+      const stats = calculatePartyStats(partyHeroes, gameState.equipment);
+      
       const { 
           totalRewardBonus, totalSpeedBonus, teamDamageReduction,
-          pickaxeBonus, skillRewardBonus, bootsBonus, skillSpeedBonus
-      } = getBonuses(partyHeroes);
+          breakdown
+      } = stats;
 
       // 1. Reward Range
       const minReward = Math.floor(config.minReward * (1 + totalRewardBonus / 100));
       const maxReward = Math.floor(config.maxReward * (1 + totalRewardBonus / 100));
 
       // 2. Duration (Speed Calculation)
-      // Formula: Duration = Base Duration / (1 + SpeedBonus%)
-      // Base Speed = 100%, Bonus = +20% -> Speed = 120% = 1.2
       const speedMultiplier = 1 + (totalSpeedBonus / 100);
       const estimatedDuration = Math.floor(config.duration / speedMultiplier);
 
       // 3. Damage Range (Per Hero Estimate)
-      
-      // Calculate Individual Reductions for breakdown
       const heroDamageReductions = partyHeroes.map(h => {
-          // Equipment Mitigation (Helmet)
-          const helmetEquip = gameState.equipment.find(e => e.id === h.equipmentIds[1]);
-          const helmetBonus = helmetEquip ? helmetEquip.bonus : 0;
-          
-          // Skill Mitigation (Self)
-          let selfSkillMitigation = 0;
-          if (isSkillActive(h) && (h.skillType || 0) % 10 !== 1) {
-              selfSkillMitigation = (h.skillDamage || 0);
-          }
-
-          // Total Reduction per Hero
-          // ヒーロー自身の基礎値(damageReduction)は計算から除外
-          const totalReduction = helmetBonus + teamDamageReduction + selfSkillMitigation;
-          
+          const totalReduction = calculateHeroDamageReduction(h, gameState.equipment, teamDamageReduction);
           return {
               id: h.id,
               name: h.name,
@@ -161,29 +62,27 @@ export const useQuest = ({ gameState, setGameState, showNotification, setReturnR
           bonusPercent: totalRewardBonus,
           speedBonusPercent: totalSpeedBonus,
           avgDamageReduction: Math.floor(avgTotalRed),
-          breakdown: {
-              reward: { hero: skillRewardBonus, equip: pickaxeBonus },
-              speed: { hero: skillSpeedBonus, equip: bootsBonus }
-          },
+          breakdown: breakdown,
           heroDamageReductions // Include individual stats
       };
   };
 
   // Helper: Calculate Rewards & Damages (Actual Logic)
   const calculateQuestResults = (config: QuestConfig, partyHeroes: Hero[]) => {
-    const { totalRewardBonus, totalSpeedBonus, teamDamageReduction } = getBonuses(partyHeroes);
+    const stats = calculatePartyStats(partyHeroes, gameState.equipment);
+    const { totalRewardBonus, totalSpeedBonus, teamDamageReduction } = stats;
 
     // 1. Calculate Rewards
     const baseReward = Math.floor(Math.random() * (config.maxReward - config.minReward + 1)) + config.minReward;
     
+    // Recalculate component parts for DB log (Equipment Only vs Hero Skill Only)
+    // NOTE: calculatePartyStats returns aggregate. We need the breakdown if we want to store it precisely.
+    // Ideally we assume the breakdown is proportional or just use the aggregated logic.
+    const pickaxeBonus = stats.breakdown.reward.equip;
+    
     const addHeroReward = Math.floor(baseReward * (totalRewardBonus / 100));
-    const pickaxeBonus = partyHeroes.reduce((acc, h) => {
-        const equip = gameState.equipment.find(e => e.id === h.equipmentIds[0]);
-        return acc + (equip ? equip.bonus : 0);
-    }, 0);
     const addEquipmentRewardOnly = Math.floor(baseReward * (pickaxeBonus / 100));
     const addHeroSkillRewardOnly = addHeroReward - addEquipmentRewardOnly;
-
 
     // 2. Calculate Damage
     const heroDamages: Record<string, number> = {};
@@ -197,18 +96,8 @@ export const useQuest = ({ gameState, setGameState, showNotification, setReturnR
         } else {
             const rawDmg = Math.floor(Math.random() * (config.maxDmg - config.minDmg + 1)) + config.minDmg;
             
-            // Equipment Mitigation (Helmet)
-            const helmetEquip = gameState.equipment.find(e => e.id === hero.equipmentIds[1]);
-            const helmetBonus = helmetEquip ? helmetEquip.bonus : 0;
-            
-            // Skill Mitigation (Self)
-            let selfSkillMitigation = 0;
-            if (isSkillActive(hero) && (hero.skillType || 0) % 10 !== 1) {
-                selfSkillMitigation = (hero.skillDamage || 0);
-            }
-
-            // Total Reduction
-            const totalReduction = helmetBonus + teamDamageReduction + selfSkillMitigation;
+            // Centralized Damage Reduction Logic
+            const totalReduction = calculateHeroDamageReduction(hero, gameState.equipment, teamDamageReduction);
             
             finalDmg = rawDmg;
             if (totalReduction > 0) {
@@ -219,8 +108,6 @@ export const useQuest = ({ gameState, setGameState, showNotification, setReturnR
     });
 
     // 3. Calculate Actual Duration (Speed Based)
-    // actualDuration = duration / (1 + speed/100)
-    // We return the multiplier relative to 1 (e.g. 0.8 if speed is 1.25) to apply to original duration
     const speedMultiplier = 1 + (totalSpeedBonus / 100);
     const durationMultiplier = 1 / speedMultiplier;
 

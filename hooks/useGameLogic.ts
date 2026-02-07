@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { GameState, QuestConfig, QuestRank, Hero, Equipment, Quest, Species } from '../types';
 import { INITIAL_HEROES, INITIAL_EQUIPMENT } from '../constants';
 import { supabase } from '../lib/supabase';
+import { getHeroImageUrl } from '../utils/heroUtils';
 
 // Sub-hooks
 import { useFarcasterAuth } from './useFarcasterAuth';
@@ -164,7 +165,7 @@ export const useGameLogic = () => {
             level: 1,
             hp: h.hp,
             maxHp: base.hp,
-            imageUrl: `https://miningquest.k0j1.v2002.coreserver.jp/images/Hero/s/${base.name}_s.png`,
+            imageUrl: getHeroImageUrl(base.name, 's'),
             equipmentIds: [
               h.pickaxe_player_eid ? h.pickaxe_player_eid.toString() : '',
               h.helmet_player_eid ? h.helmet_player_eid.toString() : '',

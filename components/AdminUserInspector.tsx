@@ -2,6 +2,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '../lib/supabase';
 import { playClick } from '../utils/sound';
+import { getHeroImageUrl } from '../utils/heroUtils';
 
 const AdminUserInspector: React.FC = () => {
   const [userSearch, setUserSearch] = useState('');
@@ -303,7 +304,7 @@ const AdminUserInspector: React.FC = () => {
                                            {h ? (
                                                <>
                                                    <img 
-                                                       src={`https://miningquest.k0j1.v2002.coreserver.jp/images/Hero/s/${h.quest_hero?.name}_s.png`} 
+                                                       src={getHeroImageUrl(h.quest_hero?.name, 's')} 
                                                        className="w-full h-full object-cover opacity-80"
                                                        alt={h.quest_hero?.name}
                                                    />
@@ -479,7 +480,7 @@ const AdminUserInspector: React.FC = () => {
                                     {rarity}
                                 </div>
                                 <div className="aspect-square bg-slate-800">
-                                    <img src={`https://miningquest.k0j1.v2002.coreserver.jp/images/Hero/s/${h.quest_hero?.name}_s.png`} className="w-full h-full object-cover" />
+                                    <img src={getHeroImageUrl(h.quest_hero?.name, 's')} className="w-full h-full object-cover" />
                                 </div>
                                 <div className="p-1 bg-slate-950/80 text-[8px] font-bold text-center truncate">
                                     {h.quest_hero?.name}
