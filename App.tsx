@@ -124,7 +124,7 @@ const App: React.FC = () => {
                 console.log("Farcaster Context Detected:", context);
                 setIsFarcasterEnv(true);
              }
-           }).catch((e) {
+           }).catch((e) => {
              console.log("Not in Farcaster Frame context or context failed:", e);
            });
         }
