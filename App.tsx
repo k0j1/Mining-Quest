@@ -9,6 +9,7 @@ import BottomNav from './components/BottomNav';
 import Notification from './components/Notification';
 import DebugConsole from './components/DebugConsole'; 
 import EnvSetup from './components/EnvSetup'; // Import Setup Screen
+import MaintenanceScreen from './components/MaintenanceScreen'; // Import Maintenance Screen
 import { playClick, playConfirm, toggleSound } from './utils/sound';
 import { useGameLogic } from './hooks/useGameLogic';
 import { sdk } from '@farcaster/frame-sdk';
@@ -39,9 +40,10 @@ const App: React.FC = () => {
   
   // Maintenance State
   const [isMaintenance, setIsMaintenance] = useState(false);
+  const [isMaintenanceTest, setIsMaintenanceTest] = useState(false); // For Admin Testing
   const [isConnectionChecked, setIsConnectionChecked] = useState(false);
 
-  const { gameState, farcasterUser, onChainBalanceRaw, ui, actions } = useGameLogic();
+  const { gameState, farcasterUser, onChainBalanceRaw, isBlocked, ui, actions } = useGameLogic();
 
   // Admin Auto-Debug Mode
   useEffect(() => {
@@ -122,7 +124,7 @@ const App: React.FC = () => {
                 console.log("Farcaster Context Detected:", context);
                 setIsFarcasterEnv(true);
              }
-           }).catch((e) => {
+           }).catch((e) {
              console.log("Not in Farcaster Frame context or context failed:", e);
            });
         }
@@ -286,39 +288,16 @@ const App: React.FC = () => {
      );
   }
 
-  // 2. Maintenance Mode
-  if (isMaintenance) {
+  // 2. Maintenance Mode OR Blocked User OR Test Mode
+  if (isMaintenance || isBlocked || isMaintenanceTest) {
     return (
-      <div className="fixed inset-0 flex flex-col items-center justify-center bg-slate-950 text-white p-8 text-center z-[9999]">
-         <MiningBackground />
-         <div className="relative z-10 flex flex-col items-center">
-            <div className="text-6xl mb-6 animate-bounce">🚧</div>
-            <h2 className="text-2xl font-black text-amber-500 mb-4 tracking-widest uppercase">MAINTENANCE</h2>
-            <p className="text-slate-400 text-sm mb-8 leading-relaxed max-w-xs mx-auto">
-              現在サーバーに接続できません。<br/>
-              メンテナンス中か、ネットワークの問題、あるいは設定されたAPIキーが無効な可能性があります。
-            </p>
-            
-            <div className="flex flex-col gap-4 w-full max-w-xs">
-              <button 
-                onClick={() => window.location.reload()}
-                className="w-full px-8 py-3 bg-indigo-600 hover:bg-indigo-500 rounded-full font-bold text-white transition-all active:scale-95 shadow-lg border border-indigo-500/50 flex items-center justify-center gap-2"
-              >
-                <span>🔄</span> 再接続を試みる
-              </button>
-
-              <button 
-                onClick={handleResetSettings}
-                className="w-full px-8 py-3 bg-slate-800 hover:bg-slate-700 rounded-full font-bold text-slate-400 text-xs transition-all active:scale-95 border border-slate-700 flex items-center justify-center gap-2"
-              >
-                <span>⚙️</span> 接続設定をリセット (API Key再入力)
-              </button>
-            </div>
-         </div>
-         
-         {/* Debug Console in Maintenance Mode */}
-         <DebugConsole isEnabled={true} />
-      </div>
+      <MaintenanceScreen 
+        isBlocked={isBlocked}
+        isTestMode={isMaintenanceTest}
+        onResetSettings={handleResetSettings}
+        onReload={() => window.location.reload()}
+        onCloseTest={() => setIsMaintenanceTest(false)}
+      />
     );
   }
 
@@ -388,6 +367,7 @@ const App: React.FC = () => {
           user={farcasterUser}
           balance={onChainBalanceRaw}
           onClose={() => setShowAccountModal(false)}
+          onTestMaintenance={() => setIsMaintenanceTest(true)} // Pass test trigger
         />
       )}
 

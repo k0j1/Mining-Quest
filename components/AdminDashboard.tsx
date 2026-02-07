@@ -5,9 +5,10 @@ import AdminDbBrowser from './AdminDbBrowser';
 
 interface AdminDashboardProps {
   onClose: () => void;
+  onTriggerMaintenance?: () => void;
 }
 
-const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
+const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose, onTriggerMaintenance }) => {
   const [activeTab, setActiveTab] = useState<'DB' | 'USER'>('USER'); 
 
   return (
@@ -32,6 +33,16 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
                 DB
               </button>
            </div>
+           
+           {/* Maintenance Test Button */}
+           {onTriggerMaintenance && (
+             <button 
+                onClick={onTriggerMaintenance}
+                className="px-3 py-1.5 bg-rose-900/30 text-rose-300 border border-rose-800 rounded text-[10px] font-bold hover:bg-rose-800 hover:text-white transition-colors flex items-center gap-1"
+             >
+                <span>🚧</span> TEST MAINT
+             </button>
+           )}
         </div>
         <button 
           onClick={onClose} 

@@ -31,6 +31,7 @@ export const useGameLogic = () => {
   // --- UI State ---
   const [returnResult, setReturnResult] = useState<{ results: any[], totalTokens: number } | null>(null);
   const [notification, setNotification] = useState<{ message: string; type: 'error' | 'success' } | null>(null);
+  const [isBlocked, setIsBlocked] = useState(false);
 
   // Helper for notification
   const showNotification = (message: string, type: 'error' | 'success') => {
@@ -93,6 +94,19 @@ export const useGameLogic = () => {
       console.log(`[useGameLogic] Starting DB fetch for FID: ${fid}`);
 
       try {
+        // --- 0. Check Block List ---
+        const { data: blockData } = await supabase
+          .from('blocked_users')
+          .select('fid')
+          .eq('fid', fid)
+          .single();
+
+        if (blockData) {
+          console.warn(`[useGameLogic] User ${fid} is blocked.`);
+          setIsBlocked(true);
+          return; // Stop loading data
+        }
+
         // --- 1. Load Equipment (Join) ---
         // Fetch Player Equipment with Inner Join to Master Data
         const { data: equipData, error: equipError } = await supabase
@@ -314,6 +328,7 @@ export const useGameLogic = () => {
     gameState,
     farcasterUser,
     onChainBalanceRaw,
+    isBlocked, // Export Blocked State
     ui: { 
       gachaResult, setGachaResult, 
       isGachaRolling, 

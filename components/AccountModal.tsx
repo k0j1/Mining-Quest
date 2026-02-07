@@ -6,12 +6,13 @@ interface AccountModalProps {
   user: any;
   balance: number | null;
   onClose: () => void;
+  onTestMaintenance?: () => void;
 }
 
 // Allowed Admin FIDs for Admin Dashboard
 const ADMIN_FIDS = [406233, 137908, 1379028]; 
 
-const AccountModal: React.FC<AccountModalProps> = ({ user, balance, onClose }) => {
+const AccountModal: React.FC<AccountModalProps> = ({ user, balance, onClose, onTestMaintenance }) => {
   const [showAdmin, setShowAdmin] = useState(false);
 
   if (!user) return null;
@@ -23,7 +24,12 @@ const AccountModal: React.FC<AccountModalProps> = ({ user, balance, onClose }) =
   const isAdmin = ADMIN_FIDS.includes(user.fid);
 
   if (showAdmin) {
-    return <AdminDashboard onClose={() => setShowAdmin(false)} />;
+    return (
+      <AdminDashboard 
+        onClose={() => setShowAdmin(false)} 
+        onTriggerMaintenance={onTestMaintenance} 
+      />
+    );
   }
 
   return (
