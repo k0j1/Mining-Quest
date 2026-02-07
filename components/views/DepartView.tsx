@@ -10,14 +10,16 @@ interface PredictionResult {
     minReward: number;
     maxReward: number;
     estimatedDuration: number;
+    rawMinDmg: number; // Added
+    rawMaxDmg: number; // Added
     minDmg: number;
     maxDmg: number;
     bonusPercent: number;
-    speedBonusPercent: number; // Changed from timeReductionPercent
+    speedBonusPercent: number;
     avgDamageReduction: number;
     breakdown: {
       reward: { hero: number; equip: number; };
-      speed: { hero: number; equip: number; }; // Changed from time
+      speed: { hero: number; equip: number; };
     };
     heroDamageReductions: { id: string; name: string; totalReduction: number }[];
 }
@@ -87,9 +89,24 @@ const DepartView: React.FC<DepartViewProps> = ({
 
   // Calculate Prediction
   let prediction: PredictionResult | null = null;
+  let riskLevel = 0; // 0: Safe, 1-2: Warning, 3: Danger (Wipeout)
+
   if (currentRankConfig && isPartyFull && getQuestPrediction) {
       prediction = getQuestPrediction(currentRankConfig, mainParty);
+      
+      // Calculate Risk
+      riskLevel = mainParty.reduce((acc, hero) => {
+          const heroReduction = prediction?.heroDamageReductions.find(h => h.id === hero.id)?.totalReduction || 0;
+          // Calculate max damage specific to this hero
+          const maxPotentialDmg = Math.floor(prediction!.rawMaxDmg * (1 - heroReduction / 100));
+          
+          if (maxPotentialDmg >= hero.hp) return acc + 1;
+          return acc;
+      }, 0);
   }
+
+  const isDanger = riskLevel === 3;
+  const isWarning = riskLevel > 0 && !isDanger;
 
   // Rarity styling maps
   const rankColors: Record<string, string> = {
@@ -188,10 +205,17 @@ const DepartView: React.FC<DepartViewProps> = ({
        {/* Confirmation Modal - Adjusted z-index and padding to avoid bottom nav overlap */}
        {selectedRank && currentRankConfig && (
          <div className="fixed inset-0 z-[1000] bg-slate-900/80 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in pb-[calc(env(safe-area-inset-bottom)+6rem)]">
-           <div className="w-full max-w-md bg-slate-900 border border-slate-700 rounded-3xl overflow-hidden flex flex-col max-h-[85vh] shadow-2xl">
+           <div className="w-full max-w-md bg-slate-900 border border-slate-700 rounded-3xl overflow-hidden flex flex-col max-h-[85vh] shadow-2xl relative">
              <div className="p-4 border-b border-slate-800 bg-slate-900 text-center shrink-0">
                <h2 className="text-lg font-bold text-white">出撃確認</h2>
              </div>
+             
+             {/* DANGER / WARNING BANNER */}
+             {(isDanger || isWarning) && (
+                <div className={`w-full py-1 text-center text-[10px] font-black uppercase tracking-[0.2em] shadow-lg flex items-center justify-center gap-2 animate-pulse ${isDanger ? 'bg-red-600 text-white' : 'bg-amber-500 text-slate-900'}`}>
+                    <span>{isDanger ? '💀 WIPEOUT RISK' : '⚠️ DEATH RISK'}</span>
+                </div>
+             )}
              
              <div className="p-6 overflow-y-auto custom-scrollbar">
                <div className="text-center mb-6">
@@ -213,13 +237,32 @@ const DepartView: React.FC<DepartViewProps> = ({
                
                {/* --- PREDICTION PANEL --- */}
                {prediction && (
-                 <div className="mb-6 bg-slate-800/50 rounded-xl border border-slate-700 p-4 relative overflow-hidden">
+                 <div className={`mb-6 bg-slate-800/50 rounded-xl border p-4 relative overflow-hidden transition-colors ${
+                     isDanger ? 'border-red-900/50 bg-red-900/10' : isWarning ? 'border-amber-900/50 bg-amber-900/10' : 'border-slate-700'
+                 }`}>
+                    {/* Background Overlay Text for Danger */}
+                    {isDanger && (
+                        <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-20">
+                            <span className="text-6xl font-black text-red-500 -rotate-12 uppercase tracking-widest border-4 border-red-500 px-4">DANGER</span>
+                        </div>
+                    )}
+                    {isWarning && (
+                        <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-10">
+                            <span className="text-5xl font-black text-amber-500 -rotate-12 uppercase tracking-widest">WARNING</span>
+                        </div>
+                    )}
+
                     <div className="absolute top-0 right-0 p-2 opacity-10 text-4xl">🔮</div>
-                    <h4 className="text-[10px] font-black text-indigo-400 uppercase tracking-widest mb-3 border-b border-slate-700 pb-2">
-                        Mission Forecast (Bonus Active)
+                    <h4 className="text-[10px] font-black text-indigo-400 uppercase tracking-widest mb-3 border-b border-slate-700 pb-2 flex justify-between">
+                        <span>Mission Forecast</span>
+                        {(isDanger || isWarning) && (
+                            <span className={`animate-pulse ${isDanger ? 'text-red-500' : 'text-amber-500'}`}>
+                                {isDanger ? 'HIGH MORTALITY' : 'CAUTION'}
+                            </span>
+                        )}
                     </h4>
                     
-                    <div className="grid grid-cols-1 gap-3">
+                    <div className="grid grid-cols-1 gap-3 relative z-10">
                         {/* Reward Forecast */}
                         <div className="flex flex-col">
                             <div className="flex justify-between items-center">
@@ -242,31 +285,51 @@ const DepartView: React.FC<DepartViewProps> = ({
                             )}
                         </div>
 
-                        {/* Damage Forecast */}
+                        {/* Damage Forecast (Updated Layout) */}
                         <div className="flex flex-col">
-                            <div className="flex justify-between items-center">
-                                <span className="text-xs font-bold text-slate-400">被ダメージ予測 (平均)</span>
-                                <div className="text-right">
-                                    <span className="text-rose-400 font-bold text-sm">
-                                        {prediction.minDmg} - {prediction.maxDmg}
-                                    </span>
-                                    {prediction.avgDamageReduction > 0 && (
-                                        <span className="ml-2 text-[9px] font-bold text-emerald-400 bg-emerald-900/30 px-1.5 py-0.5 rounded">
-                                            -{prediction.avgDamageReduction}%
+                            <div className="flex justify-between items-start">
+                                <span className="text-xs font-bold text-slate-400 mt-1">被ダメージ予測</span>
+                                <div className="text-right flex flex-col items-end">
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-[10px] text-slate-500 line-through font-mono decoration-slate-600">
+                                            Raw: {prediction.rawMinDmg}-{prediction.rawMaxDmg}
                                         </span>
+                                        <span className="text-rose-400 font-bold text-sm">
+                                            {prediction.minDmg} - {prediction.maxDmg}
+                                        </span>
+                                    </div>
+                                    {prediction.avgDamageReduction > 0 && (
+                                        <div className="text-[9px] font-bold text-emerald-400 bg-emerald-900/30 px-1.5 py-0.5 rounded mt-0.5 inline-block">
+                                            Avg Reduction -{prediction.avgDamageReduction}%
+                                        </div>
                                     )}
                                 </div>
                             </div>
-                            {/* Per Hero Breakdown */}
-                            <div className="mt-1 space-y-0.5">
-                                {prediction.heroDamageReductions.map(hero => (
-                                    <div key={hero.id} className="flex justify-between text-[8px] text-slate-500 font-bold pl-2 border-l border-slate-700/50">
-                                        <span className="truncate max-w-[150px]">{hero.name}</span>
-                                        <span className={hero.totalReduction > 0 ? "text-emerald-500" : "text-slate-600"}>
-                                            -{hero.totalReduction}%
-                                        </span>
+                            
+                            {/* Per Hero Breakdown with Danger Highlight */}
+                            <div className="mt-2 space-y-1 bg-black/20 p-2 rounded">
+                                {prediction.heroDamageReductions.map(hero => {
+                                    // Calculate individual risk
+                                    const maxPotentialDmg = Math.floor(prediction!.rawMaxDmg * (1 - hero.totalReduction / 100));
+                                    const currentHp = mainParty.find(h => h.id === hero.id)?.hp || 0;
+                                    const isAtRisk = maxPotentialDmg >= currentHp;
+
+                                    return (
+                                    <div key={hero.id} className="flex justify-between text-[9px] font-bold items-center">
+                                        <div className="flex items-center gap-1.5 max-w-[60%]">
+                                            {isAtRisk && <span className="text-[8px] animate-pulse">💀</span>}
+                                            <span className={`truncate ${isAtRisk ? 'text-red-400' : 'text-slate-400'}`}>{hero.name}</span>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            <span className={hero.totalReduction > 0 ? "text-emerald-500" : "text-slate-600"}>
+                                                -{hero.totalReduction}%
+                                            </span>
+                                            {isAtRisk && (
+                                                <span className="bg-red-600 text-white px-1 rounded text-[7px] animate-pulse">DIE?</span>
+                                            )}
+                                        </div>
                                     </div>
-                                ))}
+                                )})}
                             </div>
                         </div>
 
@@ -386,10 +449,12 @@ const DepartView: React.FC<DepartViewProps> = ({
                       ? 'bg-slate-700 opacity-50 cursor-not-allowed'
                       : !canAfford 
                         ? 'bg-rose-600 hover:bg-rose-500' // Red for unaffordable but clickable
+                        : isDanger ? 'bg-red-700 hover:bg-red-600 ring-2 ring-red-500 animate-pulse' // Danger styling
+                        : isWarning ? 'bg-amber-600 hover:bg-amber-500' // Warning styling
                         : 'bg-indigo-600 hover:bg-indigo-500'
                  }`}
                >
-                 {isProcessing ? '処理中...' : !isPartyFull ? 'メンバー不足' : isCurrentPartyQuesting ? '出撃中' : (!canAfford ? '資金不足' : '出発する')}
+                 {isProcessing ? '処理中...' : !isPartyFull ? 'メンバー不足' : isCurrentPartyQuesting ? '出撃中' : (!canAfford ? '資金不足' : isDanger ? '強行突破する (DANGER)' : '出発する')}
                </button>
              </div>
            </div>
