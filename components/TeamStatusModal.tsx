@@ -111,7 +111,7 @@ const TeamStatusModal: React.FC<TeamStatusModalProps> = ({ stats, onClose }) => 
                         </div>
                         <div>
                             <div className="text-[10px] text-indigo-400 font-bold uppercase tracking-wider">Team Defense</div>
-                            <div className="text-2xl font-black text-white">-{stats.teamDefBonus}%</div>
+                            <div className="text-2xl font-black text-white">+{stats.teamDefBonus}%</div>
                         </div>
                     </div>
                     <p className="text-[9px] text-slate-500 mt-2 pl-1">

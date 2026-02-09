@@ -156,7 +156,7 @@ const HeroDetailModal: React.FC<HeroDetailModalProps> = ({ hero, equipment, onCl
                             {helmet ? (
                                 <>
                                     <span className="text-[8px] text-white font-bold truncate w-full">{helmet.name}</span>
-                                    <span className="text-[7px] text-emerald-400 font-bold">-{helmet.bonus}%</span>
+                                    <span className="text-[7px] text-emerald-400 font-bold">+{helmet.bonus}%</span>
                                 </>
                             ) : <span className="text-[8px] text-slate-600">None</span>}
                         </div>

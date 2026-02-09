@@ -324,7 +324,7 @@ const DepartView: React.FC<DepartViewProps> = ({
                                                 {minDmg} ~ {maxDmg}
                                             </span>
                                             <span className="text-[8px] text-slate-500">
-                                                (軽減: -{hero.totalReduction}%)
+                                                (軽減: +{hero.totalReduction}%)
                                             </span>
                                         </div>
                                     </div>

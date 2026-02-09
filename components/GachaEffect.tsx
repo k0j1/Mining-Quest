@@ -318,7 +318,7 @@ const GachaEffect: React.FC<GachaEffectProps> = ({ result, onClose }) => {
                         {currentItem.type === 'Pickaxe' ? 'Reward' : currentItem.type === 'Helmet' ? 'Def' : 'Speed'}
                       </span>
                       <span className="text-base font-orbitron font-bold">
-                        {currentItem.type === 'Pickaxe' ? '+' : '-'}{currentItem.bonus}%
+                        +{currentItem.bonus}%
                       </span>
                     </div>
                   </div>
