@@ -570,7 +570,7 @@ const GachaView: React.FC<GachaViewProps> = ({
   const equipCost = 6000;
   
   const singleCost = gachaTab === 'Hero' ? heroCost : equipCost;
-  // Cost: Single x 5 (Reduced from Single x 3 x 5)
+  // Cost: Single x 5 (Reverted as per user request to maintain original pricing)
   const tripleCost = singleCost * 5;
 
   const canAffordSingle = gameState.tokens >= singleCost;
@@ -675,7 +675,7 @@ const GachaView: React.FC<GachaViewProps> = ({
                         {canAffordTriple && <div className="absolute inset-0 bg-white/20 -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-in-out skew-x-12"></div>}
                         
                         <div className="flex flex-col items-start relative z-10">
-                          <span className="font-black text-sm italic">5連ガチャ</span>
+                          <span className="font-black text-sm italic">3連ガチャ</span>
                           <span className="text-[9px] font-bold bg-black/20 px-1.5 rounded text-yellow-200">R以上1枠確定</span>
                         </div>
                         <div className="text-right relative z-10">

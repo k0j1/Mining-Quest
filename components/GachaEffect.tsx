@@ -36,9 +36,8 @@ const GachaEffect: React.FC<GachaEffectProps> = ({ result, onClose }) => {
       if (orbRef.current) {
         tl.to(orbRef.current, {
           scale: 1.5,
-          duration: 1.0,
-          ease: "power2.in",
-          boxShadow: "0 0 50px 20px rgba(255,255,255,0.8)"
+          duration: 0.8,
+          ease: "power2.in"
         })
         .to(orbRef.current, {
           scale: 0.1,
@@ -85,7 +84,7 @@ const GachaEffect: React.FC<GachaEffectProps> = ({ result, onClose }) => {
       // 2. Card Reveal (Pop up)
       if (cardContainerRef.current) {
         // Reset state first
-        gsap.set(cardContainerRef.current, { scale: 0, y: 100, opacity: 0, rotation: 0 });
+        gsap.set(cardContainerRef.current, { scale: 0, y: 50, opacity: 0, rotation: 0 });
         
         const isSpecial = isSpecialPull || isHighRarity;
 
@@ -93,8 +92,8 @@ const GachaEffect: React.FC<GachaEffectProps> = ({ result, onClose }) => {
           scale: 1,
           y: 0,
           opacity: 1,
-          duration: 0.6,
-          ease: "elastic.out(1, 0.6)",
+          duration: 0.5,
+          ease: "back.out(1.2)",
           onStart: () => playGachaReveal()
         }, "-=0.3");
 
@@ -116,13 +115,13 @@ const GachaEffect: React.FC<GachaEffectProps> = ({ result, onClose }) => {
         // Clear previous burst
         burstContainerRef.current.innerHTML = '';
         
-        const burstCount = 40;
+        // Reduced count for performance (40 -> 12)
+        const burstCount = 12;
         for (let i = 0; i < burstCount; i++) {
             const angle = (i / burstCount) * Math.PI * 2;
-            const velocity = 200 + Math.random() * 300;
+            const velocity = 150 + Math.random() * 150;
             const p = document.createElement('div');
-            p.className = 'absolute w-1 h-8 bg-white rounded-full origin-bottom';
-            // Set styles manually for performance or use classes
+            p.className = 'absolute w-1 h-6 bg-white rounded-full origin-bottom will-change-transform';
             p.style.backgroundColor = isHighRarity ? '#fbbf24' : '#fff';
             p.style.top = '50%';
             p.style.left = '50%';
@@ -140,23 +139,24 @@ const GachaEffect: React.FC<GachaEffectProps> = ({ result, onClose }) => {
                 y: Math.sin(angle) * velocity,
                 scaleY: 1,
                 opacity: 0,
-                duration: 0.8 + Math.random() * 0.4,
+                duration: 0.6 + Math.random() * 0.3,
                 ease: "power3.out",
                 onComplete: () => p.remove()
             });
         }
       }
 
-      // 4. Confetti (Paper Snowstorm)
+      // 4. Confetti (Optimized)
       if (burstContainerRef.current) {
-         const confettiCount = isSpecialPull || isHighRarity ? 80 : 40;
+         // Reduced count (80 -> 20)
+         const confettiCount = isSpecialPull || isHighRarity ? 20 : 10;
          
          for (let i = 0; i < confettiCount; i++) {
             const c = document.createElement('div');
             const color = CONFETTI_COLORS[Math.floor(Math.random() * CONFETTI_COLORS.length)];
-            const size = 8 + Math.random() * 8;
+            const size = 6 + Math.random() * 6;
             
-            c.style.position = 'absolute';
+            c.className = 'absolute will-change-transform';
             c.style.width = `${size}px`;
             c.style.height = `${size * 0.6}px`;
             c.style.backgroundColor = color;
@@ -166,17 +166,15 @@ const GachaEffect: React.FC<GachaEffectProps> = ({ result, onClose }) => {
             
             burstContainerRef.current.appendChild(c);
 
-            // Physics-like fall
             gsap.to(c, {
-                y: window.innerHeight + 100,
-                x: `+=${(Math.random() - 0.5) * 200}`, // Drift
-                rotation: Math.random() * 720,
-                rotationX: Math.random() * 720,
+                y: window.innerHeight,
+                x: `+=${(Math.random() - 0.5) * 100}`,
+                rotation: Math.random() * 360,
                 opacity: 1,
-                duration: 2 + Math.random() * 3,
-                delay: Math.random() * 0.5, // Stagger slightly
-                ease: "power1.out", // Start fast (explosion) then linear gravity? or just linear gravity
-                onStart: () => { gsap.set(c, { opacity: 1 }) },
+                duration: 1.5 + Math.random() * 2,
+                delay: Math.random() * 0.3,
+                ease: "power1.out",
+                onStart: () => { c.style.opacity = '1'; },
                 onComplete: () => c.remove()
             });
          }
@@ -215,21 +213,25 @@ const GachaEffect: React.FC<GachaEffectProps> = ({ result, onClose }) => {
   const isSpecialPull = isMulti && isLastItem; // Guaranteed slot logic
   const isHighRarity = ['R', 'E', 'L'].includes(rarity);
 
-  // Use rarity color for card/particles
   const color = rarityColors[rarity] || '#94a3b8';
 
   return (
-    <div ref={containerRef} className="fixed inset-0 z-[500] flex items-center justify-center bg-slate-950 overflow-hidden">
+    <div ref={containerRef} className="fixed inset-0 z-[1300] flex items-center justify-center bg-slate-950 overflow-hidden touch-none">
       
-      {/* 1. Background Effects (Rotating Rays) - Visible only in Reveal */}
-      <div className={`absolute inset-0 flex items-center justify-center transition-opacity duration-1000 ${phase === 'reveal' ? 'opacity-60' : 'opacity-0'}`}>
+      {/* 1. Background Effects (CSS Animation) */}
+      <style>{`
+        @keyframes rotate-bg {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
+        }
+        .anim-rotate-bg {
+          animation: rotate-bg 60s linear infinite;
+        }
+      `}</style>
+      
+      <div className={`absolute inset-0 flex items-center justify-center transition-opacity duration-500 ${phase === 'reveal' ? 'opacity-40' : 'opacity-0'}`}>
         <div 
-          className="w-[200vmax] h-[200vmax] opacity-30 flex-shrink-0 origin-center" 
-          ref={(el) => {
-              if (el && phase === 'reveal') {
-                  gsap.to(el, { rotation: 360, duration: 60, repeat: -1, ease: "linear" });
-              }
-          }}
+          className="w-[150vmax] h-[150vmax] flex-shrink-0 origin-center anim-rotate-bg will-change-transform" 
           style={{ 
             background: isSpecialPull 
               ? `conic-gradient(from 0deg, #f59e0b, #ef4444, #8b5cf6, #3b82f6, #10b981, #f59e0b)`
@@ -238,14 +240,12 @@ const GachaEffect: React.FC<GachaEffectProps> = ({ result, onClose }) => {
         />
       </div>
 
-      {/* 2. Burst & Confetti Container (Pointer Events None) */}
-      <div ref={burstContainerRef} className="absolute inset-0 pointer-events-none z-[100] overflow-hidden">
-        {/* GSAP will inject particles here */}
-      </div>
+      {/* 2. Burst & Confetti Container */}
+      <div ref={burstContainerRef} className="absolute inset-0 pointer-events-none z-[100] overflow-hidden" />
 
-      {/* 3. Charging Orb (Centered) */}
+      {/* 3. Charging Orb */}
       {phase === 'charging' && (
-        <div ref={orbRef} className="relative z-50 w-24 h-24 rounded-full bg-white shadow-[0_0_30px_rgba(255,255,255,0.8)]" />
+        <div ref={orbRef} className="relative z-50 w-20 h-20 rounded-full bg-white shadow-xl" />
       )}
 
       {/* 4. White Flash Overlay */}
@@ -264,33 +264,21 @@ const GachaEffect: React.FC<GachaEffectProps> = ({ result, onClose }) => {
 
           <div ref={cardContainerRef} className="w-60 aspect-[3/4.5] relative">
             
-            {/* Glow for high rarity */}
             {(isSpecialPull || isHighRarity) && (
-                 <div className="absolute -inset-10 bg-white/20 blur-2xl rounded-full z-[-1]" 
+                 <div className="absolute -inset-8 bg-white/10 blur-xl rounded-full z-[-1]" 
                       style={{ backgroundColor: color }} 
                  />
             )}
 
             <div 
-              className={`absolute inset-0 rounded-[2rem] overflow-hidden glass-panel flex flex-col z-10`}
+              className={`absolute inset-0 rounded-[2rem] overflow-hidden flex flex-col z-10 bg-slate-900`}
               style={{ 
                 borderWidth: (isSpecialPull || isHighRarity) ? '0px' : '6px',
                 borderColor: color, 
-                boxShadow: `0 0 30px ${color}44`,
-                backgroundColor: (isSpecialPull || isHighRarity) ? '#0f172a' : undefined
+                boxShadow: `0 0 20px ${color}33`,
               }}
             >
-              {/* Inner Border */}
               {(isSpecialPull || isHighRarity) && <div className="absolute inset-0 border border-white/30 rounded-[2rem] z-50 pointer-events-none" />}
-
-              {/* Holographic Glint (CSS Animation is fine for simple shimmer, or convert to GSAP) */}
-              <div className="absolute inset-0 z-20 pointer-events-none overflow-hidden mix-blend-overlay opacity-50">
-                 <div className="w-[200%] h-[200%] absolute top-[-50%] left-[-50%] bg-gradient-to-tr from-transparent via-white/30 to-transparent rotate-45"
-                      ref={el => {
-                          if(el) gsap.to(el, { x: 200, y: 200, duration: 2, repeat: -1, ease: "linear" });
-                      }}
-                 />
-              </div>
 
               {result.type === 'Hero' ? (
                 <>
@@ -313,7 +301,7 @@ const GachaEffect: React.FC<GachaEffectProps> = ({ result, onClose }) => {
                 </>
               ) : (
                 <div className="w-full h-full flex flex-col items-center justify-center p-6 space-y-4 bg-slate-900/40">
-                  <div className="drop-shadow-[0_0_20px_rgba(255,255,255,0.3)]">
+                  <div className="drop-shadow-lg">
                     <EquipmentIcon 
                         type={currentItem.type} 
                         rarity={currentItem.rarity} 
@@ -341,7 +329,7 @@ const GachaEffect: React.FC<GachaEffectProps> = ({ result, onClose }) => {
 
           <button 
             onClick={handleNext}
-            className={`mt-8 px-12 py-3 bg-white text-slate-950 font-black rounded-xl hover:scale-110 active:scale-95 transition-all shadow-[0_0_30px_rgba(255,255,255,0.4)] border-b-4 border-slate-300 z-50 ${isSpecialPull ? 'ring-4 ring-opacity-50' : ''}`}
+            className={`mt-8 px-12 py-3 bg-white text-slate-950 font-black rounded-xl hover:scale-105 active:scale-95 transition-all shadow-xl border-b-4 border-slate-300 z-50 ${isSpecialPull ? 'ring-4 ring-opacity-50' : ''}`}
             style={isSpecialPull ? { '--tw-ring-color': color } as React.CSSProperties : undefined}
           >
             {isLastItem ? '素晴らしい！' : '次へ'}

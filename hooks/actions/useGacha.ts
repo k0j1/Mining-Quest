@@ -160,7 +160,8 @@ export const useGacha = ({ gameState, setGameState, showNotification, farcasterU
 
   const rollGachaTriple = async (tab: 'Hero' | 'Equipment') => {
     const baseCost = tab === 'Hero' ? 10000 : 6000;
-    const cost = baseCost * 5;
+    // Reverted: Cost is 5x base (50,000 or 30,000) despite being 3 pulls, as per original design/user request.
+    const cost = baseCost * 5; 
 
     if (gameState.tokens < cost) {
       playError();
