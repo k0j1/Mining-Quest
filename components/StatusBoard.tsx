@@ -5,7 +5,6 @@ import { playClick } from '../utils/sound';
 import Header from './Header';
 import PartySlotGrid from './PartySlotGrid';
 import { IS_TEST_MODE } from '../constants';
-import { CampEffect } from './AmbientEffects';
 
 interface StatusBoardProps {
   state: GameState;
@@ -114,9 +113,7 @@ const StatusBoard: React.FC<StatusBoardProps> = ({
 
   return (
     <div className="flex flex-col h-full relative bg-slate-900">
-      {/* Background Ambient Effect for HOME */}
-      {view === View.HOME && <CampEffect />}
-
+      
       <Header 
         title={title} tokens={state.tokens} isSoundOn={isSoundOn} onToggleSound={onToggleSound} onDebugAddTokens={onDebugAddTokens}
         farcasterUser={farcasterUser} onChainBalance={onChainBalance} onAccountClick={onAccountClick}

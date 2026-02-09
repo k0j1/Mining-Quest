@@ -10,7 +10,6 @@ import { playClick, playError, playConfirm } from '../../utils/sound';
 import Header from '../Header';
 import { IS_TEST_MODE } from '../../constants';
 import { calculatePartyStats } from '../../utils/mechanics';
-import { PartyEffect } from '../AmbientEffects';
 import { gsap } from 'gsap';
 
 interface PartyViewProps {
@@ -224,8 +223,7 @@ const PartyView: React.FC<PartyViewProps> = ({
   return (
     <>
       <div className="flex flex-col h-full relative bg-slate-900">
-        <PartyEffect />
-
+        
         <Header 
           title="パーティ編成" 
           tokens={gameState.tokens} 
