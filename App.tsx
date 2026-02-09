@@ -14,7 +14,7 @@ import { playClick, playConfirm, toggleSound } from './utils/sound';
 import { useGameLogic } from './hooks/useGameLogic';
 import { sdk } from '@farcaster/frame-sdk';
 import { supabase, isSupabaseConfigured } from './lib/supabase';
-import { gsap } from 'gsap';
+import gsap from 'gsap';
 
 // Views
 import PartyView from './components/views/PartyView';

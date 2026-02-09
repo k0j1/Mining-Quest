@@ -3,7 +3,7 @@ import React, { useRef, useLayoutEffect } from 'react';
 import { Hero, Equipment } from '../types';
 import { playClick } from '../utils/sound';
 import EquipmentIcon from './EquipmentIcon';
-import { gsap } from 'gsap';
+import gsap from 'gsap';
 
 interface HeroDetailModalProps {
   hero: Hero;

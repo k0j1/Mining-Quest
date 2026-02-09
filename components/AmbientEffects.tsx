@@ -1,6 +1,6 @@
 
 import React, { useRef, useLayoutEffect } from 'react';
-import { gsap } from 'gsap';
+import gsap from 'gsap';
 
 // --- HOME: Campfire & Sparks ---
 export const CampEffect: React.FC = () => {
@@ -86,7 +86,7 @@ export const PartyEffect: React.FC = () => {
             duration: 4 + Math.random() * 4,
             ease: "sine.out",
             yoyo: true, // fade out at end handled by tween timeline usually, but simple here
-            onStart: () => gsap.to(el, { opacity: 0, duration: 1, delay: 3 }),
+            onStart: () => { gsap.to(el, { opacity: 0, duration: 1, delay: 3 }); }, // Block body to return void
             onComplete: () => el.remove()
           }
         );

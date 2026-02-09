@@ -9,7 +9,7 @@ import { HeroDefinition, HERO_DEFINITIONS } from '../../data/hero_data';
 import { HERO_RATES, EQUIPMENT_RATES } from '../../services/gachaService';
 import { getHeroImageUrl } from '../../utils/heroUtils';
 import EquipmentIcon from '../EquipmentIcon';
-import { gsap } from 'gsap';
+import gsap from 'gsap';
 
 interface GachaViewProps {
   gameState: GameState;
@@ -631,63 +631,76 @@ const GachaView: React.FC<GachaViewProps> = ({
                 </div>
               )}
               
-              <div className="flex-1 flex flex-col justify-between pt-2">
-                
-                {/* 3D Showcase Area */}
-                <GachaShowcase tab={gachaTab} />
+              <div className="flex-1 flex flex-col justify-between pt-8">
+                 <div className="flex-1 flex flex-col items-center justify-center">
+                    <h2 className="text-xl font-black text-white mb-2 uppercase tracking-widest drop-shadow-md">
+                      {gachaTab === 'Hero' ? 'Hero Summon' : 'Equipment Forge'}
+                    </h2>
+                    
+                    <GachaShowcase tab={gachaTab} />
+                 </div>
 
-                <div>
-                  <h2 className="text-xl font-black text-white mb-1 tracking-wide">{gachaTab === 'Hero' ? 'CALL OF LEGENDS' : 'ANCIENT RELICS'}</h2>
-                  <p className="text-slate-400 text-[10px] font-bold tracking-wider uppercase">
-                    {gachaTab === 'Hero' ? 'Recruit new companions' : 'Excavate rare gear'}
-                  </p>
-                </div>
-
-                <div className="space-y-3 pt-4">
-                    {/* Single Gacha */}
+                 <div className="space-y-3 pb-4">
+                    {/* Single Pull */}
                     <button 
                       onClick={() => onRollGacha(gachaTab)}
-                      disabled={isGachaRolling}
-                      className={`w-full py-3.5 bg-slate-700 text-white rounded-xl font-bold text-sm shadow-md transition-all border border-slate-600 flex items-center justify-between px-5 ${
-                        isGachaRolling
-                          ? 'opacity-50 cursor-not-allowed grayscale' 
-                          : 'hover:bg-slate-600 active:scale-95'
+                      disabled={!canAffordSingle || isGachaRolling}
+                      className={`w-full py-3 rounded-xl border-b-4 transition-all active:scale-95 flex items-center justify-between px-6 ${
+                        !canAffordSingle 
+                          ? 'bg-slate-700 border-slate-900 text-slate-500 cursor-not-allowed opacity-70' 
+                          : 'bg-indigo-600 border-indigo-800 text-white hover:bg-indigo-500 shadow-lg shadow-indigo-900/40'
                       }`}
                     >
-                      <span className="text-xs">1回召喚</span>
-                      <span className={canAffordSingle ? 'text-amber-400' : 'text-red-400'}>{singleCost.toLocaleString()} $CHH</span>
+                      <span className="font-bold text-sm">1回ガチャ</span>
+                      <div className="text-right">
+                         <div className={`font-black ${!canAffordSingle ? 'text-rose-400' : 'text-amber-400'}`}>
+                           {singleCost.toLocaleString()}
+                         </div>
+                         <div className="text-[9px] font-bold text-white/50">$CHH</div>
+                      </div>
                     </button>
 
-                    {/* Triple Gacha */}
-                    <button 
-                      onClick={() => onRollGachaTriple && onRollGachaTriple(gachaTab)}
-                      disabled={isGachaRolling}
-                      className={`w-full py-4 bg-gradient-to-r from-amber-600 to-orange-600 text-white rounded-xl shadow-lg transition-all border border-amber-500/50 flex items-center justify-between px-5 relative overflow-hidden group ${
-                        isGachaRolling
-                          ? 'opacity-50 cursor-not-allowed grayscale' 
-                          : 'hover:brightness-110 active:scale-95'
-                      }`}
-                    >
-                      <div className="absolute inset-0 bg-white/10 group-hover:animate-pulse"></div>
-                      <div className="flex flex-col items-start z-10 text-left">
-                          <div className="flex items-center gap-2 mb-0.5">
-                              <span className="font-black text-sm leading-none drop-shadow-md">3連召喚</span>
-                              <span className="text-[9px] bg-white text-orange-600 px-1.5 py-0.5 rounded shadow-sm font-black leading-none border border-orange-200">R以上1枠確定</span>
-                          </div>
-                      </div>
-                      <div className="z-10 text-right flex flex-col items-end justify-center">
-                          <span className={`text-sm font-black ${canAffordTriple ? 'text-white' : 'text-red-100'} drop-shadow-md`}>{tripleCost.toLocaleString()}</span>
-                          <span className="text-[9px] opacity-80 text-amber-100">$CHH</span>
-                      </div>
-                    </button>
-                </div>
+                    {/* Triple Pull */}
+                    {onRollGachaTriple && (
+                      <button 
+                        onClick={() => onRollGachaTriple(gachaTab)}
+                        disabled={!canAffordTriple || isGachaRolling}
+                        className={`w-full py-4 rounded-xl border-b-4 transition-all active:scale-95 flex items-center justify-between px-6 relative overflow-hidden group ${
+                          !canAffordTriple 
+                            ? 'bg-slate-700 border-slate-900 text-slate-500 cursor-not-allowed opacity-70' 
+                            : 'bg-gradient-to-r from-amber-600 to-orange-600 border-orange-800 text-white shadow-lg shadow-orange-900/40'
+                        }`}
+                      >
+                        {/* Shine effect */}
+                        {canAffordTriple && <div className="absolute inset-0 bg-white/20 -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-in-out skew-x-12"></div>}
+                        
+                        <div className="flex flex-col items-start relative z-10">
+                          <span className="font-black text-sm italic">5連ガチャ</span>
+                          <span className="text-[9px] font-bold bg-black/20 px-1.5 rounded text-yellow-200">R以上1枠確定</span>
+                        </div>
+                        <div className="text-right relative z-10">
+                           <div className={`font-black text-lg ${!canAffordTriple ? 'text-rose-400' : 'text-white'}`}>
+                             {tripleCost.toLocaleString()}
+                           </div>
+                           <div className="text-[9px] font-bold text-white/70">$CHH</div>
+                        </div>
+                      </button>
+                    )}
+                 </div>
               </div>
             </div>
          </div>
       </div>
-      
-      {gachaResult && <GachaEffect result={gachaResult} onClose={onCloseResult} />}
-      
+
+      {/* Result Overlay */}
+      {gachaResult && (
+        <GachaEffect 
+           result={gachaResult} 
+           onClose={onCloseResult} 
+        />
+      )}
+
+      {/* Lists Modals */}
       {showHeroList && <HeroListModal onClose={() => { playClick(); setShowHeroList(false); }} />}
       {showEquipmentList && <EquipmentListModal onClose={() => { playClick(); setShowEquipmentList(false); }} />}
     </>

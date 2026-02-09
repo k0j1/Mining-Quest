@@ -1,7 +1,7 @@
 
 import React, { useEffect, useRef, useLayoutEffect } from 'react';
 import { playFanfare } from '../utils/sound';
-import { gsap } from 'gsap';
+import gsap from 'gsap';
 
 interface QuestResult {
   questName: string;

@@ -2,7 +2,7 @@
 import React, { useEffect, useState, useRef, useLayoutEffect } from 'react';
 import { playGachaReveal, playClick } from '../utils/sound';
 import EquipmentIcon from './EquipmentIcon';
-import { gsap } from 'gsap';
+import gsap from 'gsap';
 
 interface GachaEffectProps {
   result: { type: 'Hero' | 'Equipment'; data: any[] } | null;

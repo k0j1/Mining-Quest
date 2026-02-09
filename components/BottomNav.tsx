@@ -2,7 +2,7 @@
 import React, { useRef, useEffect } from 'react';
 import { View } from '../types';
 import { ICONS } from '../constants';
-import { gsap } from 'gsap';
+import gsap from 'gsap';
 
 interface NavItem {
   view: View;
