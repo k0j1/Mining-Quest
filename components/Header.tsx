@@ -1,6 +1,7 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { playClick } from '../utils/sound';
+import { gsap } from 'gsap';
 
 interface HeaderProps {
   title: string;
@@ -36,6 +37,48 @@ const Header: React.FC<HeaderProps> = ({
   children 
 }) => {
   const [tapCount, setTapCount] = useState(0);
+  
+  // Refs for animation
+  const tokenRef = useRef<HTMLSpanElement>(null);
+  const previousTokenValue = useRef<number>(tokens);
+  
+  // Farcasterユーザーかつオンチェーン残高が取得できている場合はそちらを表示
+  // そうでない場合はゲーム内トークンを表示
+  const currentTokenValue = (farcasterUser && onChainBalance !== null && onChainBalance !== undefined) 
+    ? onChainBalance 
+    : tokens;
+
+  // GSAP Token Counting Animation
+  useEffect(() => {
+    if (!tokenRef.current) return;
+    
+    // Create a proxy object to animate
+    const proxy = { value: previousTokenValue.current };
+    
+    gsap.to(proxy, {
+      value: currentTokenValue,
+      duration: 1.5,
+      ease: "power2.out",
+      onUpdate: () => {
+        if (tokenRef.current) {
+          // Format based on magnitude
+          tokenRef.current.innerText = formatCompactNumber(Math.floor(proxy.value));
+        }
+      },
+      onComplete: () => {
+        previousTokenValue.current = currentTokenValue;
+      }
+    });
+    
+    // Scale bump effect when tokens change significantly
+    if (Math.abs(currentTokenValue - previousTokenValue.current) > 0) {
+       gsap.fromTo(tokenRef.current, 
+         { scale: 1.5, color: '#fff' }, 
+         { scale: 1, color: farcasterUser ? '#818cf8' : '#fbbf24', duration: 0.3, ease: "back.out(1.7)" }
+       );
+    }
+
+  }, [currentTokenValue, farcasterUser]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -65,13 +108,7 @@ const Header: React.FC<HeaderProps> = ({
     window.location.reload();
   };
 
-  // Farcasterユーザーかつオンチェーン残高が取得できている場合はそちらを表示
-  // そうでない場合はゲーム内トークンを表示
-  const tokenValue = (farcasterUser && onChainBalance !== null && onChainBalance !== undefined) 
-    ? onChainBalance 
-    : tokens;
-    
-  const displayTokens = formatCompactNumber(tokenValue);
+  const displayTokens = formatCompactNumber(currentTokenValue);
 
   // Farcasterユーザーの場合はテーマカラーを変える
   const themeColorClass = farcasterUser ? 'text-indigo-400' : 'text-amber-400';
@@ -114,7 +151,7 @@ const Header: React.FC<HeaderProps> = ({
           
           <div 
             onClick={handleTokenClick}
-            className={`flex items-center gap-2.5 px-4 h-11 rounded-xl border transition-all cursor-pointer shadow-sm ${
+            className={`flex items-center gap-2.5 px-4 h-11 rounded-xl border transition-all cursor-pointer shadow-sm active:scale-95 ${
               farcasterUser 
                 ? 'bg-slate-800 border-indigo-500/50' 
                 : 'bg-slate-800 border-amber-500/50'
@@ -131,7 +168,11 @@ const Header: React.FC<HeaderProps> = ({
             )}
             
             <div className="flex items-center gap-1.5">
-              <span className={`text-sm font-black ${themeColorClass}`}>
+              <span 
+                ref={tokenRef} 
+                className={`text-sm font-black tabular-nums ${themeColorClass}`}
+              >
+                {/* Initial Render fallback */}
                 {displayTokens}
               </span>
               <span className={`text-[10px] font-bold uppercase tracking-wide ${farcasterUser ? 'text-indigo-400' : 'text-amber-500'}`}>

@@ -46,7 +46,8 @@ const PartySlotGrid: React.FC<PartySlotGridProps> = ({
         const isSelected = selectedIndex === slotIdx;
 
         return (
-          <div key={slotIdx} className="relative group">
+          // Added 'party-slot-active' class if hero exists for GSAP targeting
+          <div key={slotIdx} className={`relative group ${hero ? 'party-slot-active' : ''}`}>
             {showSlotLabels && (
               <div className="absolute -top-3 left-0 right-0 flex justify-center z-20">
                 <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full border whitespace-nowrap transition-all ${

@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Hero, Equipment } from '../types';
 import { useLongPress } from '../hooks/useLongPress';
 import { calculateHeroDamageReduction } from '../utils/mechanics';
+import EquipmentIcon from './EquipmentIcon';
 
 interface HeroCardProps {
   hero: Hero;
@@ -69,11 +70,9 @@ const HeroCard: React.FC<HeroCardProps> = ({
     L: 'border-amber-600'
   };
 
-  const slotIcons = ['⛏️', '🪖', '👢'];
+  const slotTypes = ['Pickaxe', 'Helmet', 'Boots'] as const;
 
   // Calculate Total Damage Reduction (Skill + Helmet)
-  // Note: HeroCard displays individual potential. It doesn't know about team bonuses easily here unless passed.
-  // We assume 0 team bonus for card display to show "Self" stats.
   const totalDamageReduction = calculateHeroDamageReduction(hero, equipment || [], 0);
 
   // Determine font size and padding based on name length more aggressively
@@ -231,7 +230,12 @@ const HeroCard: React.FC<HeroCardProps> = ({
           onTouchStart={(e) => e.stopPropagation()}
           onClick={(e) => e.stopPropagation()}
         >
-          {[0, 1, 2].map(i => (
+          {[0, 1, 2].map(i => {
+            const equipId = hero.equipmentIds[i];
+            const equippedItem = equipment?.find(e => e.id === equipId);
+            const rarity = equippedItem ? equippedItem.rarity : 'C';
+
+            return (
             <button 
               key={i} 
               onClick={(e) => {
@@ -241,20 +245,24 @@ const HeroCard: React.FC<HeroCardProps> = ({
               }}
               disabled={isLocked}
               className={`flex-1 h-full rounded-lg flex items-center justify-center transition-all relative group/slot ${
-                hero.equipmentIds[i] 
-                  ? 'bg-slate-800 border border-slate-600 shadow-inner' 
+                equipId 
+                  ? 'bg-slate-800/80 border border-slate-600 shadow-inner' 
                   : 'bg-slate-900/40 border border-slate-800 border-dashed hover:bg-slate-800 hover:border-slate-600'
               } ${isLocked ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
-              <span className={`text-sm transition-transform ${hero.equipmentIds[i] ? 'opacity-100 scale-110 drop-shadow' : 'opacity-20 grayscale scale-90'}`}>
-                 {slotIcons[i]}
-              </span>
+              <div className={`transform transition-transform ${equipId ? 'scale-110 drop-shadow-lg' : 'opacity-20 grayscale scale-75'}`}>
+                 <EquipmentIcon 
+                    type={slotTypes[i]} 
+                    rarity={equipId ? rarity : 'C'} 
+                    size="1.4em" 
+                 />
+              </div>
               
-              {hero.equipmentIds[i] && (
+              {equipId && (
                  <div className="absolute top-0.5 right-0.5 w-1.5 h-1.5 bg-emerald-500 rounded-full shadow-[0_0_4px_#10b981]"></div>
               )}
             </button>
-          ))}
+          )})}
         </div>
 
       </div>

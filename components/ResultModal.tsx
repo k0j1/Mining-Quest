@@ -1,6 +1,7 @@
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef, useLayoutEffect } from 'react';
 import { playFanfare } from '../utils/sound';
+import { gsap } from 'gsap';
 
 interface QuestResult {
   questName: string;
@@ -20,14 +21,57 @@ interface ResultModalProps {
 }
 
 const ResultModal: React.FC<ResultModalProps> = ({ results, totalTokens, onClose }) => {
-  
+  const containerRef = useRef<HTMLDivElement>(null);
+  const itemsRef = useRef<HTMLDivElement[]>([]);
+  const totalRef = useRef<HTMLDivElement>(null);
+
   useEffect(() => {
     playFanfare();
   }, []);
 
+  useLayoutEffect(() => {
+    if (!containerRef.current) return;
+
+    const ctx = gsap.context(() => {
+      const tl = gsap.timeline();
+
+      // 1. Modal Container Pop
+      tl.from(containerRef.current, {
+        scale: 0.8,
+        opacity: 0,
+        duration: 0.4,
+        ease: "back.out(1.5)"
+      });
+
+      // 2. Stagger items
+      if (itemsRef.current.length > 0) {
+        tl.from(itemsRef.current, {
+          y: 20,
+          opacity: 0,
+          duration: 0.4,
+          stagger: 0.15,
+          ease: "power2.out"
+        }, "-=0.2");
+      }
+
+      // 3. Total Score Boom
+      if (totalRef.current) {
+        tl.from(totalRef.current, {
+          scale: 0.5,
+          opacity: 0,
+          duration: 0.5,
+          ease: "elastic.out(1, 0.5)"
+        }, "-=0.2");
+      }
+
+    }, containerRef);
+
+    return () => ctx.revert();
+  }, []);
+
   return (
-    <div className="fixed inset-0 z-[200] flex items-center justify-center bg-slate-950/90 backdrop-blur-sm p-4 animate-fade-in">
-      <div className="w-full max-w-lg flex flex-col max-h-[90vh]">
+    <div className="fixed inset-0 z-[200] flex items-center justify-center bg-slate-950/90 backdrop-blur-sm p-4">
+      <div ref={containerRef} className="w-full max-w-lg flex flex-col max-h-[90vh]">
         {/* Header */}
         <div className="text-center mb-6">
           <h2 className="text-2xl font-black text-amber-500 mb-1">
@@ -40,7 +84,8 @@ const ResultModal: React.FC<ResultModalProps> = ({ results, totalTokens, onClose
         <div className="flex-1 overflow-y-auto space-y-4 px-2 py-2 custom-scrollbar">
           {results.map((res, idx) => (
             <div 
-              key={idx} 
+              key={idx}
+              ref={el => { if(el) itemsRef.current[idx] = el }}
               className="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-sm"
             >
               <div className="flex justify-between items-start border-b border-slate-800 pb-3 mb-3">
@@ -84,7 +129,7 @@ const ResultModal: React.FC<ResultModalProps> = ({ results, totalTokens, onClose
         </div>
 
         {/* Total & Button */}
-        <div className="mt-6 pt-6 border-t border-slate-800 bg-slate-900 rounded-2xl p-6 text-center shadow-xl border border-slate-800 shrink-0">
+        <div ref={totalRef} className="mt-6 pt-6 border-t border-slate-800 bg-slate-900 rounded-2xl p-6 text-center shadow-xl border border-slate-800 shrink-0">
           <p className="text-slate-500 text-xs font-bold mb-2 uppercase tracking-wide">Total Earnings</p>
           <div className="text-4xl font-black text-white mb-6">
             +{totalTokens.toLocaleString()} <span className="text-lg text-amber-500">$CHH</span>
@@ -98,14 +143,6 @@ const ResultModal: React.FC<ResultModalProps> = ({ results, totalTokens, onClose
           </button>
         </div>
       </div>
-      
-      <style>{`
-        @keyframes fade-in {
-          from { opacity: 0; }
-          to { opacity: 1; }
-        }
-        .animate-fade-in { animation: fade-in 0.2s ease-out forwards; }
-      `}</style>
     </div>
   );
 };

@@ -1,13 +1,15 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useLayoutEffect } from 'react';
 import { GameState } from '../../types';
 import GachaEffect from '../GachaEffect';
 import { playClick } from '../../utils/sound';
 import Header from '../Header';
 import { supabase } from '../../lib/supabase';
-import { HeroDefinition } from '../../data/hero_data';
+import { HeroDefinition, HERO_DEFINITIONS } from '../../data/hero_data';
 import { HERO_RATES, EQUIPMENT_RATES } from '../../services/gachaService';
 import { getHeroImageUrl } from '../../utils/heroUtils';
+import EquipmentIcon from '../EquipmentIcon';
+import { gsap } from 'gsap';
 
 interface GachaViewProps {
   gameState: GameState;
@@ -45,6 +47,172 @@ const RateDisplay: React.FC<{ rates: Record<string, number> }> = ({ rates }) => 
          ))}
        </div>
     </div>
+  );
+};
+
+// --- Showcase Components ---
+
+const SimpleHeroCard: React.FC<{ hero: HeroDefinition; isMain?: boolean }> = ({ hero, isMain }) => {
+  const rarityColors: Record<string, string> = {
+    L: 'border-amber-400 shadow-[0_0_15px_rgba(251,191,36,0.4)]',
+    E: 'border-fuchsia-400 shadow-[0_0_10px_rgba(232,121,249,0.3)]',
+    R: 'border-indigo-400 shadow-[0_0_10px_rgba(129,140,248,0.3)]',
+    UC: 'border-emerald-400',
+    C: 'border-slate-600'
+  };
+  const colorClass = rarityColors[hero.rarity] || rarityColors.C;
+  
+  return (
+    <div className={`
+      relative rounded-xl overflow-hidden bg-slate-900 border-2 ${colorClass} 
+      ${isMain ? 'w-28 h-40 z-20' : 'w-24 h-32 grayscale-[0.3] brightness-75 z-10'}
+      flex flex-col transition-all duration-300
+    `}>
+        <img src={getHeroImageUrl(hero.name, 's')} className="w-full h-full object-cover" alt={hero.name} />
+        
+        {/* Rarity Badge */}
+        <div className="absolute top-1 left-1 bg-black/60 px-1.5 py-0.5 rounded text-[8px] font-black text-white border border-white/20 backdrop-blur-sm">
+            {hero.rarity}
+        </div>
+        
+        {/* Shiny Effect for Main Card */}
+        {isMain && (
+            <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/30 to-transparent w-[200%] h-full animate-shimmer pointer-events-none mix-blend-overlay"></div>
+        )}
+    </div>
+  );
+};
+
+const GachaShowcase: React.FC<{ tab: 'Hero' | 'Equipment' }> = ({ tab }) => {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const bgRef = useRef<HTMLDivElement>(null);
+
+  // Select Sample Heroes (L, E, R)
+  const heroSamples = [
+    HERO_DEFINITIONS.find(h => h.rarity === 'L') || HERO_DEFINITIONS[0], // Center
+    HERO_DEFINITIONS.find(h => h.rarity === 'E') || HERO_DEFINITIONS[1], // Left
+    HERO_DEFINITIONS.find(h => h.rarity === 'R') || HERO_DEFINITIONS[2], // Right
+  ];
+
+  useLayoutEffect(() => {
+    if (!containerRef.current) return;
+
+    const ctx = gsap.context(() => {
+        // 1. Initial Reveal
+        gsap.from(".showcase-item", {
+            y: 50,
+            opacity: 0,
+            scale: 0.5,
+            duration: 0.8,
+            stagger: 0.15,
+            ease: "back.out(1.5)"
+        });
+
+        // 2. Background Rotation (Sunburst)
+        if (bgRef.current) {
+            gsap.to(bgRef.current, {
+                rotation: 360,
+                duration: 40,
+                repeat: -1,
+                ease: "linear"
+            });
+        }
+
+        // 3. Floating Animation (Different timing for organic feel)
+        const items = gsap.utils.toArray<HTMLElement>(".showcase-item");
+        items.forEach((item, i) => {
+            gsap.to(item, {
+                y: i === 1 ? -15 : -10, // Center moves more
+                duration: 2 + i * 0.5,
+                yoyo: true,
+                repeat: -1,
+                ease: "sine.inOut",
+                delay: i * 0.2
+            });
+        });
+
+        // 4. Equipment Shine Rotation
+        if (tab === 'Equipment') {
+             gsap.to(".equip-glow", {
+                opacity: 0.8,
+                duration: 1.5,
+                yoyo: true,
+                repeat: -1,
+                ease: "sine.inOut"
+             });
+        }
+
+    }, containerRef);
+
+    return () => ctx.revert();
+  }, [tab]);
+
+  if (tab === 'Hero') {
+      return (
+          <div ref={containerRef} className="relative w-full h-52 flex items-center justify-center mt-2 mb-6 perspective-[1000px]">
+              {/* Rotating Light Background */}
+              <div className="absolute inset-0 flex items-center justify-center opacity-40 pointer-events-none overflow-hidden">
+                  <div ref={bgRef} className="w-[500px] h-[500px]" style={{
+                      background: `conic-gradient(from 0deg, transparent 0deg, #6366f1 20deg, transparent 40deg, #f59e0b 60deg, transparent 80deg, #6366f1 100deg, transparent 120deg, #f59e0b 140deg, transparent 160deg)`
+                  }}></div>
+                  <div className="absolute inset-0 bg-slate-800 rounded-full blur-3xl scale-75"></div>
+              </div>
+
+              {/* Left (E) */}
+              <div className="showcase-item absolute left-[10%] transform -rotate-12 translate-z-[-20px]">
+                  <SimpleHeroCard hero={heroSamples[1]} />
+              </div>
+              
+              {/* Right (R) */}
+              <div className="showcase-item absolute right-[10%] transform rotate-12 translate-z-[-20px]">
+                  <SimpleHeroCard hero={heroSamples[2]} />
+              </div>
+              
+              {/* Center (L) */}
+              <div className="showcase-item absolute z-30 transform scale-110 drop-shadow-2xl">
+                  <SimpleHeroCard hero={heroSamples[0]} isMain />
+                  {/* Sparkles */}
+                  <div className="absolute -top-4 -right-4 text-2xl animate-pulse">✨</div>
+                  <div className="absolute -bottom-2 -left-4 text-xl animate-bounce delay-75">✨</div>
+              </div>
+          </div>
+      );
+  }
+
+  // Equipment Layout
+  return (
+      <div ref={containerRef} className="relative w-full h-52 flex items-center justify-center mt-2 mb-6">
+          {/* Rotating Light Background */}
+          <div className="absolute inset-0 flex items-center justify-center opacity-30 pointer-events-none overflow-hidden">
+              <div ref={bgRef} className="w-[500px] h-[500px]" style={{
+                  background: `conic-gradient(from 0deg, transparent 0deg, #3b82f6 20deg, transparent 40deg, #3b82f6 60deg, transparent 80deg)`
+              }}></div>
+              <div className="absolute inset-0 bg-slate-800 rounded-full blur-3xl scale-75"></div>
+          </div>
+
+          <div className="flex gap-6 items-center z-10">
+              {/* Helmet */}
+              <div className="showcase-item transform translate-y-4 scale-90">
+                  <div className="drop-shadow-[0_0_15px_rgba(59,130,246,0.6)]">
+                      <EquipmentIcon type="Helmet" rarity="L" size="4em" />
+                  </div>
+              </div>
+              
+              {/* Pickaxe (Center) */}
+              <div className="showcase-item transform -translate-y-4 scale-125 z-20">
+                  <div className="drop-shadow-[0_0_25px_rgba(245,158,11,0.8)] equip-glow">
+                      <EquipmentIcon type="Pickaxe" rarity="L" size="5em" />
+                  </div>
+              </div>
+
+              {/* Boots */}
+              <div className="showcase-item transform translate-y-4 scale-90">
+                  <div className="drop-shadow-[0_0_15px_rgba(59,130,246,0.6)]">
+                      <EquipmentIcon type="Boots" rarity="L" size="4em" />
+                  </div>
+              </div>
+          </div>
+      </div>
   );
 };
 
@@ -240,6 +408,14 @@ const HeroListModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
         .animate-bounce-in {
             animation: bounce-in 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
         }
+        
+        @keyframes shimmer {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+        .animate-shimmer {
+            animation: shimmer 2s infinite linear;
+        }
       `}</style>
     </div>
   );
@@ -260,13 +436,11 @@ const EquipmentListItem: React.FC<{
   item: EquipmentDefinition; 
   rarityColors: Record<string, string>; 
 }> = ({ item, rarityColors }) => {
-  const icon = item.type === 'Pickaxe' ? '⛏️' : item.type === 'Helmet' ? '🪖' : '👢';
-  
   return (
     <div className="flex gap-4 bg-slate-800/50 p-3 rounded-xl border border-slate-700/50 hover:bg-slate-800 transition-colors">
       {/* Icon Area */}
-      <div className="shrink-0 w-16 h-16 rounded-lg bg-slate-900 border border-slate-700 flex items-center justify-center text-3xl shadow-inner">
-         {icon}
+      <div className="shrink-0 w-16 h-16 rounded-lg bg-slate-900 border border-slate-700 flex items-center justify-center shadow-inner">
+         <EquipmentIcon type={item.type} rarity={item.rarity} size="3em" />
       </div>
       
       {/* Info */}
@@ -416,8 +590,8 @@ const GachaView: React.FC<GachaViewProps> = ({
            onAccountClick={onAccountClick}
          />
 
-         <div className="flex-1 overflow-y-auto w-full px-4 pt-8 pb-44 flex flex-col items-center custom-scrollbar">
-            <div className="flex bg-slate-800 p-1.5 rounded-xl w-full max-w-[320px] mb-8 border border-slate-700 shadow-sm shrink-0">
+         <div className="flex-1 overflow-y-auto w-full px-4 pt-6 pb-44 flex flex-col items-center custom-scrollbar">
+            <div className="flex bg-slate-800 p-1.5 rounded-xl w-full max-w-[320px] mb-6 border border-slate-700 shadow-sm shrink-0">
               <button 
                 className={`flex-1 py-3 rounded-lg font-bold text-xs transition-all ${gachaTab === 'Hero' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-500 hover:text-slate-300'}`}
                 onClick={() => { playClick(); setGachaTab('Hero'); }}
@@ -432,7 +606,7 @@ const GachaView: React.FC<GachaViewProps> = ({
               </button>
             </div>
 
-            <div className="bg-slate-800 p-8 rounded-[2.5rem] text-center w-full max-w-[360px] border border-slate-700 shadow-xl relative overflow-hidden shrink-0 flex flex-col justify-center min-h-[480px]">
+            <div className="bg-slate-800 p-6 rounded-[2.5rem] text-center w-full max-w-[360px] border border-slate-700 shadow-xl relative overflow-hidden shrink-0 flex flex-col justify-start min-h-[500px]">
               
               {/* List Button Inside Frame (Absolute Position) */}
               <button 
@@ -444,49 +618,43 @@ const GachaView: React.FC<GachaViewProps> = ({
                       setShowEquipmentList(true);
                     }
                   }}
-                  className="absolute top-5 right-5 z-40 flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-900/40 text-slate-400 hover:bg-slate-800 hover:text-white border border-slate-700/50 backdrop-blur-md transition-all active:scale-95 shadow-sm group"
+                  className="absolute top-5 right-5 z-40 flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-900/60 text-slate-400 hover:bg-slate-800 hover:text-white border border-slate-700/50 backdrop-blur-md transition-all active:scale-95 shadow-sm group"
                 >
                   <span className="text-xs group-hover:scale-110 transition-transform">{gachaTab === 'Hero' ? '📜' : '⚒️'}</span>
                   <span className="text-[10px] font-bold">一覧</span>
               </button>
 
               {isGachaRolling && (
-                <div className="absolute inset-0 z-50 bg-slate-900/90 flex flex-col items-center justify-center p-6 space-y-4">
+                <div className="absolute inset-0 z-50 bg-slate-900/90 flex flex-col items-center justify-center p-6 space-y-4 backdrop-blur-[2px]">
                   <div className="w-12 h-12 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
                   <p className="font-bold text-indigo-400 text-xs tracking-widest">CONNECTING...</p>
                 </div>
               )}
               
-              <div className="flex-1 flex flex-col justify-center space-y-6">
-                <div className="relative py-2 flex justify-center items-center h-24">
-                  {gachaTab === 'Hero' ? (
-                     <div className="text-6xl drop-shadow-lg animate-pulse">🎁</div>
-                  ) : (
-                     <div className="flex gap-4">
-                        <div className="text-5xl drop-shadow-lg animate-bounce" style={{ animationDelay: '0s' }}>⛏️</div>
-                        <div className="text-5xl drop-shadow-lg animate-bounce" style={{ animationDelay: '0.2s' }}>🪖</div>
-                        <div className="text-5xl drop-shadow-lg animate-bounce" style={{ animationDelay: '0.4s' }}>👢</div>
-                     </div>
-                  )}
-                </div>
+              <div className="flex-1 flex flex-col justify-between pt-2">
+                
+                {/* 3D Showcase Area */}
+                <GachaShowcase tab={gachaTab} />
 
                 <div>
-                  <h2 className="text-xl font-bold text-white mb-2">{gachaTab === 'Hero' ? '新しい相棒を呼ぶ' : '地下の遺物を探す'}</h2>
-                  <p className="text-slate-400 text-xs">戦力を増強して深層を目指そう</p>
+                  <h2 className="text-xl font-black text-white mb-1 tracking-wide">{gachaTab === 'Hero' ? 'CALL OF LEGENDS' : 'ANCIENT RELICS'}</h2>
+                  <p className="text-slate-400 text-[10px] font-bold tracking-wider uppercase">
+                    {gachaTab === 'Hero' ? 'Recruit new companions' : 'Excavate rare gear'}
+                  </p>
                 </div>
 
-                <div className="space-y-4 pt-2">
+                <div className="space-y-3 pt-4">
                     {/* Single Gacha */}
                     <button 
                       onClick={() => onRollGacha(gachaTab)}
                       disabled={isGachaRolling}
-                      className={`w-full py-4 bg-slate-700 text-white rounded-xl font-bold text-sm shadow-md transition-all border border-slate-600 flex items-center justify-between px-6 ${
+                      className={`w-full py-3.5 bg-slate-700 text-white rounded-xl font-bold text-sm shadow-md transition-all border border-slate-600 flex items-center justify-between px-5 ${
                         isGachaRolling
                           ? 'opacity-50 cursor-not-allowed grayscale' 
                           : 'hover:bg-slate-600 active:scale-95'
                       }`}
                     >
-                      <span>1回召喚</span>
+                      <span className="text-xs">1回召喚</span>
                       <span className={canAffordSingle ? 'text-amber-400' : 'text-red-400'}>{singleCost.toLocaleString()} $CHH</span>
                     </button>
 
@@ -494,7 +662,7 @@ const GachaView: React.FC<GachaViewProps> = ({
                     <button 
                       onClick={() => onRollGachaTriple && onRollGachaTriple(gachaTab)}
                       disabled={isGachaRolling}
-                      className={`w-full py-4 bg-gradient-to-r from-amber-600 to-orange-600 text-white rounded-xl shadow-md transition-all border border-amber-500/50 flex items-center justify-between px-6 relative overflow-hidden group ${
+                      className={`w-full py-4 bg-gradient-to-r from-amber-600 to-orange-600 text-white rounded-xl shadow-lg transition-all border border-amber-500/50 flex items-center justify-between px-5 relative overflow-hidden group ${
                         isGachaRolling
                           ? 'opacity-50 cursor-not-allowed grayscale' 
                           : 'hover:brightness-110 active:scale-95'
@@ -504,7 +672,7 @@ const GachaView: React.FC<GachaViewProps> = ({
                       <div className="flex flex-col items-start z-10 text-left">
                           <div className="flex items-center gap-2 mb-0.5">
                               <span className="font-black text-sm leading-none drop-shadow-md">3連召喚</span>
-                              <span className="text-[9px] bg-white text-orange-600 px-1.5 py-0.5 rounded shadow-sm font-black leading-none border border-orange-200">R以上最低1枚確定</span>
+                              <span className="text-[9px] bg-white text-orange-600 px-1.5 py-0.5 rounded shadow-sm font-black leading-none border border-orange-200">R以上1枠確定</span>
                           </div>
                       </div>
                       <div className="z-10 text-right flex flex-col items-end justify-center">

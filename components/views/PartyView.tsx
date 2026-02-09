@@ -1,5 +1,5 @@
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef, useLayoutEffect } from 'react';
 import { GameState, Hero } from '../../types';
 import HeroCard from '../HeroCard';
 import EquipmentSelector from '../EquipmentSelector';
@@ -10,6 +10,8 @@ import { playClick, playError, playConfirm } from '../../utils/sound';
 import Header from '../Header';
 import { IS_TEST_MODE } from '../../constants';
 import { calculatePartyStats } from '../../utils/mechanics';
+import { PartyEffect } from '../AmbientEffects';
+import { gsap } from 'gsap';
 
 interface PartyViewProps {
   gameState: GameState;
@@ -54,6 +56,36 @@ const PartyView: React.FC<PartyViewProps> = ({
   const isPartyLocked = currentPreset.some(id => id && activeQuestHeroIds.includes(id));
 
   const allAssignedHeroIds = gameState.partyPresets.flat().filter((id): id is string => !!id);
+
+  // Animation Ref
+  const partyContainerRef = useRef<HTMLDivElement>(null);
+
+  // GSAP: Idle Animation for Party Members
+  useLayoutEffect(() => {
+    if (!partyContainerRef.current) return;
+    
+    // Select the wrapper divs of HeroCards in the main slot grid
+    // Note: PartySlotGrid structure implies we need to target the containers
+    const ctx = gsap.context(() => {
+       const slots = gsap.utils.toArray('.party-slot-active'); // We will add this class to active slots in grid
+       
+       if (slots.length > 0) {
+           gsap.to(slots, {
+               y: -6,
+               duration: 1.5,
+               yoyo: true,
+               repeat: -1,
+               ease: "sine.inOut",
+               stagger: {
+                   amount: 0.8,
+                   from: "random"
+               }
+           });
+       }
+    }, partyContainerRef);
+
+    return () => ctx.revert();
+  }, [currentPreset]);
 
   // --- Stats Calculation Logic using Centralized Utility ---
   const partyStats = useMemo(() => {
@@ -192,6 +224,8 @@ const PartyView: React.FC<PartyViewProps> = ({
   return (
     <>
       <div className="flex flex-col h-full relative bg-slate-900">
+        <PartyEffect />
+
         <Header 
           title="パーティ編成" 
           tokens={gameState.tokens} 
@@ -203,7 +237,7 @@ const PartyView: React.FC<PartyViewProps> = ({
           onAccountClick={onAccountClick}
         />
 
-        <div className="flex-1 overflow-y-auto pb-32 pt-4 bg-slate-900 custom-scrollbar">
+        <div className="flex-1 overflow-y-auto pb-32 pt-4 bg-transparent relative z-10 custom-scrollbar">
           
           {/* Banner (Scrollable) */}
           <div className="px-5 pb-3">
@@ -262,7 +296,8 @@ const PartyView: React.FC<PartyViewProps> = ({
               Long press hero to view details
             </p>
 
-            <div className="mb-6">
+            {/* Animation Wrapper Ref */}
+            <div className="mb-6" ref={partyContainerRef}>
               <PartySlotGrid
                 heroIds={currentPreset}
                 heroes={gameState.heroes}
@@ -276,6 +311,7 @@ const PartyView: React.FC<PartyViewProps> = ({
                 onEquipClick={handleEquipClick}
                 onLongPress={handleHeroLongPress} 
                 equipment={gameState.equipment}
+                // Add a custom class for animation targeting inside PartySlotGrid logic (passed via props indirectly or wrapper)
               />
             </div>
 

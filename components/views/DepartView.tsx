@@ -5,6 +5,7 @@ import PartySlotGrid from '../PartySlotGrid';
 import { playClick, playError } from '../../utils/sound';
 import Header from '../Header';
 import { IS_TEST_MODE } from '../../constants';
+import { MiningEffect } from '../AmbientEffects';
 
 interface PredictionResult {
     minReward: number;
@@ -129,6 +130,8 @@ const DepartView: React.FC<DepartViewProps> = ({
 
   return (
     <div className="flex flex-col h-full relative bg-slate-900">
+       <MiningEffect />
+
        <Header 
          title="クエスト" 
          tokens={gameState.tokens} 
@@ -140,7 +143,7 @@ const DepartView: React.FC<DepartViewProps> = ({
          onAccountClick={onAccountClick}
        />
 
-       <div className="flex-1 overflow-y-auto p-4 space-y-4 pb-24 bg-slate-900">
+       <div className="flex-1 overflow-y-auto p-4 space-y-4 pb-24 bg-transparent relative z-10">
           
           {/* Banner for QUEST */}
           <div className="mb-2 relative rounded-2xl overflow-hidden shadow-md border border-slate-700">

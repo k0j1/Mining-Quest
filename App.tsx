@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useLayoutEffect } from 'react';
 import { View } from './types';
 import StatusBoard from './components/StatusBoard';
 import MiningBackground from './components/MiningBackground';
@@ -8,12 +8,13 @@ import AccountModal from './components/AccountModal';
 import BottomNav from './components/BottomNav';
 import Notification from './components/Notification';
 import DebugConsole from './components/DebugConsole'; 
-import EnvSetup from './components/EnvSetup'; // Import Setup Screen
-import MaintenanceScreen from './components/MaintenanceScreen'; // Import Maintenance Screen
+import EnvSetup from './components/EnvSetup'; 
+import MaintenanceScreen from './components/MaintenanceScreen';
 import { playClick, playConfirm, toggleSound } from './utils/sound';
 import { useGameLogic } from './hooks/useGameLogic';
 import { sdk } from '@farcaster/frame-sdk';
-import { supabase, isSupabaseConfigured } from './lib/supabase'; // Import check flag
+import { supabase, isSupabaseConfigured } from './lib/supabase';
+import { gsap } from 'gsap';
 
 // Views
 import PartyView from './components/views/PartyView';
@@ -25,10 +26,8 @@ import LightpaperView from './components/views/LightpaperView';
 const ADMIN_FIDS = [406233];
 
 const App: React.FC = () => {
-  // 0. Configuration Check - Return early if keys are missing
-  if (!isSupabaseConfigured) {
-    return <EnvSetup />;
-  }
+  // Setup State for Manual Reset
+  const [showSetup, setShowSetup] = useState(false);
 
   const [currentView, setCurrentView] = useState<View>(View.HOME);
   const [isSoundOn, setIsSoundOn] = useState(false);
@@ -40,8 +39,11 @@ const App: React.FC = () => {
   
   // Maintenance State
   const [isMaintenance, setIsMaintenance] = useState(false);
-  const [isMaintenanceTest, setIsMaintenanceTest] = useState(false); // For Admin Testing
+  const [isMaintenanceTest, setIsMaintenanceTest] = useState(false); 
   const [isConnectionChecked, setIsConnectionChecked] = useState(false);
+
+  // GSAP Ref for view transitions
+  const contentRef = useRef<HTMLDivElement>(null);
 
   const { gameState, farcasterUser, onChainBalanceRaw, isBlocked, ui, actions } = useGameLogic();
 
@@ -53,16 +55,27 @@ const App: React.FC = () => {
     }
   }, [farcasterUser]);
 
+  // View Transition Animation
+  useLayoutEffect(() => {
+    if (contentRef.current) {
+        gsap.fromTo(contentRef.current, 
+            { opacity: 0, y: 10, scale: 0.98 },
+            { opacity: 1, y: 0, scale: 1, duration: 0.3, ease: "power2.out" }
+        );
+    }
+  }, [currentView]);
+
   // Supabase Connection Check
   useEffect(() => {
+    // Skip check if we are in setup mode or not configured properly (wait for setup)
+    if (!isSupabaseConfigured && !showSetup) return;
+
     const checkSupabase = async () => {
        try {
-         // タイムアウトを設定 (5秒)
          const timeoutPromise = new Promise((_, reject) => 
            setTimeout(() => reject(new Error('Connection timeout')), 5000)
          );
          
-         // 単純なHEADリクエストで接続確認
          const queryPromise = supabase.from('quest_hero').select('count', { count: 'exact', head: true });
          
          const { error } = await Promise.race([queryPromise, timeoutPromise]) as any;
@@ -79,9 +92,9 @@ const App: React.FC = () => {
     };
     
     checkSupabase();
-  }, []);
+  }, [showSetup]);
 
-  // グローバルエラーハンドリング
+  // Global Error Handling
   useEffect(() => {
     const handleError = (event: ErrorEvent) => {
       setAppError(event.message || "Unknown error occurred");
@@ -99,7 +112,7 @@ const App: React.FC = () => {
     };
   }, []);
 
-  // Farcaster Frame v2 Loading Optimization
+  // Farcaster Frame v2 Loading
   useEffect(() => {
     const safetyTimer = setTimeout(() => {
       if (!isSDKLoaded) {
@@ -167,12 +180,17 @@ const App: React.FC = () => {
     if (newState) playConfirm();
   };
 
-  // Maintenance: Reset Settings Handler
   const handleResetSettings = () => {
     if (window.confirm("接続設定をリセットして、セットアップ画面に戻りますか？\n(入力されたAPIキー情報は削除されます)")) {
       localStorage.removeItem('VITE_SUPABASE_URL');
       localStorage.removeItem('VITE_SUPABASE_ANON_KEY');
-      window.location.reload();
+      
+      // Instead of reloading immediately which might loop if ENV key is bad,
+      // we clear maintenance mode and force showing the setup screen.
+      setIsMaintenance(false);
+      setIsMaintenanceTest(false);
+      setAppError(null);
+      setShowSetup(true);
     }
   };
 
@@ -276,7 +294,14 @@ const App: React.FC = () => {
     }
   };
 
-  // 1. Loading State (Connection Check)
+  // --- Render Logic with Priority ---
+
+  // 0. Setup Mode (Must be checked first, but after hooks)
+  if (!isSupabaseConfigured || showSetup) {
+    return <EnvSetup />;
+  }
+
+  // 1. Loading State
   if (!isConnectionChecked) {
      return (
        <div className="fixed inset-0 flex items-center justify-center bg-slate-950 text-white z-[9999]">
@@ -288,7 +313,7 @@ const App: React.FC = () => {
      );
   }
 
-  // 2. Maintenance Mode OR Blocked User OR Test Mode
+  // 2. Maintenance / Blocked / Test
   if (isMaintenance || isBlocked || isMaintenanceTest) {
     return (
       <MaintenanceScreen 
@@ -333,12 +358,13 @@ const App: React.FC = () => {
     <div className="fixed inset-0 flex flex-col max-w-4xl mx-auto overflow-hidden bg-slate-950 border-x border-slate-800 shadow-2xl">
       <main className="flex-1 relative overflow-hidden">
         <MiningBackground />
-        <div className="relative z-10 h-full">
+        {/* Animated View Container */}
+        <div ref={contentRef} className="relative z-10 h-full">
           {renderContent()}
         </div>
       </main>
 
-      {/* Debug Console: Enabled on error or when toggled by admin */}
+      {/* Debug Console */}
       <DebugConsole isEnabled={appError !== null || isDebugMode} />
 
       {/* Notification Toast */}
@@ -367,7 +393,7 @@ const App: React.FC = () => {
           user={farcasterUser}
           balance={onChainBalanceRaw}
           onClose={() => setShowAccountModal(false)}
-          onTestMaintenance={() => setIsMaintenanceTest(true)} // Pass test trigger
+          onTestMaintenance={() => setIsMaintenanceTest(true)}
         />
       )}
 

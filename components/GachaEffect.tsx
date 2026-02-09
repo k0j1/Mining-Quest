@@ -1,32 +1,191 @@
-import React, { useEffect, useState } from 'react';
+
+import React, { useEffect, useState, useRef, useLayoutEffect } from 'react';
 import { playGachaReveal, playClick } from '../utils/sound';
+import EquipmentIcon from './EquipmentIcon';
+import { gsap } from 'gsap';
 
 interface GachaEffectProps {
   result: { type: 'Hero' | 'Equipment'; data: any[] } | null;
   onClose: () => void;
 }
 
+const CONFETTI_COLORS = ['#f59e0b', '#ef4444', '#3b82f6', '#10b981', '#8b5cf6', '#ec4899', '#ffffff'];
+
 const GachaEffect: React.FC<GachaEffectProps> = ({ result, onClose }) => {
-  const [phase, setPhase] = useState<'charging' | 'burst' | 'reveal'>('charging');
+  const [phase, setPhase] = useState<'charging' | 'reveal'>('charging');
   const [currentIndex, setCurrentIndex] = useState(0);
 
-  useEffect(() => {
-    const t1 = setTimeout(() => setPhase('burst'), 1200);
-    const t2 = setTimeout(() => {
-      setPhase('reveal');
-      playGachaReveal(); // Play sound on reveal
-    }, 1500);
-    return () => {
-      clearTimeout(t1);
-      clearTimeout(t2);
-    };
+  // Refs for GSAP
+  const containerRef = useRef<HTMLDivElement>(null);
+  const orbRef = useRef<HTMLDivElement>(null);
+  const flashRef = useRef<HTMLDivElement>(null);
+  const cardContainerRef = useRef<HTMLDivElement>(null);
+  const burstContainerRef = useRef<HTMLDivElement>(null);
+
+  // Initial Sequence: Charge -> Burst -> Reveal
+  useLayoutEffect(() => {
+    const ctx = gsap.context(() => {
+      const tl = gsap.timeline({
+        onComplete: () => {
+          setPhase('reveal');
+          playGachaReveal();
+        }
+      });
+
+      // 1. Charging Animation
+      if (orbRef.current) {
+        tl.to(orbRef.current, {
+          scale: 1.5,
+          duration: 1.0,
+          ease: "power2.in",
+          boxShadow: "0 0 50px 20px rgba(255,255,255,0.8)"
+        })
+        .to(orbRef.current, {
+          scale: 0.1,
+          opacity: 0,
+          duration: 0.2,
+          ease: "back.in(2)",
+          onStart: () => {
+             // Shake effect just before burst
+             gsap.to(containerRef.current, { x: "+=5", yoyo: true, repeat: 5, duration: 0.05 });
+          }
+        });
+      }
+
+      // 2. Flash (Transition)
+      if (flashRef.current) {
+        tl.to(flashRef.current, {
+          opacity: 1,
+          duration: 0.1,
+          ease: "power1.out"
+        }, "-=0.1"); // Overlap slightly with orb shrink
+      }
+
+    }, containerRef);
+
+    return () => ctx.revert();
   }, []);
 
-  useEffect(() => {
-    if (phase === 'reveal') {
-       playGachaReveal();
-    }
-  }, [currentIndex]);
+  // Effect Triggered on Reveal Phase (and subsequent items)
+  useLayoutEffect(() => {
+    if (phase !== 'reveal' || !result) return;
+
+    const ctx = gsap.context(() => {
+      const tl = gsap.timeline();
+
+      // 1. Flash Fade Out
+      if (flashRef.current) {
+        tl.to(flashRef.current, {
+          opacity: 0,
+          duration: 0.5,
+          ease: "power2.out"
+        });
+      }
+
+      // 2. Card Reveal (Pop up)
+      if (cardContainerRef.current) {
+        // Reset state first
+        gsap.set(cardContainerRef.current, { scale: 0, y: 100, opacity: 0, rotation: 0 });
+        
+        const isSpecial = isSpecialPull || isHighRarity;
+
+        tl.to(cardContainerRef.current, {
+          scale: 1,
+          y: 0,
+          opacity: 1,
+          duration: 0.6,
+          ease: "elastic.out(1, 0.6)",
+          onStart: () => playGachaReveal()
+        }, "-=0.3");
+
+        // Special Shake
+        if (isSpecial) {
+           tl.to(cardContainerRef.current, {
+             rotation: 5,
+             yoyo: true,
+             repeat: 3,
+             duration: 0.1,
+             ease: "sine.inOut"
+           }, "-=0.2");
+           tl.to(cardContainerRef.current, { rotation: 0, duration: 0.1 });
+        }
+      }
+
+      // 3. Burst / Firework Effect (Cracker)
+      if (burstContainerRef.current) {
+        // Clear previous burst
+        burstContainerRef.current.innerHTML = '';
+        
+        const burstCount = 40;
+        for (let i = 0; i < burstCount; i++) {
+            const angle = (i / burstCount) * Math.PI * 2;
+            const velocity = 200 + Math.random() * 300;
+            const p = document.createElement('div');
+            p.className = 'absolute w-1 h-8 bg-white rounded-full origin-bottom';
+            // Set styles manually for performance or use classes
+            p.style.backgroundColor = isHighRarity ? '#fbbf24' : '#fff';
+            p.style.top = '50%';
+            p.style.left = '50%';
+            
+            burstContainerRef.current.appendChild(p);
+
+            gsap.set(p, { 
+                rotation: angle * (180/Math.PI) + 90,
+                scaleY: 0,
+                opacity: 1
+            });
+            
+            gsap.to(p, {
+                x: Math.cos(angle) * velocity,
+                y: Math.sin(angle) * velocity,
+                scaleY: 1,
+                opacity: 0,
+                duration: 0.8 + Math.random() * 0.4,
+                ease: "power3.out",
+                onComplete: () => p.remove()
+            });
+        }
+      }
+
+      // 4. Confetti (Paper Snowstorm)
+      if (burstContainerRef.current) {
+         const confettiCount = isSpecialPull || isHighRarity ? 80 : 40;
+         
+         for (let i = 0; i < confettiCount; i++) {
+            const c = document.createElement('div');
+            const color = CONFETTI_COLORS[Math.floor(Math.random() * CONFETTI_COLORS.length)];
+            const size = 8 + Math.random() * 8;
+            
+            c.style.position = 'absolute';
+            c.style.width = `${size}px`;
+            c.style.height = `${size * 0.6}px`;
+            c.style.backgroundColor = color;
+            c.style.top = '-10%'; // Start above screen
+            c.style.left = `${Math.random() * 100}%`;
+            c.style.opacity = '0';
+            
+            burstContainerRef.current.appendChild(c);
+
+            // Physics-like fall
+            gsap.to(c, {
+                y: window.innerHeight + 100,
+                x: `+=${(Math.random() - 0.5) * 200}`, // Drift
+                rotation: Math.random() * 720,
+                rotationX: Math.random() * 720,
+                opacity: 1,
+                duration: 2 + Math.random() * 3,
+                delay: Math.random() * 0.5, // Stagger slightly
+                ease: "power1.out", // Start fast (explosion) then linear gravity? or just linear gravity
+                onStart: () => { gsap.set(c, { opacity: 1 }) },
+                onComplete: () => c.remove()
+            });
+         }
+      }
+
+    }, containerRef);
+
+    return () => ctx.revert();
+  }, [phase, currentIndex]); // Re-run on phase change or next item
 
   const handleNext = () => {
     if (!result) return;
@@ -53,62 +212,49 @@ const GachaEffect: React.FC<GachaEffectProps> = ({ result, onClose }) => {
   
   const isMulti = result.data.length > 1;
   const isLastItem = currentIndex === result.data.length - 1;
-  // It is the special guaranteed pull if it is the last item of a multi-pull
-  const isSpecialPull = isMulti && isLastItem;
+  const isSpecialPull = isMulti && isLastItem; // Guaranteed slot logic
+  const isHighRarity = ['R', 'E', 'L'].includes(rarity);
 
-  // Use rarity color for card/particles, but allow background to be rainbow if special
+  // Use rarity color for card/particles
   const color = rarityColors[rarity] || '#94a3b8';
-  
+
   return (
-    <div className="fixed inset-0 z-[500] flex items-center justify-center bg-slate-950 overflow-hidden">
-      {/* 1. Background God Rays - Enhanced for Special Pull */}
+    <div ref={containerRef} className="fixed inset-0 z-[500] flex items-center justify-center bg-slate-950 overflow-hidden">
+      
+      {/* 1. Background Effects (Rotating Rays) - Visible only in Reveal */}
       <div className={`absolute inset-0 flex items-center justify-center transition-opacity duration-1000 ${phase === 'reveal' ? 'opacity-60' : 'opacity-0'}`}>
         <div 
-          className="w-[450vmax] h-[450vmax] animate-spin-ultra-slow opacity-30 flex-shrink-0" 
+          className="w-[200vmax] h-[200vmax] opacity-30 flex-shrink-0 origin-center" 
+          ref={(el) => {
+              if (el && phase === 'reveal') {
+                  gsap.to(el, { rotation: 360, duration: 60, repeat: -1, ease: "linear" });
+              }
+          }}
           style={{ 
             background: isSpecialPull 
-              ? `conic-gradient(from 0deg, #f59e0b, #ef4444, #8b5cf6, #3b82f6, #10b981, #f59e0b)` // Rainbow for special background
+              ? `conic-gradient(from 0deg, #f59e0b, #ef4444, #8b5cf6, #3b82f6, #10b981, #f59e0b)`
               : `conic-gradient(transparent 0deg, ${color} 20deg, transparent 40deg, ${color} 60deg, transparent 80deg, ${color} 100deg, transparent 120deg, ${color} 140deg, transparent 160deg, ${color} 180deg, transparent 200deg, ${color} 220deg, transparent 240deg, ${color} 260deg, transparent 280deg, ${color} 300deg, transparent 320deg, ${color} 340deg, transparent 360deg)` 
           }}
         />
       </div>
 
-      {/* 2. Floating Particles - Intense for Special */}
-      {phase === 'reveal' && (
-        <div className="absolute inset-0 pointer-events-none">
-          {[...Array(isSpecialPull ? 60 : 30)].map((_, i) => (
-            <div
-              key={i}
-              className={`absolute rounded-full animate-float-particle`}
-              style={{
-                backgroundColor: color,
-                boxShadow: isSpecialPull ? `0 0 10px ${color}` : 'none',
-                width: isSpecialPull ? Math.random() * 6 + 2 + 'px' : '4px',
-                height: isSpecialPull ? Math.random() * 6 + 2 + 'px' : '4px',
-                left: `${Math.random() * 100}%`,
-                top: `${Math.random() * 100}%`,
-                animationDelay: `${Math.random() * 5}s`,
-                opacity: Math.random() * 0.5 + 0.2
-              }}
-            />
-          ))}
-        </div>
-      )}
+      {/* 2. Burst & Confetti Container (Pointer Events None) */}
+      <div ref={burstContainerRef} className="absolute inset-0 pointer-events-none z-[100] overflow-hidden">
+        {/* GSAP will inject particles here */}
+      </div>
 
-      {/* 3. Charging Phase: Pulsing Orb */}
+      {/* 3. Charging Orb (Centered) */}
       {phase === 'charging' && (
-        <div className="relative">
-          <div className="w-32 h-32 rounded-full bg-white animate-gacha-charge shadow-[0_0_100px_rgba(255,255,255,1)]" />
-          <div className="absolute inset-0 w-32 h-32 rounded-full border-8 border-white animate-ping opacity-50" />
-        </div>
+        <div ref={orbRef} className="relative z-50 w-24 h-24 rounded-full bg-white shadow-[0_0_30px_rgba(255,255,255,0.8)]" />
       )}
 
-      {/* 4. Burst Phase: White Flash */}
-      <div className={`absolute inset-0 bg-white transition-opacity duration-300 pointer-events-none z-[110] ${phase === 'burst' ? 'opacity-100' : 'opacity-0'}`} />
+      {/* 4. White Flash Overlay */}
+      <div ref={flashRef} className="absolute inset-0 bg-white opacity-0 z-[110] pointer-events-none" />
 
-      {/* 5. Reveal Phase: Card Animation */}
+      {/* 5. Reveal Card */}
       {phase === 'reveal' && (
-        <div className={`relative flex flex-col items-center justify-center animate-card-reveal z-50 w-full h-full pb-10 ${isSpecialPull ? 'animate-shake-entry' : ''}`} key={currentIndex}>
+        <div className="relative z-[120] w-full h-full flex flex-col items-center justify-center pb-10">
+           
            {/* Multi-pull Indicator */}
            {result.data.length > 1 && (
              <div className="absolute top-10 bg-slate-800/80 text-white px-4 py-1 rounded-full text-xs font-bold border border-slate-600 backdrop-blur-sm z-50">
@@ -116,50 +262,34 @@ const GachaEffect: React.FC<GachaEffectProps> = ({ result, onClose }) => {
              </div>
            )}
 
-          {/* Card Aura Bloom */}
-          <div 
-            className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 -z-10 w-[200vmax] h-[200vmax] opacity-80 animate-pulse-slow pointer-events-none ${isSpecialPull ? 'mix-blend-screen' : ''}`}
-            style={{ 
-              background: `radial-gradient(circle, ${color} 0%, ${color}22 20%, transparent 50%)`
-            }} 
-          />
-          
-          <div 
-            className={`w-60 aspect-[3/4.5] relative group mx-auto transition-all duration-300 ${isSpecialPull ? 'scale-105' : ''}`}
-          >
-            {/* Special Pull Animated Border & Glow */}
-            {isSpecialPull && (
-              <>
-                 {/* Glow Layer (Blurred) */}
-                 <div className="absolute -inset-6 rounded-[2.5rem] z-0 blur-xl opacity-80 overflow-hidden pointer-events-none">
-                     <div className="absolute top-1/2 left-1/2 w-[200%] h-[200%] -translate-x-1/2 -translate-y-1/2 animate-spin-slow-gradient"
-                          style={{ background: `conic-gradient(from 0deg, transparent 60%, ${color})` }}
-                     />
-                 </div>
-                 {/* Border Layer (Sharp) */}
-                 <div className="absolute -inset-[5px] rounded-[2.3rem] z-0 overflow-hidden bg-slate-800 pointer-events-none">
-                     <div className="absolute top-1/2 left-1/2 w-[200%] h-[200%] -translate-x-1/2 -translate-y-1/2 animate-spin-slow-gradient"
-                          style={{ background: `conic-gradient(from 0deg, transparent 60%, ${color})` }}
-                     />
-                 </div>
-              </>
+          <div ref={cardContainerRef} className="w-60 aspect-[3/4.5] relative">
+            
+            {/* Glow for high rarity */}
+            {(isSpecialPull || isHighRarity) && (
+                 <div className="absolute -inset-10 bg-white/20 blur-2xl rounded-full z-[-1]" 
+                      style={{ backgroundColor: color }} 
+                 />
             )}
 
             <div 
-              className={`absolute inset-0 rounded-[2rem] overflow-hidden glass-panel flex flex-col z-10 transition-all duration-300`}
+              className={`absolute inset-0 rounded-[2rem] overflow-hidden glass-panel flex flex-col z-10`}
               style={{ 
-                borderWidth: isSpecialPull ? '0px' : '6px',
+                borderWidth: (isSpecialPull || isHighRarity) ? '0px' : '6px',
                 borderColor: color, 
-                boxShadow: isSpecialPull ? 'none' : `0 0 60px ${color}66`,
-                backgroundColor: isSpecialPull ? '#0f172a' : undefined
+                boxShadow: `0 0 30px ${color}44`,
+                backgroundColor: (isSpecialPull || isHighRarity) ? '#0f172a' : undefined
               }}
             >
-              {/* Inner thin border for definition on special pull */}
-              {isSpecialPull && <div className="absolute inset-0 border border-white/20 rounded-[2rem] z-50 pointer-events-none" />}
+              {/* Inner Border */}
+              {(isSpecialPull || isHighRarity) && <div className="absolute inset-0 border border-white/30 rounded-[2rem] z-50 pointer-events-none" />}
 
-              {/* Holographic Glint */}
-              <div className="absolute inset-0 z-20 pointer-events-none overflow-hidden">
-                <div className={`absolute top-[-100%] left-[-100%] w-[300%] h-[300%] bg-gradient-to-tr from-transparent via-white/20 to-transparent rotate-[35deg] animate-shimmer ${isSpecialPull ? 'via-white/50' : ''}`} />
+              {/* Holographic Glint (CSS Animation is fine for simple shimmer, or convert to GSAP) */}
+              <div className="absolute inset-0 z-20 pointer-events-none overflow-hidden mix-blend-overlay opacity-50">
+                 <div className="w-[200%] h-[200%] absolute top-[-50%] left-[-50%] bg-gradient-to-tr from-transparent via-white/30 to-transparent rotate-45"
+                      ref={el => {
+                          if(el) gsap.to(el, { x: 200, y: 200, duration: 2, repeat: -1, ease: "linear" });
+                      }}
+                 />
               </div>
 
               {result.type === 'Hero' ? (
@@ -183,8 +313,12 @@ const GachaEffect: React.FC<GachaEffectProps> = ({ result, onClose }) => {
                 </>
               ) : (
                 <div className="w-full h-full flex flex-col items-center justify-center p-6 space-y-4 bg-slate-900/40">
-                  <div className="text-7xl drop-shadow-[0_0_20px_rgba(255,255,255,0.3)]">
-                    {currentItem.type === 'Pickaxe' ? '⛏️' : currentItem.type === 'Helmet' ? '🪖' : '👢'}
+                  <div className="drop-shadow-[0_0_20px_rgba(255,255,255,0.3)]">
+                    <EquipmentIcon 
+                        type={currentItem.type} 
+                        rarity={currentItem.rarity} 
+                        size="140px" 
+                    />
                   </div>
                   <div className="text-center">
                     <div className="inline-block px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-widest mb-3 border border-white/20" style={{ backgroundColor: `${color}cc`, color: '#fff' }}>
@@ -207,87 +341,13 @@ const GachaEffect: React.FC<GachaEffectProps> = ({ result, onClose }) => {
 
           <button 
             onClick={handleNext}
-            className={`mt-6 px-12 py-3 bg-white text-slate-950 font-black rounded-xl hover:scale-110 active:scale-95 transition-all shadow-[0_0_30px_rgba(255,255,255,0.4)] border-b-4 border-slate-300 z-50 ${isSpecialPull ? 'ring-4 ring-opacity-50' : ''}`}
+            className={`mt-8 px-12 py-3 bg-white text-slate-950 font-black rounded-xl hover:scale-110 active:scale-95 transition-all shadow-[0_0_30px_rgba(255,255,255,0.4)] border-b-4 border-slate-300 z-50 ${isSpecialPull ? 'ring-4 ring-opacity-50' : ''}`}
             style={isSpecialPull ? { '--tw-ring-color': color } as React.CSSProperties : undefined}
           >
             {isLastItem ? '素晴らしい！' : '次へ'}
           </button>
         </div>
       )}
-
-      <style>{`
-        @keyframes spin-ultra-slow {
-          from { transform: rotate(0deg); }
-          to { transform: rotate(360deg); }
-        }
-        @keyframes spin-gradient {
-          0% { transform: translate(-50%, -50%) rotate(0deg); }
-          100% { transform: translate(-50%, -50%) rotate(360deg); }
-        }
-        @keyframes float-particle {
-          0% { transform: translateY(0) scale(0); opacity: 0; }
-          20% { opacity: 1; }
-          100% { transform: translateY(-100px) scale(1.5); opacity: 0; }
-        }
-        @keyframes shimmer {
-          0% { transform: translate(-50%, -50%) rotate(35deg); }
-          100% { transform: translate(50%, 50%) rotate(35deg); }
-        }
-        @keyframes gacha-charge {
-          0% { transform: scale(0.5); filter: blur(10px); }
-          50% { transform: scale(1.2); filter: blur(0px); }
-          100% { transform: scale(1.8); filter: blur(2px); }
-        }
-        @keyframes card-reveal {
-          0% { transform: scale(0.5) translateY(100px); opacity: 0; filter: brightness(3); }
-          100% { transform: scale(1) translateY(0); opacity: 1; filter: brightness(1); }
-        }
-        @keyframes pulse-slow {
-          0%, 100% { opacity: 0.5; transform: translate(-50%, -50%) scale(1); }
-          50% { opacity: 0.8; transform: translate(-50%, -50%) scale(1.05); }
-        }
-        @keyframes bounce-in {
-            0% { transform: scale(0) rotate(-10deg); opacity: 0; }
-            50% { transform: scale(1.2) rotate(5deg); opacity: 1; }
-            100% { transform: scale(1) rotate(-2deg); opacity: 1; }
-        }
-        @keyframes shake-entry {
-            0% { transform: translate(0, 0) rotate(0); }
-            10% { transform: translate(-5px, -5px) rotate(-1deg); }
-            20% { transform: translate(5px, 5px) rotate(1deg); }
-            30% { transform: translate(-5px, 5px) rotate(0); }
-            40% { transform: translate(5px, -5px) rotate(1deg); }
-            50% { transform: translate(0, 0) rotate(0); }
-        }
-
-        .animate-spin-ultra-slow {
-          animation: spin-ultra-slow 30s linear infinite;
-        }
-        .animate-spin-slow-gradient {
-          animation: spin-gradient 3s linear infinite;
-        }
-        .animate-float-particle {
-          animation: float-particle 4s ease-out infinite;
-        }
-        .animate-shimmer {
-          animation: shimmer 2s linear infinite;
-        }
-        .animate-gacha-charge {
-          animation: gacha-charge 1.2s ease-in-out forwards;
-        }
-        .animate-card-reveal {
-          animation: card-reveal 0.4s cubic-bezier(0.17, 0.67, 0.83, 0.67) forwards;
-        }
-        .animate-pulse-slow {
-          animation: pulse-slow 4s ease-in-out infinite;
-        }
-        .animate-bounce-in {
-            animation: bounce-in 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards;
-        }
-        .animate-shake-entry {
-            animation: shake-entry 0.5s ease-in-out forwards;
-        }
-      `}</style>
     </div>
   );
 };

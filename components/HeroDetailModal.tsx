@@ -1,7 +1,9 @@
 
-import React from 'react';
+import React, { useRef, useLayoutEffect } from 'react';
 import { Hero, Equipment } from '../types';
 import { playClick } from '../utils/sound';
+import EquipmentIcon from './EquipmentIcon';
+import { gsap } from 'gsap';
 
 interface HeroDetailModalProps {
   hero: Hero;
@@ -10,7 +12,18 @@ interface HeroDetailModalProps {
 }
 
 const HeroDetailModal: React.FC<HeroDetailModalProps> = ({ hero, equipment, onClose }) => {
-  
+  const modalRef = useRef<HTMLDivElement>(null);
+
+  useLayoutEffect(() => {
+    if (!modalRef.current) return;
+    
+    // Pop in animation
+    gsap.fromTo(modalRef.current,
+        { scale: 0.8, opacity: 0, rotationY: 15 },
+        { scale: 1, opacity: 1, rotationY: 0, duration: 0.4, ease: "back.out(1.5)" }
+    );
+  }, []);
+
   // Find equipped items
   const pickaxe = hero.equipmentIds[0] ? equipment.find(e => e.id === hero.equipmentIds[0]) : null;
   const helmet = hero.equipmentIds[1] ? equipment.find(e => e.id === hero.equipmentIds[1]) : null;
@@ -42,10 +55,13 @@ const HeroDetailModal: React.FC<HeroDetailModalProps> = ({ hero, equipment, onCl
 
   return (
     // pb-28 added to lift the modal above the bottom navigation bar
-    <div className="fixed inset-0 z-[1200] flex items-center justify-center bg-slate-950/90 backdrop-blur-md p-4 pb-28 animate-fade-in">
+    <div className="fixed inset-0 z-[1200] flex items-center justify-center bg-slate-950/90 backdrop-blur-md p-4 pb-28">
       
       {/* Card Container - Reduced width (max-w-[320px]) and constraint height */}
-      <div className={`w-full max-w-[320px] relative flex flex-col max-h-[65vh] bg-slate-900 rounded-[2rem] border-2 overflow-hidden shadow-2xl ${rarityColors[hero.rarity].split(' ')[1]} ${rarityGlow[hero.rarity]}`}>
+      <div 
+        ref={modalRef}
+        className={`w-full max-w-[320px] relative flex flex-col max-h-[65vh] bg-slate-900 rounded-[2rem] border-2 overflow-hidden shadow-2xl ${rarityColors[hero.rarity].split(' ')[1]} ${rarityGlow[hero.rarity]}`}
+      >
             
             <button 
                 onClick={() => { playClick(); onClose(); }}
@@ -121,7 +137,9 @@ const HeroDetailModal: React.FC<HeroDetailModalProps> = ({ hero, equipment, onCl
                     <div className="grid grid-cols-3 gap-1.5">
                         {/* Pickaxe */}
                         <div className={`p-1.5 rounded-lg border flex flex-col items-center text-center ${pickaxe ? 'bg-slate-800 border-slate-600' : 'bg-slate-900/50 border-slate-800 border-dashed'}`}>
-                            <span className="text-base mb-0.5">⛏️</span>
+                            <div className="mb-1">
+                               <EquipmentIcon type="Pickaxe" rarity={pickaxe?.rarity} size="1.2em" className={!pickaxe ? 'opacity-30 grayscale' : ''} />
+                            </div>
                             {pickaxe ? (
                                 <>
                                     <span className="text-[8px] text-white font-bold truncate w-full">{pickaxe.name}</span>
@@ -132,7 +150,9 @@ const HeroDetailModal: React.FC<HeroDetailModalProps> = ({ hero, equipment, onCl
 
                         {/* Helmet */}
                         <div className={`p-1.5 rounded-lg border flex flex-col items-center text-center ${helmet ? 'bg-slate-800 border-slate-600' : 'bg-slate-900/50 border-slate-800 border-dashed'}`}>
-                            <span className="text-base mb-0.5">🪖</span>
+                            <div className="mb-1">
+                               <EquipmentIcon type="Helmet" rarity={helmet?.rarity} size="1.2em" className={!helmet ? 'opacity-30 grayscale' : ''} />
+                            </div>
                             {helmet ? (
                                 <>
                                     <span className="text-[8px] text-white font-bold truncate w-full">{helmet.name}</span>
@@ -143,7 +163,9 @@ const HeroDetailModal: React.FC<HeroDetailModalProps> = ({ hero, equipment, onCl
 
                         {/* Boots */}
                         <div className={`p-1.5 rounded-lg border flex flex-col items-center text-center ${boots ? 'bg-slate-800 border-slate-600' : 'bg-slate-900/50 border-slate-800 border-dashed'}`}>
-                            <span className="text-base mb-0.5">👢</span>
+                            <div className="mb-1">
+                               <EquipmentIcon type="Boots" rarity={boots?.rarity} size="1.2em" className={!boots ? 'opacity-30 grayscale' : ''} />
+                            </div>
                             {boots ? (
                                 <>
                                     <span className="text-[8px] text-white font-bold truncate w-full">{boots.name}</span>
@@ -158,14 +180,6 @@ const HeroDetailModal: React.FC<HeroDetailModalProps> = ({ hero, equipment, onCl
                 <div className="h-1"></div>
             </div>
       </div>
-      
-      <style>{`
-        @keyframes fade-in {
-          from { opacity: 0; transform: scale(0.95); }
-          to { opacity: 1; transform: scale(1); }
-        }
-        .animate-fade-in { animation: fade-in 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
-      `}</style>
     </div>
   );
 };
