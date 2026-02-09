@@ -1,6 +1,7 @@
 
-import React from 'react';
+import React, { useRef, useLayoutEffect } from 'react';
 import { QuestRank } from '../types';
+import gsap from 'gsap';
 
 interface EquipmentIconProps {
   type: 'Pickaxe' | 'Helmet' | 'Boots';
@@ -15,8 +16,81 @@ const EquipmentIcon: React.FC<EquipmentIconProps> = ({
   size = '1em',
   className = '' 
 }) => {
+  const svgRef = useRef<SVGSVGElement>(null);
+  
   // Generate a semi-unique ID for defs to prevent conflicts
   const idBase = `eq-${type}-${rarity}-${Math.random().toString(36).substr(2, 5)}`;
+
+  // GSAP Animation Logic
+  useLayoutEffect(() => {
+    if (!svgRef.current) return;
+
+    const ctx = gsap.context(() => {
+      // 1. Floating Effect REMOVED to fix position shifting
+
+      // 2. Sunburst Rotation (L)
+      const sunburstTarget = svgRef.current?.querySelector('.anim-spin');
+      if (sunburstTarget) {
+        gsap.to(sunburstTarget, {
+          rotation: 360,
+          transformOrigin: "center", // Fixed: Use center of bounding box
+          duration: 20,
+          ease: "linear",
+          repeat: -1
+        });
+      }
+
+      // 3. Pulse (E & L)
+      const pulseTarget = svgRef.current?.querySelector('.anim-pulse');
+      if (pulseTarget) {
+        gsap.to(pulseTarget, {
+          opacity: 0.2,
+          scale: 0.9,
+          transformOrigin: "center", // Fixed: Use center of bounding box
+          duration: 1.5,
+          ease: "sine.inOut",
+          yoyo: true,
+          repeat: -1
+        });
+      }
+
+      // 4. Shine (R, E, L) - Moves the rect across
+      const shineTarget = svgRef.current?.querySelector('.anim-shine-bar');
+      if (shineTarget) {
+        gsap.fromTo(shineTarget, 
+          { x: '-150%' },
+          { 
+            x: '150%', 
+            duration: 2, 
+            ease: "power2.inOut", 
+            repeat: -1, 
+            repeatDelay: 3 
+          }
+        );
+      }
+
+      // 5. Sparkles (R, E, L) - Added R to sparkles
+      const sparkles = svgRef.current?.querySelectorAll('.anim-sparkle');
+      if (sparkles && sparkles.length > 0) {
+        gsap.to(sparkles, {
+          opacity: 1,
+          scale: 1.2,
+          transformOrigin: "center",
+          duration: 0.8,
+          ease: "sine.inOut",
+          yoyo: true,
+          repeat: -1,
+          stagger: {
+            each: 0.5,
+            from: "random"
+          }
+        });
+      }
+
+    }, svgRef);
+
+    return () => ctx.revert();
+  }, [rarity, type]); // Re-run if props change
 
   // Configuration based on Rarity
   const config = {
@@ -25,7 +99,6 @@ const EquipmentIcon: React.FC<EquipmentIconProps> = ({
       color2: '#64748b', // Slate 500
       stroke: '#475569',
       filter: null,
-      floating: false,
       shine: false
     },
     UC: {
@@ -33,23 +106,20 @@ const EquipmentIcon: React.FC<EquipmentIconProps> = ({
       color2: '#059669', // Emerald 600
       stroke: '#065f46',
       filter: null, // UC is simple
-      floating: false,
       shine: false
     },
     R: {
       color1: '#60a5fa', // Blue 400
       color2: '#2563eb', // Blue 600
       stroke: '#1e40af',
-      filter: null, // Remove global glow to focus on the shine
-      floating: false, // Remove floating
-      shine: true // Enable partial shine
+      filter: null, 
+      shine: true // R gets Shine
     },
     E: {
       color1: '#d8b4fe', // Purple 300 (Lighter for glow)
       color2: '#9333ea', // Purple 600
       stroke: '#581c87',
       filter: `url(#glow-heavy-${idBase})`,
-      floating: true,
       shine: true,
       pulse: true
     },
@@ -58,13 +128,15 @@ const EquipmentIcon: React.FC<EquipmentIconProps> = ({
       color2: '#b45309', // Amber 700
       stroke: '#78350f',
       filter: `url(#glow-intense-${idBase})`,
-      floating: true,
       shine: true,
       godray: true
     }
   };
 
   const c = config[rarity as QuestRank] || config.C;
+  
+  // Determine if sparkles should be shown (R, E, L)
+  const showSparkles = ['R', 'E', 'L'].includes(rarity as string);
 
   // Render shapes
   // isMask=true: Renders white silhouette for masking.
@@ -140,6 +212,7 @@ const EquipmentIcon: React.FC<EquipmentIconProps> = ({
 
   return (
     <svg 
+      ref={svgRef}
       width={size} 
       height={size} 
       viewBox="0 0 24 24" 
@@ -194,84 +267,52 @@ const EquipmentIcon: React.FC<EquipmentIconProps> = ({
 
       {/* Legendary: Rotating Sunburst */}
       {rarity === 'L' && (
-        <g transform="translate(12, 12)">
-           <g opacity="0.6">
-             <animateTransform attributeName="transform" type="rotate" from="0" to="360" dur="20s" repeatCount="indefinite" />
-             {[0, 45, 90, 135, 180, 225, 270, 315].map((deg, i) => (
-                <path key={i} d="M0 0 L2 -12 L0 -16 L-2 -12 Z" fill={c.color1} transform={`rotate(${deg})`} />
-             ))}
-           </g>
-           <circle r="10" fill={`url(#grad-${idBase})`} opacity="0.2" filter={`url(#glow-intense-${idBase})`}>
-              <animate attributeName="r" values="8;11;8" dur="3s" repeatCount="indefinite" />
-              <animate attributeName="opacity" values="0.1;0.3;0.1" dur="3s" repeatCount="indefinite" />
-           </circle>
-        </g>
+        <>
+          <g transform="translate(12, 12)">
+             <g opacity="0.6" className="anim-spin">
+               {[0, 45, 90, 135, 180, 225, 270, 315].map((deg, i) => (
+                  <path key={i} d="M0 0 L2 -12 L0 -16 L-2 -12 Z" fill={c.color1} transform={`rotate(${deg})`} />
+               ))}
+             </g>
+          </g>
+          {/* Moved pulse outside translate group to normalize coordinates with Epic */}
+          <circle className="anim-pulse" cx="12" cy="12" r="10" fill={`url(#grad-${idBase})`} opacity="0.2" filter={`url(#glow-intense-${idBase})`} />
+        </>
       )}
 
       {/* Epic: Pulsing Aura Ring */}
       {rarity === 'E' && (
-        <circle cx="12" cy="12" r="11" fill="none" stroke={c.color1} strokeWidth="1" opacity="0.6">
-           <animate attributeName="r" values="10;12;10" dur="2s" repeatCount="indefinite" />
-           <animate attributeName="stroke-opacity" values="0.2;0.6;0.2" dur="2s" repeatCount="indefinite" />
-           <animate attributeName="stroke-width" values="0.5;2;0.5" dur="2s" repeatCount="indefinite" />
-        </circle>
+        <circle className="anim-pulse" cx="12" cy="12" r="11" fill="none" stroke={c.color1} strokeWidth="1" opacity="0.6" />
       )}
 
       {/* --- MAIN ICON --- */}
       <g>
-        {c.floating && (
-          <animateTransform 
-            attributeName="transform" 
-            type="translate" 
-            values="0 0; 0 -1.5; 0 0" 
-            dur="3s" 
-            repeatCount="indefinite" 
-            additive="sum"
-          />
-        )}
         {renderShape(false)}
       </g>
 
       {/* --- SHINE EFFECT (R+) --- */}
       {c.shine && (
         <rect 
+          className="anim-shine-bar"
           x="-50%" y="-50%" width="200%" height="200%" 
           fill={`url(#shine-${idBase})`} 
           mask={`url(#mask-${idBase})`}
           style={{ mixBlendMode: 'plus-lighter', pointerEvents: 'none' }}
-        >
-           {/* Shine moves across */}
-           <animate 
-             attributeName="x" 
-             values="-100%; 100%; 100%" 
-             keyTimes="0; 0.4; 1"
-             dur="3.5s" 
-             repeatCount="indefinite" 
-           />
-        </rect>
+        />
       )}
 
       {/* --- FOREGROUND EFFECTS --- */}
 
-      {/* Sparkles for Legendary & Epic */}
-      {(rarity === 'L' || rarity === 'E') && (
+      {/* Sparkles for Legendary & Epic & Rare */}
+      {showSparkles && (
         <g>
            {/* Star 1 */}
-           <path d="M4 4 L5 6 L6 4 L5 2 Z" fill="white">
-             <animate attributeName="opacity" values="0;1;0" dur="2s" repeatCount="indefinite" />
-             <animateTransform attributeName="transform" type="scale" values="0;1;0" dur="2s" repeatCount="indefinite" additive="sum" />
-           </path>
+           <path className="anim-sparkle" d="M4 4 L5 6 L6 4 L5 2 Z" fill="white" opacity="0" style={{ transformBox: 'fill-box' }} />
            {/* Star 2 */}
-           <path d="M20 20 L21 22 L22 20 L21 18 Z" fill="white">
-             <animate attributeName="opacity" values="0;1;0" dur="1.5s" begin="0.7s" repeatCount="indefinite" />
-             <animateTransform attributeName="transform" type="scale" values="0;1.2;0" dur="1.5s" begin="0.7s" repeatCount="indefinite" additive="sum" />
-           </path>
+           <path className="anim-sparkle" d="M20 20 L21 22 L22 20 L21 18 Z" fill="white" opacity="0" style={{ transformBox: 'fill-box' }} />
            {/* Star 3 (Legendary only) */}
            {rarity === 'L' && (
-             <path d="M18 4 L19 7 L20 4 L19 1 Z" fill={c.color1}>
-                <animate attributeName="opacity" values="0;1;0" dur="1s" begin="0.3s" repeatCount="indefinite" />
-                <animateTransform attributeName="transform" type="rotate" values="0 19 4; 90 19 4" dur="1s" repeatCount="indefinite" />
-             </path>
+             <path className="anim-sparkle" d="M18 4 L19 7 L20 4 L19 1 Z" fill={c.color1} opacity="0" style={{ transformBox: 'fill-box' }} />
            )}
         </g>
       )}
