@@ -120,7 +120,7 @@ const GachaShowcase: React.FC<{ tab: 'Hero' | 'Equipment' }> = ({ tab }) => {
 
         // 3. Floating Animation (Different timing for organic feel)
         const items = gsap.utils.toArray<HTMLElement>(".showcase-item");
-        items.forEach((item, i) => {
+        items.forEach((item: any, i: number) => {
             gsap.to(item, {
                 y: i === 1 ? -15 : -10, // Center moves more
                 duration: 2 + i * 0.5,
