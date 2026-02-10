@@ -1,5 +1,5 @@
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { sdk } from '@farcaster/frame-sdk';
 import { supabase } from '../lib/supabase';
 
@@ -9,12 +9,14 @@ const BASE_RPC_URL = 'https://mainnet.base.org';
 export const useFarcasterAuth = (setNotification: (msg: string, type: 'error' | 'success') => void) => {
   const [farcasterUser, setFarcasterUser] = useState<any>(null);
   const [onChainBalanceRaw, setOnChainBalanceRaw] = useState<number | null>(null);
+  
+  // Guard to ensure initialization runs only once
+  const isInitialized = useRef(false);
 
   const fetchBalance = useCallback(async (address: string) => {
     try {
       if (!address.startsWith('0x')) {
          console.warn("Invalid address format for balance fetch:", address);
-         // Keep null to fall back to game tokens
          return;
       }
 
@@ -50,13 +52,10 @@ export const useFarcasterAuth = (setNotification: (msg: string, type: 'error' | 
         console.log(`Balance Fetched: ${numericBalance} CHH`);
         setOnChainBalanceRaw(numericBalance);
       } else {
-        // If result is '0x' or empty, it might be an RPC issue or contract not found.
-        // We do NOT set to 0 here to avoid overwriting a potentially valid previous state or local state.
         console.warn("Balance fetch returned empty/invalid result (0x), ignoring update.");
       }
     } catch (e: any) {
       console.error("Balance fetch error:", e);
-      // Do not set to 0 on error, keep null to use local state
     }
   }, []);
 
@@ -69,7 +68,13 @@ export const useFarcasterAuth = (setNotification: (msg: string, type: 'error' | 
   }, [farcasterUser, fetchBalance]);
 
   useEffect(() => {
+    // Strict Mode / Double-Render Guard
+    if (isInitialized.current) return;
+
     const initFarcasterContext = async () => {
+      // Mark as initialized immediately to block subsequent calls
+      isInitialized.current = true;
+      
       try {
         if (sdk && sdk.context) {
             const context = await sdk.context;
@@ -147,13 +152,12 @@ export const useFarcasterAuth = (setNotification: (msg: string, type: 'error' | 
 
               if (ethAddress) {
                 console.log("Fetching balance from BASE chain...");
+                // Just call directly, don't await to block UI if slow
                 fetchBalance(ethAddress).catch(e => {
                   console.warn("Balance fetch failed in catch:", e);
-                  // Do not set to 0 on error
                 });
               } else {
                  console.warn("No ETH address found for user");
-                 // Do not set to 0, use local tokens
               }
             } else {
               console.log("No user in Farcaster context");
@@ -163,9 +167,12 @@ export const useFarcasterAuth = (setNotification: (msg: string, type: 'error' | 
         }
       } catch (e: any) {
         console.warn("Farcaster Context initialization warning:", e);
+        // Only notify error if we actually tried and failed significantly, 
+        // preventing notification spam on soft-errors
         setNotification(`FC Login Error: ${e.message}`, 'error');
       }
     };
+    
     initFarcasterContext();
   }, [fetchBalance, setNotification]);
 

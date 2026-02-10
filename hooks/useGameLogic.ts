@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { GameState, QuestConfig, QuestRank, Hero, Equipment, Quest, Species } from '../types';
 import { INITIAL_HEROES, INITIAL_EQUIPMENT } from '../constants';
 import { supabase } from '../lib/supabase';
@@ -35,9 +35,10 @@ export const useGameLogic = () => {
   const [isBlocked, setIsBlocked] = useState(false);
 
   // Helper for notification
-  const showNotification = (message: string, type: 'error' | 'success') => {
+  // Memoized to prevent re-triggering effects in child hooks (like useFarcasterAuth)
+  const showNotification = useCallback((message: string, type: 'error' | 'success') => {
     setNotification({ message, type });
-  };
+  }, []);
 
   // --- Fetch Quest Configs from DB ---
   useEffect(() => {
