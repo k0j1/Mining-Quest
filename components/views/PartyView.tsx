@@ -1,5 +1,5 @@
 
-import React, { useState, useMemo, useRef, useLayoutEffect } from 'react';
+import React, { useState, useMemo, useRef, useEffect, useLayoutEffect } from 'react';
 import { GameState, Hero } from '../../types';
 import HeroCard from '../HeroCard';
 import EquipmentSelector from '../EquipmentSelector';
@@ -11,6 +11,7 @@ import Header from '../Header';
 import { IS_TEST_MODE } from '../../constants';
 import { calculatePartyStats } from '../../utils/mechanics';
 import { gsap } from 'gsap';
+import { getHeroImageUrl } from '../../utils/heroUtils';
 
 interface PartyViewProps {
   gameState: GameState;
@@ -45,8 +46,13 @@ const PartyView: React.FC<PartyViewProps> = ({
   const [selectedHeroId, setSelectedHeroId] = useState<string | null>(null);
   const [equippingState, setEquippingState] = useState<{ heroId: string, slotIndex: number } | null>(null);
   const [unlockingIndex, setUnlockingIndex] = useState<number | null>(null);
-  const [inspectingHero, setInspectingHero] = useState<Hero | null>(null); // State for detailed view
-  const [showTeamStatus, setShowTeamStatus] = useState(false); // State for team status modal
+  const [inspectingHero, setInspectingHero] = useState<Hero | null>(null);
+  const [showTeamStatus, setShowTeamStatus] = useState(false);
+  
+  // Intersection Observer State
+  const [isMainPartyVisible, setIsMainPartyVisible] = useState(true);
+  const mainPartyRef = useRef<HTMLDivElement>(null);
+  const floatRef = useRef<HTMLDivElement>(null);
 
   const activePartyIndex = gameState.activePartyIndex;
   const currentPreset = gameState.partyPresets[activePartyIndex];
@@ -56,37 +62,36 @@ const PartyView: React.FC<PartyViewProps> = ({
 
   const allAssignedHeroIds = gameState.partyPresets.flat().filter((id): id is string => !!id);
 
-  // Animation Ref
-  const partyContainerRef = useRef<HTMLDivElement>(null);
+  // --- Scroll Detection ---
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        // Only show float if the main party grid is NOT intersecting (scrolled out of view)
+        // AND the bounding box is above the viewport (scrolled down), not below (scrolled up before reaching it)
+        const isAbove = entry.boundingClientRect.top < 0;
+        setIsMainPartyVisible(entry.isIntersecting || !isAbove);
+      },
+      { threshold: 0, rootMargin: "-60px 0px 0px 0px" } // Offset for header
+    );
 
-  // GSAP: Idle Animation for Party Members
+    if (mainPartyRef.current) {
+      observer.observe(mainPartyRef.current);
+    }
+
+    return () => observer.disconnect();
+  }, []);
+
+  // GSAP: Float Animation Entrance
   useLayoutEffect(() => {
-    if (!partyContainerRef.current) return;
-    
-    // Select the wrapper divs of HeroCards in the main slot grid
-    // Note: PartySlotGrid structure implies we need to target the containers
-    const ctx = gsap.context(() => {
-       const slots = gsap.utils.toArray('.party-slot-active'); // We will add this class to active slots in grid
-       
-       if (slots.length > 0) {
-           gsap.to(slots, {
-               y: -6,
-               duration: 1.5,
-               yoyo: true,
-               repeat: -1,
-               ease: "sine.inOut",
-               stagger: {
-                   amount: 0.8,
-                   from: "random"
-               }
-           });
-       }
-    }, partyContainerRef);
+    if (!isMainPartyVisible && floatRef.current) {
+       gsap.fromTo(floatRef.current, 
+         { x: 50, opacity: 0, scale: 0.8 },
+         { x: 0, opacity: 1, scale: 1, duration: 0.4, ease: "back.out(1.5)" }
+       );
+    }
+  }, [isMainPartyVisible]);
 
-    return () => ctx.revert();
-  }, [currentPreset]);
-
-  // --- Stats Calculation Logic using Centralized Utility ---
+  // --- Stats Calculation ---
   const partyStats = useMemo(() => {
     const activeHeroes = currentPreset
       .map(id => gameState.heroes.find(h => h.id === id))
@@ -150,10 +155,8 @@ const PartyView: React.FC<PartyViewProps> = ({
     // Case 2: A party slot is already selected
     if (selectedSlotIndex !== null) {
       if (selectedSlotIndex === slotIdx) {
-        // Clicked same slot -> Deselect
         setSelectedSlotIndex(null);
       } else {
-        // Clicked different slot -> Swap
         onSwapSlots(selectedSlotIndex, slotIdx);
         setSelectedSlotIndex(null);
       }
@@ -215,14 +218,14 @@ const PartyView: React.FC<PartyViewProps> = ({
   const handleHeroLongPress = (heroId: string) => {
     const hero = gameState.heroes.find(h => h.id === heroId);
     if (hero) {
-      playConfirm(); // Sound effect for opening detail
+      playConfirm();
       setInspectingHero(hero);
     }
   };
 
   return (
     <>
-      <div className="flex flex-col h-full relative bg-slate-900">
+      <div className="flex flex-col h-full bg-slate-900">
         
         <Header 
           title="PARTY" 
@@ -235,137 +238,122 @@ const PartyView: React.FC<PartyViewProps> = ({
           onAccountClick={onAccountClick}
         />
 
-        <div className="flex-1 overflow-y-auto pb-32 pt-4 bg-transparent relative z-10 custom-scrollbar">
+        {/* --- SCROLLABLE CONTENT AREA --- */}
+        <div className="flex-1 overflow-y-auto px-4 pt-4 pb-24 custom-scrollbar">
           
-          {/* Banner (Scrollable) */}
-          <div className="px-5 pb-3">
-            <div className="relative rounded-2xl overflow-hidden shadow-md border border-slate-700">
-                <img 
-                src="https://miningquest.k0j1.v2002.coreserver.jp/images/B_Team.png" 
-                alt="Team Banner" 
-                className="w-full h-auto"
-                />
-                {IS_TEST_MODE && (
-                <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-20 bg-black/10">
-                    <span className="text-3xl font-black text-white/30 -rotate-12 border-4 border-white/30 px-4 py-2 rounded-xl uppercase tracking-widest backdrop-blur-[1px]">
-                        TEST MODE
-                    </span>
+            {/* Banner */}
+            <div className="mb-4">
+                <div className="relative rounded-2xl overflow-hidden shadow-md border border-slate-700">
+                    <img 
+                        src="https://miningquest.k0j1.v2002.coreserver.jp/images/B_Team.png" 
+                        alt="Team Banner" 
+                        className="w-full h-auto"
+                    />
+                    {IS_TEST_MODE && (
+                        <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-20 bg-black/10">
+                            <span className="text-3xl font-black text-white/30 -rotate-12 border-4 border-white/30 px-4 py-2 rounded-xl uppercase tracking-widest backdrop-blur-[1px]">
+                                TEST MODE
+                            </span>
+                        </div>
+                    )}
                 </div>
-                )}
             </div>
-          </div>
 
-          {/* Status Message (Scrollable) */}
-          <div className="px-5 mb-3">
-            <p className={`text-[10px] py-2 px-3 rounded-lg border text-center font-bold tracking-widest uppercase transition-all ${
-              isPartyLocked ? 'text-rose-400 bg-rose-900/20 border-rose-800' : 'text-indigo-400 bg-indigo-900/20 border-indigo-800'
-            }`}>
-              {isPartyLocked ? "PARTY LOCKED ON MISSION" : (selectedSlotIndex !== null ? "SELECT TARGET SLOT TO SWAP" : selectedHeroId !== null ? "ASSIGNING UNIT..." : "SELECT SLOT TO EDIT / HOLD FOR INFO")}
-            </p>
-          </div>
+            {/* Main Party Editor (Normal Position) */}
+            <div ref={mainPartyRef} className="mb-4">
+                {/* Tabs */}
+                <div className="flex gap-2 mb-2 overflow-x-auto pb-1 custom-scrollbar">
+                    {[0, 1, 2].map(idx => {
+                        const isUnlocked = gameState.unlockedParties[idx];
+                        const isActive = activePartyIndex === idx;
+                        return (
+                            <button
+                                key={idx}
+                                onClick={() => handleTabClick(idx)}
+                                className={`px-4 py-2 rounded-lg font-bold text-[10px] uppercase tracking-wider transition-all border whitespace-nowrap flex-1 ${
+                                    isActive 
+                                    ? 'bg-indigo-600 text-white border-indigo-500 shadow-md'
+                                    : isUnlocked 
+                                        ? 'bg-slate-800 text-slate-500 border-slate-700 hover:bg-slate-700'
+                                        : 'bg-slate-900 text-slate-700 border-slate-700'
+                                }`}
+                            >
+                                {isUnlocked ? `Party 0${idx + 1}` : '🔒 LOCK'}
+                            </button>
+                        );
+                    })}
+                </div>
 
-          {/* Tabs (Scrollable) */}
-          <div className="flex px-5 gap-3 pb-4">
-            {[0, 1, 2].map(idx => {
-              const isUnlocked = gameState.unlockedParties[idx];
-              const isActive = activePartyIndex === idx;
-              return (
-                <button
-                  key={idx}
-                  onClick={() => handleTabClick(idx)}
-                  className={`flex-1 py-3 rounded-xl font-bold text-[10px] tracking-widest uppercase transition-all border ${
-                    isActive 
-                      ? 'bg-indigo-600 text-white border-indigo-500 shadow-sm cursor-pointer'
-                      : isUnlocked 
-                        ? 'bg-slate-800 text-slate-500 border-slate-700 hover:bg-slate-700 cursor-pointer'
-                        : 'bg-slate-900 text-slate-600 border-slate-800 cursor-pointer hover:bg-slate-800/50 hover:text-amber-500/80'
-                  }`}
-                  title={!isUnlocked ? "クリックしてこのパーティ枠を解放" : ""}
+                <PartySlotGrid
+                    heroIds={currentPreset}
+                    heroes={gameState.heroes}
+                    activeQuestHeroIds={activeQuestHeroIds}
+                    selectedIndex={selectedSlotIndex}
+                    isPartyLocked={isPartyLocked}
+                    readOnly={false}
+                    showSlotLabels={true}
+                    onSlotClick={handleSlotClick}
+                    onRemoveClick={handleRemoveHero}
+                    onEquipClick={handleEquipClick}
+                    onLongPress={handleHeroLongPress} 
+                    equipment={gameState.equipment}
+                    className="grid grid-cols-3 gap-2"
+                />
+            </div>
+
+            {/* Team Status Dashboard (Moved Below Party Grid) */}
+            <div className="bg-slate-800/60 rounded-xl border border-slate-700 p-3 shadow-sm relative overflow-hidden mb-6">
+                <div className="flex justify-between items-center mb-2">
+                    <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center">
+                    <span className="w-1.5 h-1.5 bg-indigo-500 rounded-full mr-2"></span>
+                    Team Status
+                    </h3>
+                </div>
+                
+                <div className="grid grid-cols-2 gap-2 mb-2">
+                    {/* Reward */}
+                    <div className="bg-slate-900/50 rounded-lg p-2 border border-slate-700/50">
+                        <div className="flex items-center gap-2">
+                        <div className="text-lg">⛏️</div>
+                        <div>
+                            <div className="text-[8px] text-slate-500 font-bold uppercase">Reward</div>
+                            <div className="text-xs font-black text-amber-500">+{partyStats.rewardBonus}%</div>
+                        </div>
+                        </div>
+                    </div>
+                    
+                    {/* Speed */}
+                    <div className="bg-slate-900/50 rounded-lg p-2 border border-slate-700/50">
+                        <div className="flex items-center gap-2">
+                        <div className="text-lg">👢</div>
+                        <div>
+                            <div className="text-[8px] text-slate-500 font-bold uppercase">Speed</div>
+                            <div className="text-xs font-black text-emerald-400">+{partyStats.speedBonus}%</div>
+                        </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <button 
+                    onClick={() => { playClick(); setShowTeamStatus(true); }}
+                    className="w-full text-[9px] text-slate-500 bg-slate-900/30 hover:bg-slate-900/50 py-1.5 rounded font-bold transition-colors"
                 >
-                  {isUnlocked ? `PARTY 0${idx + 1}` : '🔒 LOCKED'}
+                    詳細ステータスを表示
                 </button>
-              );
-            })}
-          </div>
-
-          {/* Main Content Area */}
-          <div className="px-5">
-            <p className="text-[10px] text-slate-500 text-center font-bold uppercase tracking-widest mb-3 opacity-70">
-              Long press hero to view details
-            </p>
-
-            {/* Animation Wrapper Ref */}
-            <div className="mb-6" ref={partyContainerRef}>
-              <PartySlotGrid
-                heroIds={currentPreset}
-                heroes={gameState.heroes}
-                activeQuestHeroIds={activeQuestHeroIds}
-                selectedIndex={selectedSlotIndex}
-                isPartyLocked={isPartyLocked}
-                readOnly={false}
-                showSlotLabels={true}
-                onSlotClick={handleSlotClick}
-                onRemoveClick={handleRemoveHero}
-                onEquipClick={handleEquipClick}
-                onLongPress={handleHeroLongPress} 
-                equipment={gameState.equipment}
-                // Add a custom class for animation targeting inside PartySlotGrid logic (passed via props indirectly or wrapper)
-              />
             </div>
 
-            {/* Team Status Dashboard */}
-            <div className="mb-8 bg-slate-800/60 rounded-xl border border-slate-700 p-4 shadow-sm relative overflow-hidden">
-              <div className="absolute top-0 right-0 p-2 opacity-5 text-4xl pointer-events-none">📊</div>
-              <div className="flex justify-between items-center mb-3">
-                <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center">
-                  <span className="w-1.5 h-1.5 bg-indigo-500 rounded-full mr-2"></span>
-                  Team Status
-                </h3>
-              </div>
-              
-              <div className="grid grid-cols-2 gap-3 mb-3">
-                 {/* Reward */}
-                 <div className="bg-slate-900/50 rounded-lg p-2 border border-slate-700/50">
-                    <div className="flex items-center gap-3">
-                      <div className="text-xl">⛏️</div>
-                      <div>
-                          <div className="text-[9px] text-slate-500 font-bold uppercase">Reward Bonus</div>
-                          <div className="text-sm font-black text-amber-500">+{partyStats.rewardBonus}%</div>
-                      </div>
-                    </div>
-                    <div className="mt-1 flex justify-between text-[8px] text-slate-500 font-bold bg-black/20 px-1.5 py-0.5 rounded">
-                      <span>Hero: +{partyStats.rewardHero}%</span>
-                      <span>Equip: +{partyStats.rewardEquip}%</span>
-                    </div>
-                 </div>
-                 
-                 {/* Speed */}
-                 <div className="bg-slate-900/50 rounded-lg p-2 border border-slate-700/50">
-                    <div className="flex items-center gap-3">
-                      <div className="text-xl">👢</div>
-                      <div>
-                          <div className="text-[9px] text-slate-500 font-bold uppercase">Speed Boost</div>
-                          <div className="text-sm font-black text-emerald-400">+{partyStats.speedBonus}%</div>
-                      </div>
-                    </div>
-                    <div className="mt-1 flex justify-between text-[8px] text-slate-500 font-bold bg-black/20 px-1.5 py-0.5 rounded">
-                      <span>Hero: +{partyStats.speedHero}%</span>
-                      <span>Equip: +{partyStats.speedEquip}%</span>
-                    </div>
-                 </div>
-              </div>
-              
-              <p className="text-[9px] text-slate-500 text-right opacity-70">
-                * Based on active skills & equipment
-              </p>
-            </div>
-
-            <div className="mt-4 border-t border-slate-800 pt-6">
-              <h2 className="text-xs font-bold text-slate-500 mb-6 uppercase tracking-widest flex items-center px-1">
-                <span className="w-1 h-4 bg-slate-700 mr-4 rounded-full"></span>
+            {/* Barracks List */}
+            <div>
+              <h2 className="text-xs font-bold text-slate-500 mb-4 uppercase tracking-widest flex items-center sticky top-0 bg-slate-900/95 py-2 backdrop-blur-sm z-10 border-b border-slate-800/50">
+                <span className="w-1 h-3 bg-slate-600 mr-2 rounded-full"></span>
                 Barracks
+                {selectedSlotIndex !== null && (
+                    <span className="ml-auto text-[9px] text-indigo-400 bg-indigo-900/20 px-2 py-0.5 rounded animate-pulse">
+                        Select Hero for Slot {selectedSlotIndex + 1}
+                    </span>
+                )}
               </h2>
-              <div className="grid grid-cols-2 gap-4 pb-12">
+              <div className="grid grid-cols-2 gap-3">
                   {gameState.heroes
                     .filter(h => !allAssignedHeroIds.includes(h.id))
                     .map((hero, idx) => {
@@ -387,10 +375,61 @@ const PartyView: React.FC<PartyViewProps> = ({
                       </div>
                     );
                   })}
+                  {gameState.heroes.filter(h => !allAssignedHeroIds.includes(h.id)).length === 0 && (
+                      <div className="col-span-2 text-center py-8 text-slate-600 text-xs font-bold">
+                          NO HEROES IN BARRACKS
+                      </div>
+                  )}
               </div>
             </div>
-          </div>
         </div>
+
+        {/* --- FLOATING MINI PARTY PANEL (Shows only when Main Party is scrolled out) --- */}
+        {!isMainPartyVisible && (
+            <div 
+                ref={floatRef}
+                className="fixed top-20 right-3 z-40 bg-slate-900/80 backdrop-blur-md border border-slate-700/50 rounded-2xl p-2 shadow-2xl flex flex-col gap-2"
+            >
+                <div className="text-[8px] font-bold text-slate-400 text-center uppercase tracking-widest border-b border-slate-700/50 pb-1">
+                    Party {activePartyIndex + 1}
+                </div>
+                <div className="flex gap-2">
+                    {[0, 1, 2].map(slotIdx => {
+                        const heroId = currentPreset[slotIdx];
+                        const hero = heroId ? gameState.heroes.find(h => h.id === heroId) : null;
+                        const isSelected = selectedSlotIndex === slotIdx;
+                        
+                        return (
+                            <button
+                                key={slotIdx}
+                                onClick={() => handleSlotClick(slotIdx)}
+                                className={`w-10 h-10 rounded-full flex items-center justify-center relative overflow-hidden transition-all border-2 ${
+                                    isSelected 
+                                    ? 'border-indigo-500 ring-2 ring-indigo-500/30 scale-110 z-10' 
+                                    : 'border-slate-600 hover:border-slate-400'
+                                } bg-slate-800`}
+                            >
+                                {hero ? (
+                                    <img 
+                                        src={getHeroImageUrl(hero.name, 's')} 
+                                        className="w-full h-full object-cover" 
+                                        alt={hero.name} 
+                                    />
+                                ) : (
+                                    <span className="text-slate-500 text-lg">+</span>
+                                )}
+                                
+                                {/* Slot Number Badge */}
+                                <div className="absolute -bottom-1 -right-1 bg-black/70 text-[8px] font-bold text-white w-4 h-4 flex items-center justify-center rounded-full border border-slate-700">
+                                    {slotIdx + 1}
+                                </div>
+                            </button>
+                        );
+                    })}
+                </div>
+            </div>
+        )}
+
       </div>
 
       {equippingState && (
