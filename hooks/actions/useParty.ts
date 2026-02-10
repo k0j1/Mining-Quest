@@ -9,9 +9,10 @@ interface UsePartyProps {
   setGameState: Dispatch<SetStateAction<GameState>>;
   showNotification: (msg: string, type: 'error' | 'success') => void;
   farcasterUser?: any;
+  refetchBalance: () => Promise<void>;
 }
 
-export const useParty = ({ gameState, setGameState, showNotification, farcasterUser }: UsePartyProps) => {
+export const useParty = ({ gameState, setGameState, showNotification, farcasterUser, refetchBalance }: UsePartyProps) => {
 
   const equipItem = async (heroId: string, slotIndex: number, equipmentId: string | null) => {
     playConfirm();
@@ -71,6 +72,9 @@ export const useParty = ({ gameState, setGameState, showNotification, farcasterU
             hero3_hid: null
         }, { onConflict: 'fid,party_no' });
     }
+    
+    // Refetch balance once
+    refetchBalance();
   };
 
   const savePartyToDB = async (partyIndex: number, heroes: (string | null)[]) => {

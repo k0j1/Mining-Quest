@@ -78,8 +78,8 @@ export const useGameLogic = () => {
   }, []);
 
   // --- 1. Farcaster Integration ---
-  // Only fetch balance on init, do not expose refetchBalance for actions
-  const { farcasterUser, onChainBalanceRaw } = useFarcasterAuth(showNotification);
+  // Expose refetchBalance to pass to action hooks
+  const { farcasterUser, onChainBalanceRaw, refetchBalance } = useFarcasterAuth(showNotification);
 
   // Sync On-chain balance to game tokens if available
   useEffect(() => {
@@ -299,26 +299,26 @@ export const useGameLogic = () => {
   }, [farcasterUser?.fid]);
   
 
-  // --- 2. Action Hooks ---
+  // --- 2. Action Hooks (Pass refetchBalance to all hooks that consume tokens) ---
   
   // Quest Logic
   const { depart, returnFromQuest, debugCompleteQuest, getQuestPrediction } = useQuest({
-    gameState, setGameState, showNotification, setReturnResult, farcasterUser
+    gameState, setGameState, showNotification, setReturnResult, farcasterUser, refetchBalance
   });
 
   // Gacha Logic
   const { gachaResult, setGachaResult, isGachaRolling, rollGacha, rollGachaTriple } = useGacha({
-    gameState, setGameState, showNotification, farcasterUser
+    gameState, setGameState, showNotification, farcasterUser, refetchBalance
   });
 
   // Party Logic
   const { equipItem, switchParty, unlockParty, assignHeroToParty, swapPartyPositions } = useParty({
-    gameState, setGameState, showNotification, farcasterUser
+    gameState, setGameState, showNotification, farcasterUser, refetchBalance
   });
 
   // Item Logic
   const { usePotion, useElixir } = useItems({
-    gameState, setGameState, showNotification, farcasterUser
+    gameState, setGameState, showNotification, farcasterUser, refetchBalance
   });
 
   // Debug Actions

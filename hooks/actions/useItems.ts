@@ -9,9 +9,10 @@ interface UseItemsProps {
   setGameState: Dispatch<SetStateAction<GameState>>;
   showNotification: (msg: string, type: 'error' | 'success') => void;
   farcasterUser?: any;
+  refetchBalance: () => Promise<void>;
 }
 
-export const useItems = ({ gameState, setGameState, showNotification, farcasterUser }: UseItemsProps) => {
+export const useItems = ({ gameState, setGameState, showNotification, farcasterUser, refetchBalance }: UseItemsProps) => {
 
   const updateHeroHpDB = async (heroId: string, newHp: number) => {
     if (!farcasterUser?.fid) return;
@@ -45,6 +46,10 @@ export const useItems = ({ gameState, setGameState, showNotification, farcasterU
     }));
     
     updateHeroHpDB(heroId, newHp);
+    
+    // Refetch balance once
+    refetchBalance();
+
     showNotification(`${hero.name}を回復しました (+10HP)`, 'success');
   };
 
@@ -67,6 +72,10 @@ export const useItems = ({ gameState, setGameState, showNotification, farcasterU
     }));
     
     updateHeroHpDB(heroId, newHp);
+    
+    // Refetch balance once
+    refetchBalance();
+
     showNotification(`${hero.name}を全回復しました`, 'success');
   };
 

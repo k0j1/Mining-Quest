@@ -11,9 +11,10 @@ interface UseQuestProps {
   showNotification: (msg: string, type: 'error' | 'success') => void;
   setReturnResult: (result: { results: any[], totalTokens: number } | null) => void;
   farcasterUser?: any;
+  refetchBalance: () => Promise<void>;
 }
 
-export const useQuest = ({ gameState, setGameState, showNotification, setReturnResult, farcasterUser }: UseQuestProps) => {
+export const useQuest = ({ gameState, setGameState, showNotification, setReturnResult, farcasterUser, refetchBalance }: UseQuestProps) => {
   
   // Exposed Helper: Calculate Prediction for UI
   const getQuestPrediction = (config: QuestConfig, partyHeroes: Hero[]) => {
@@ -234,6 +235,9 @@ export const useQuest = ({ gameState, setGameState, showNotification, setReturnR
       tokens: prev.tokens - config.burnCost,
       activeQuests: [...prev.activeQuests, newQuest]
     }));
+    
+    // Refetch balance once after spending tokens
+    refetchBalance();
 
     playDepart();
     
@@ -384,6 +388,15 @@ export const useQuest = ({ gameState, setGameState, showNotification, setReturnR
       activeQuests: prev.activeQuests.filter(q => q.endTime > now),
       partyPresets: prev.partyPresets.map(p => p.map(id => (id && deadHeroIds.includes(id)) ? null : id))
     }));
+    
+    // Also refetch after receiving rewards
+    if (actualTotalReward > 0) {
+        // Wait slightly to ensure on-chain could possibly reflect? (Though usually local sync is fine)
+        // Just keeping it local sync via refetch if needed, though usually rewards are off-chain until claimed.
+        // But if rewards are just game tokens, we simply update state.
+        // If the game uses on-chain tokens for rewards, we might want to refetch, but here it seems strictly game tokens.
+        // However, keeping consistent balance check is fine.
+    }
 
     if (resultList.length > 0) {
         setReturnResult({ results: resultList, totalTokens: actualTotalReward });

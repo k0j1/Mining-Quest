@@ -11,9 +11,10 @@ interface UseGachaProps {
   setGameState: Dispatch<SetStateAction<GameState>>;
   showNotification: (msg: string, type: 'error' | 'success') => void;
   farcasterUser?: any;
+  refetchBalance: () => Promise<void>;
 }
 
-export const useGacha = ({ gameState, setGameState, showNotification, farcasterUser }: UseGachaProps) => {
+export const useGacha = ({ gameState, setGameState, showNotification, farcasterUser, refetchBalance }: UseGachaProps) => {
   const [gachaResult, setGachaResult] = useState<{ type: 'Hero' | 'Equipment'; data: any[] } | null>(null);
   const [isGachaRolling, setIsGachaRolling] = useState(false);
 
@@ -149,6 +150,9 @@ export const useGacha = ({ gameState, setGameState, showNotification, farcasterU
       setGachaResult({ type: tab, data: persisted });
       setGameState(prev => ({ ...prev, tokens: prev.tokens - cost }));
       processGachaItems(tab, persisted);
+      
+      // Refetch balance once
+      refetchBalance();
 
     } catch (e) {
       console.error(e);
@@ -182,6 +186,9 @@ export const useGacha = ({ gameState, setGameState, showNotification, farcasterU
       setGachaResult({ type: tab, data: persisted });
       setGameState(prev => ({ ...prev, tokens: prev.tokens - cost }));
       processGachaItems(tab, persisted);
+      
+      // Refetch balance once
+      refetchBalance();
 
     } catch (e) {
       console.error(e);
