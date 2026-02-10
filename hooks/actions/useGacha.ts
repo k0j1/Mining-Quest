@@ -152,7 +152,10 @@ export const useGacha = ({ gameState, setGameState, showNotification, farcasterU
       processGachaItems(tab, persisted);
       
       // Refetch Balance after cost deduction
-      if (refetchBalance) refetchBalance();
+      if (refetchBalance) {
+          console.log("Refetching balance after Gacha spend");
+          refetchBalance();
+      }
 
     } catch (e) {
       console.error(e);
@@ -164,7 +167,6 @@ export const useGacha = ({ gameState, setGameState, showNotification, farcasterU
 
   const rollGachaTriple = async (tab: 'Hero' | 'Equipment') => {
     const baseCost = tab === 'Hero' ? 10000 : 6000;
-    // Reverted: Cost is 5x base (50,000 or 30,000) despite being 3 pulls, as per original design/user request.
     const cost = baseCost * 5; 
 
     if (gameState.tokens < cost) {
@@ -189,7 +191,10 @@ export const useGacha = ({ gameState, setGameState, showNotification, farcasterU
       processGachaItems(tab, persisted);
       
       // Refetch Balance
-      if (refetchBalance) refetchBalance();
+      if (refetchBalance) {
+          console.log("Refetching balance after 3x Gacha spend");
+          refetchBalance();
+      }
 
     } catch (e) {
       console.error(e);

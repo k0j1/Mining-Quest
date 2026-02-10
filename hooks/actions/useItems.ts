@@ -17,7 +17,6 @@ export const useItems = ({ gameState, setGameState, showNotification, farcasterU
   const updateHeroHpDB = async (heroId: string, newHp: number) => {
     if (!farcasterUser?.fid) return;
     
-    // Get current recovery count
     const { data } = await supabase.from('quest_player_hero').select('recovery_count').eq('player_hid', parseInt(heroId)).single();
     const currentCount = data?.recovery_count || 0;
 
@@ -49,7 +48,11 @@ export const useItems = ({ gameState, setGameState, showNotification, farcasterU
     updateHeroHpDB(heroId, newHp);
     showNotification(`${hero.name}を回復しました (+10HP)`, 'success');
     
-    if (refetchBalance) refetchBalance();
+    // Consumes Tokens -> Refetch
+    if (refetchBalance) {
+        console.log("Refetching balance after Potion use");
+        refetchBalance();
+    }
   };
 
   const useElixir = (heroId: string) => {
@@ -73,7 +76,11 @@ export const useItems = ({ gameState, setGameState, showNotification, farcasterU
     updateHeroHpDB(heroId, newHp);
     showNotification(`${hero.name}を全回復しました`, 'success');
     
-    if (refetchBalance) refetchBalance();
+    // Consumes Tokens -> Refetch
+    if (refetchBalance) {
+        console.log("Refetching balance after Elixir use");
+        refetchBalance();
+    }
   };
 
   return { usePotion, useElixir };

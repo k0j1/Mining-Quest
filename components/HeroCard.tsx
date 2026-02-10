@@ -97,11 +97,11 @@ const HeroCard: React.FC<HeroCardProps> = ({
     return (
       <div 
         {...longPressProps}
-        className={`flex items-center space-x-3 p-3 bg-slate-800 rounded-xl border transition-all duration-200 relative ${
+        className={`flex items-center space-x-3 p-2 bg-slate-800 rounded-xl border transition-all duration-200 relative overflow-hidden ${
           isLocked ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:bg-slate-750'
         } ${
           isSelected 
-            ? 'border-amber-500 ring-1 ring-amber-500' 
+            ? 'border-amber-500 ring-1 ring-amber-500 bg-amber-900/10' 
             : 'border-slate-700'
         }`}
       >
@@ -133,42 +133,59 @@ const HeroCard: React.FC<HeroCardProps> = ({
           </div>
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2 flex-1 mr-2">
-              <span className="text-[10px] font-bold text-slate-500">HP {hero.hp}</span>
-              <div className="flex-1 bg-slate-900 h-1.5 rounded-full overflow-hidden">
+              <div className="flex-1 bg-slate-900 h-1.5 rounded-full overflow-hidden border border-slate-700/50">
                 <div 
                   className={`h-full ${hero.hp < 30 ? 'bg-rose-500' : 'bg-amber-500'}`} 
                   style={{ width: `${(hero.hp / hero.maxHp) * 100}%` }}
                 />
               </div>
+              <span className={`text-[8px] font-bold ${hero.hp < 30 ? 'text-rose-400' : 'text-slate-500'}`}>HP {hero.hp}</span>
             </div>
             
-            {/* Equipment Indicators */}
+            {/* Equipment Indicators (Icons) */}
             <div className="flex gap-1 shrink-0">
-               {/* Slot 0: Pickaxe */}
-               <div className={`w-2.5 h-2.5 rounded-sm border flex items-center justify-center ${hero.equipmentIds[0] ? 'bg-amber-900/50 border-amber-500' : 'bg-slate-900 border-slate-700'}`}>
-                  {hero.equipmentIds[0] && <div className="w-1 h-1 bg-amber-500 rounded-full"></div>}
-               </div>
-               {/* Slot 1: Helmet */}
-               <div className={`w-2.5 h-2.5 rounded-sm border flex items-center justify-center ${hero.equipmentIds[1] ? 'bg-emerald-900/50 border-emerald-500' : 'bg-slate-900 border-slate-700'}`}>
-                  {hero.equipmentIds[1] && <div className="w-1 h-1 bg-emerald-500 rounded-full"></div>}
-               </div>
-               {/* Slot 2: Boots */}
-               <div className={`w-2.5 h-2.5 rounded-sm border flex items-center justify-center ${hero.equipmentIds[2] ? 'bg-indigo-900/50 border-indigo-500' : 'bg-slate-900 border-slate-700'}`}>
-                  {hero.equipmentIds[2] && <div className="w-1 h-1 bg-indigo-500 rounded-full"></div>}
-               </div>
+               {[0, 1, 2].map(slotIdx => {
+                 const equipId = hero.equipmentIds[slotIdx];
+                 const item = equipId && equipment ? equipment.find(e => e.id === equipId) : null;
+                 const type = slotTypes[slotIdx];
+                 
+                 // Icons for compact view
+                 const Icon = () => {
+                    if (type === 'Pickaxe') return <span className="text-[10px] leading-none">⛏️</span>;
+                    if (type === 'Helmet') return <span className="text-[10px] leading-none">🪖</span>;
+                    return <span className="text-[10px] leading-none">👢</span>;
+                 };
+
+                 return (
+                   <div 
+                     key={slotIdx}
+                     className={`w-5 h-5 rounded flex items-center justify-center border transition-all ${
+                       item 
+                         ? 'bg-slate-700 border-slate-600 text-white shadow-sm' 
+                         : 'bg-slate-900 border-slate-800 text-slate-700 opacity-50'
+                     }`}
+                     title={item ? item.name : 'Empty'}
+                   >
+                      <Icon />
+                   </div>
+                 );
+               })}
             </div>
           </div>
         </div>
+        
         {isLocked && (
-          <div className="absolute inset-0 bg-slate-900/60 rounded-xl flex items-center justify-center z-50">
-            <span className="text-[10px] font-bold text-white bg-slate-800 px-2 py-1 rounded border border-slate-600">QUESTING</span>
+          <div className="absolute inset-0 bg-slate-950/80 rounded-xl flex items-center justify-center z-50 backdrop-blur-[1px]">
+            <span className="text-[8px] font-black text-amber-500 border border-amber-500/50 bg-amber-950/80 px-2 py-1 rounded uppercase tracking-wider shadow-lg transform -rotate-3">
+               ON MISSION
+            </span>
           </div>
         )}
       </div>
     );
   }
 
-  // Standard Card Layout
+  // Standard Card Layout (Unchanged)
   return (
     <div 
       {...longPressProps}

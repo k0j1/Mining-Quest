@@ -41,11 +41,14 @@ export const useParty = ({ gameState, setGameState, showNotification, farcasterU
         
       if (error) console.error("Equip DB Update Error:", error);
     }
+    
+    // NO refetchBalance here (No token consumption)
   };
 
   const switchParty = (index: number) => {
     playClick();
     setGameState(prev => ({ ...prev, activePartyIndex: index }));
+    // NO refetchBalance here
   };
 
   const unlockParty = async (index: number) => {
@@ -63,9 +66,7 @@ export const useParty = ({ gameState, setGameState, showNotification, farcasterU
     });
     
     // In DB, unlocking is implicit by having a record, or we just rely on local token burn for now
-    // as there is no specific "unlock" table, but we should create the party record.
     if (farcasterUser?.fid) {
-        // Initial insert to 'unlock' - CHANGED heroX_id to heroX_hid
         await supabase.from('quest_player_party').upsert({
             fid: farcasterUser.fid,
             party_no: index + 1,
@@ -75,13 +76,16 @@ export const useParty = ({ gameState, setGameState, showNotification, farcasterU
         }, { onConflict: 'fid,party_no' });
     }
     
-    if (refetchBalance) refetchBalance();
+    // Consumes Tokens -> Refetch
+    if (refetchBalance) {
+        console.log("Refetching balance after Party Unlock");
+        refetchBalance();
+    }
   };
 
   const savePartyToDB = async (partyIndex: number, heroes: (string | null)[]) => {
       if (!farcasterUser?.fid) return;
       
-      // CHANGED heroX_id to heroX_hid
       const { error } = await supabase.from('quest_player_party').upsert({
           fid: farcasterUser.fid,
           party_no: partyIndex + 1,
@@ -112,6 +116,7 @@ export const useParty = ({ gameState, setGameState, showNotification, farcasterU
 
     // DB Sync
     savePartyToDB(gameState.activePartyIndex, newPartyState);
+    // NO refetchBalance here
   };
 
   const swapPartyPositions = (index1: number, index2: number) => {
@@ -133,6 +138,7 @@ export const useParty = ({ gameState, setGameState, showNotification, farcasterU
     
     // DB Sync
     savePartyToDB(gameState.activePartyIndex, newPartyState);
+    // NO refetchBalance here
   };
 
   return { equipItem, switchParty, unlockParty, assignHeroToParty, swapPartyPositions };
