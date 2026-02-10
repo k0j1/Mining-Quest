@@ -32,7 +32,7 @@ const RecoveryView: React.FC<RecoveryViewProps> = ({
   return (
     <div className="flex flex-col h-full bg-slate-900">
        <Header 
-         title="ヒーローを回復" 
+         title="RECOVERY" 
          tokens={gameState.tokens} 
          isSoundOn={isSoundOn} 
          onToggleSound={onToggleSound} 

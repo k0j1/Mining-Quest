@@ -133,7 +133,7 @@ const DepartView: React.FC<DepartViewProps> = ({
        <MiningEffect />
 
        <Header 
-         title="クエスト" 
+         title="QUEST" 
          tokens={gameState.tokens} 
          isSoundOn={isSoundOn} 
          onToggleSound={onToggleSound} 

@@ -580,7 +580,7 @@ const GachaView: React.FC<GachaViewProps> = ({
     <>
       <div className="flex flex-col h-full bg-slate-900">
          <Header 
-           title="採掘ガチャ" 
+           title="GACHA" 
            tokens={gameState.tokens} 
            isSoundOn={isSoundOn} 
            onToggleSound={onToggleSound} 

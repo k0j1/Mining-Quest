@@ -225,7 +225,7 @@ const PartyView: React.FC<PartyViewProps> = ({
       <div className="flex flex-col h-full relative bg-slate-900">
         
         <Header 
-          title="パーティ編成" 
+          title="PARTY" 
           tokens={gameState.tokens} 
           isSoundOn={isSoundOn} 
           onToggleSound={onToggleSound}

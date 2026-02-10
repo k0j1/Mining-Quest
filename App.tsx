@@ -251,7 +251,7 @@ const App: React.FC = () => {
           <StatusBoard 
             state={gameState} 
             view={View.RETURN} 
-            title="回収" 
+            title="RESULT" 
             actionButtonLabel="報酬を回収して帰還" 
             onAction={actions.returnFromQuest}
             onDebugCompleteQuest={actions.debugCompleteQuest}
@@ -284,7 +284,7 @@ const App: React.FC = () => {
           <StatusBoard 
             state={gameState} 
             view={View.HOME} 
-            title="ベースキャンプ" 
+            title="HOME" 
             onShowLightpaper={() => setCurrentView(View.LIGHTPAPER)}
             onDebugCompleteQuest={actions.debugCompleteQuest}
             onToggleDebug={() => setIsDebugMode(p => !p)}
