@@ -14,7 +14,7 @@ export const useFarcasterAuth = (setNotification: (msg: string, type: 'error' | 
     try {
       if (!address.startsWith('0x')) {
          console.warn("Invalid address format for balance fetch:", address);
-         setOnChainBalanceRaw(0);
+         // Keep null to fall back to game tokens
          return;
       }
 
@@ -44,19 +44,19 @@ export const useFarcasterAuth = (setNotification: (msg: string, type: 'error' | 
          throw new Error(`RPC Error: ${result.error.message}`);
       }
 
-      if (result.result && result.result !== '0x') {
+      if (result.result && result.result !== '0x' && result.result.length > 2) {
         const balanceBigInt = BigInt(result.result);
         const numericBalance = Number(balanceBigInt) / 1e18; // 18 decimals assumption
         console.log(`Balance Fetched: ${numericBalance} CHH`);
         setOnChainBalanceRaw(numericBalance);
       } else {
-        console.log("Balance result is 0x or empty, setting to 0");
-        setOnChainBalanceRaw(0);
+        // If result is '0x' or empty, it might be an RPC issue or contract not found.
+        // We do NOT set to 0 here to avoid overwriting a potentially valid previous state or local state.
+        console.warn("Balance fetch returned empty/invalid result (0x), ignoring update.");
       }
     } catch (e: any) {
       console.error("Balance fetch error:", e);
-      // RPCエラー等の場合は0を表示して、UIがローディング状態のままになるのを防ぐ
-      setOnChainBalanceRaw(0);
+      // Do not set to 0 on error, keep null to use local state
     }
   }, []);
 
@@ -149,11 +149,11 @@ export const useFarcasterAuth = (setNotification: (msg: string, type: 'error' | 
                 console.log("Fetching balance from BASE chain...");
                 fetchBalance(ethAddress).catch(e => {
                   console.warn("Balance fetch failed in catch:", e);
-                  setOnChainBalanceRaw(0);
+                  // Do not set to 0 on error
                 });
               } else {
                  console.warn("No ETH address found for user");
-                 setOnChainBalanceRaw(0);
+                 // Do not set to 0, use local tokens
               }
             } else {
               console.log("No user in Farcaster context");
