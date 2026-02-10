@@ -11,9 +11,10 @@ interface UseQuestProps {
   showNotification: (msg: string, type: 'error' | 'success') => void;
   setReturnResult: (result: { results: any[], totalTokens: number } | null) => void;
   farcasterUser?: any;
+  refetchBalance?: () => Promise<void>;
 }
 
-export const useQuest = ({ gameState, setGameState, showNotification, setReturnResult, farcasterUser }: UseQuestProps) => {
+export const useQuest = ({ gameState, setGameState, showNotification, setReturnResult, farcasterUser, refetchBalance }: UseQuestProps) => {
   
   // Exposed Helper: Calculate Prediction for UI
   const getQuestPrediction = (config: QuestConfig, partyHeroes: Hero[]) => {
@@ -238,6 +239,10 @@ export const useQuest = ({ gameState, setGameState, showNotification, setReturnR
     }));
 
     playDepart();
+    
+    // Refetch Balance after cost deduction
+    if (refetchBalance) refetchBalance();
+    
     return true;
   };
 
@@ -484,6 +489,12 @@ export const useQuest = ({ gameState, setGameState, showNotification, setReturnR
     if (resultList.length > 0) {
         setReturnResult({ results: resultList, totalTokens: actualTotalReward });
     }
+    
+    // Refetch Balance? Technically we gain rewards here, so balance increases.
+    // If it's a claim tx, we refetch. But this logic just adds to score. 
+    // If on-chain balance is the source, we should refetch to see if *real* tokens were sent?
+    // Since we don't have a claim button sending tx here, we probably don't refetch or we do just to sync.
+    // The prompt says "after consuming". Returning gains tokens. But let's leave it safe.
     
     return true;
   };

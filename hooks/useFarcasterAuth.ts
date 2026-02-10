@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { sdk } from '@farcaster/frame-sdk';
 import { supabase } from '../lib/supabase';
 
@@ -10,7 +10,7 @@ export const useFarcasterAuth = (setNotification: (msg: string, type: 'error' | 
   const [farcasterUser, setFarcasterUser] = useState<any>(null);
   const [onChainBalanceRaw, setOnChainBalanceRaw] = useState<number | null>(null);
 
-  const fetchBalance = async (address: string) => {
+  const fetchBalance = useCallback(async (address: string) => {
     try {
       if (!address.startsWith('0x')) {
          console.warn("Invalid address format for balance fetch:", address);
@@ -58,7 +58,15 @@ export const useFarcasterAuth = (setNotification: (msg: string, type: 'error' | 
       // RPCエラー等の場合は0を表示して、UIがローディング状態のままになるのを防ぐ
       setOnChainBalanceRaw(0);
     }
-  };
+  }, []);
+
+  const refetchBalance = useCallback(async () => {
+    if (farcasterUser?.address) {
+        await fetchBalance(farcasterUser.address);
+    } else {
+        console.log("Skipping refetch: No wallet address connected");
+    }
+  }, [farcasterUser, fetchBalance]);
 
   useEffect(() => {
     const initFarcasterContext = async () => {
@@ -159,7 +167,7 @@ export const useFarcasterAuth = (setNotification: (msg: string, type: 'error' | 
       }
     };
     initFarcasterContext();
-  }, []);
+  }, [fetchBalance, setNotification]);
 
-  return { farcasterUser, onChainBalanceRaw };
+  return { farcasterUser, onChainBalanceRaw, refetchBalance };
 };

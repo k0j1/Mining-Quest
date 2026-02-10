@@ -131,13 +131,31 @@ const HeroCard: React.FC<HeroCardProps> = ({
           <div className="flex justify-between items-center mb-1">
             <p className="font-bold text-xs truncate text-slate-200">{hero.name}</p>
           </div>
-          <div className="flex items-center space-x-2">
-            <span className="text-[10px] font-bold text-slate-500">HP {hero.hp}</span>
-            <div className="flex-1 bg-slate-900 h-1.5 rounded-full overflow-hidden">
-              <div 
-                className={`h-full ${hero.hp < 30 ? 'bg-rose-500' : 'bg-amber-500'}`} 
-                style={{ width: `${(hero.hp / hero.maxHp) * 100}%` }}
-              />
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-2 flex-1 mr-2">
+              <span className="text-[10px] font-bold text-slate-500">HP {hero.hp}</span>
+              <div className="flex-1 bg-slate-900 h-1.5 rounded-full overflow-hidden">
+                <div 
+                  className={`h-full ${hero.hp < 30 ? 'bg-rose-500' : 'bg-amber-500'}`} 
+                  style={{ width: `${(hero.hp / hero.maxHp) * 100}%` }}
+                />
+              </div>
+            </div>
+            
+            {/* Equipment Indicators */}
+            <div className="flex gap-1 shrink-0">
+               {/* Slot 0: Pickaxe */}
+               <div className={`w-2.5 h-2.5 rounded-sm border flex items-center justify-center ${hero.equipmentIds[0] ? 'bg-amber-900/50 border-amber-500' : 'bg-slate-900 border-slate-700'}`}>
+                  {hero.equipmentIds[0] && <div className="w-1 h-1 bg-amber-500 rounded-full"></div>}
+               </div>
+               {/* Slot 1: Helmet */}
+               <div className={`w-2.5 h-2.5 rounded-sm border flex items-center justify-center ${hero.equipmentIds[1] ? 'bg-emerald-900/50 border-emerald-500' : 'bg-slate-900 border-slate-700'}`}>
+                  {hero.equipmentIds[1] && <div className="w-1 h-1 bg-emerald-500 rounded-full"></div>}
+               </div>
+               {/* Slot 2: Boots */}
+               <div className={`w-2.5 h-2.5 rounded-sm border flex items-center justify-center ${hero.equipmentIds[2] ? 'bg-indigo-900/50 border-indigo-500' : 'bg-slate-900 border-slate-700'}`}>
+                  {hero.equipmentIds[2] && <div className="w-1 h-1 bg-indigo-500 rounded-full"></div>}
+               </div>
             </div>
           </div>
         </div>
