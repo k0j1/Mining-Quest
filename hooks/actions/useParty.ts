@@ -9,10 +9,9 @@ interface UsePartyProps {
   setGameState: Dispatch<SetStateAction<GameState>>;
   showNotification: (msg: string, type: 'error' | 'success') => void;
   farcasterUser?: any;
-  refetchBalance?: () => Promise<void>;
 }
 
-export const useParty = ({ gameState, setGameState, showNotification, farcasterUser, refetchBalance }: UsePartyProps) => {
+export const useParty = ({ gameState, setGameState, showNotification, farcasterUser }: UsePartyProps) => {
 
   const equipItem = async (heroId: string, slotIndex: number, equipmentId: string | null) => {
     playConfirm();
@@ -41,14 +40,11 @@ export const useParty = ({ gameState, setGameState, showNotification, farcasterU
         
       if (error) console.error("Equip DB Update Error:", error);
     }
-    
-    // NO refetchBalance here (No token consumption)
   };
 
   const switchParty = (index: number) => {
     playClick();
     setGameState(prev => ({ ...prev, activePartyIndex: index }));
-    // NO refetchBalance here
   };
 
   const unlockParty = async (index: number) => {
@@ -74,12 +70,6 @@ export const useParty = ({ gameState, setGameState, showNotification, farcasterU
             hero2_hid: null,
             hero3_hid: null
         }, { onConflict: 'fid,party_no' });
-    }
-    
-    // Consumes Tokens -> Refetch
-    if (refetchBalance) {
-        console.log("Refetching balance after Party Unlock");
-        refetchBalance();
     }
   };
 
@@ -116,7 +106,6 @@ export const useParty = ({ gameState, setGameState, showNotification, farcasterU
 
     // DB Sync
     savePartyToDB(gameState.activePartyIndex, newPartyState);
-    // NO refetchBalance here
   };
 
   const swapPartyPositions = (index1: number, index2: number) => {
@@ -138,7 +127,6 @@ export const useParty = ({ gameState, setGameState, showNotification, farcasterU
     
     // DB Sync
     savePartyToDB(gameState.activePartyIndex, newPartyState);
-    // NO refetchBalance here
   };
 
   return { equipItem, switchParty, unlockParty, assignHeroToParty, swapPartyPositions };

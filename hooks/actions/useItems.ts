@@ -9,10 +9,9 @@ interface UseItemsProps {
   setGameState: Dispatch<SetStateAction<GameState>>;
   showNotification: (msg: string, type: 'error' | 'success') => void;
   farcasterUser?: any;
-  refetchBalance?: () => Promise<void>;
 }
 
-export const useItems = ({ gameState, setGameState, showNotification, farcasterUser, refetchBalance }: UseItemsProps) => {
+export const useItems = ({ gameState, setGameState, showNotification, farcasterUser }: UseItemsProps) => {
 
   const updateHeroHpDB = async (heroId: string, newHp: number) => {
     if (!farcasterUser?.fid) return;
@@ -47,12 +46,6 @@ export const useItems = ({ gameState, setGameState, showNotification, farcasterU
     
     updateHeroHpDB(heroId, newHp);
     showNotification(`${hero.name}を回復しました (+10HP)`, 'success');
-    
-    // Consumes Tokens -> Refetch
-    if (refetchBalance) {
-        console.log("Refetching balance after Potion use");
-        refetchBalance();
-    }
   };
 
   const useElixir = (heroId: string) => {
@@ -75,12 +68,6 @@ export const useItems = ({ gameState, setGameState, showNotification, farcasterU
     
     updateHeroHpDB(heroId, newHp);
     showNotification(`${hero.name}を全回復しました`, 'success');
-    
-    // Consumes Tokens -> Refetch
-    if (refetchBalance) {
-        console.log("Refetching balance after Elixir use");
-        refetchBalance();
-    }
   };
 
   return { usePotion, useElixir };

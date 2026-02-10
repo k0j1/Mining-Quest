@@ -77,7 +77,8 @@ export const useGameLogic = () => {
   }, []);
 
   // --- 1. Farcaster Integration ---
-  const { farcasterUser, onChainBalanceRaw, refetchBalance } = useFarcasterAuth(showNotification);
+  // Only fetch balance on init, do not expose refetchBalance for actions
+  const { farcasterUser, onChainBalanceRaw } = useFarcasterAuth(showNotification);
 
   // Sync On-chain balance to game tokens if available
   useEffect(() => {
@@ -301,22 +302,22 @@ export const useGameLogic = () => {
   
   // Quest Logic
   const { depart, returnFromQuest, debugCompleteQuest, getQuestPrediction } = useQuest({
-    gameState, setGameState, showNotification, setReturnResult, farcasterUser, refetchBalance
+    gameState, setGameState, showNotification, setReturnResult, farcasterUser
   });
 
   // Gacha Logic
   const { gachaResult, setGachaResult, isGachaRolling, rollGacha, rollGachaTriple } = useGacha({
-    gameState, setGameState, showNotification, farcasterUser, refetchBalance
+    gameState, setGameState, showNotification, farcasterUser
   });
 
   // Party Logic
   const { equipItem, switchParty, unlockParty, assignHeroToParty, swapPartyPositions } = useParty({
-    gameState, setGameState, showNotification, farcasterUser, refetchBalance
+    gameState, setGameState, showNotification, farcasterUser
   });
 
   // Item Logic
   const { usePotion, useElixir } = useItems({
-    gameState, setGameState, showNotification, farcasterUser, refetchBalance
+    gameState, setGameState, showNotification, farcasterUser
   });
 
   // Debug Actions

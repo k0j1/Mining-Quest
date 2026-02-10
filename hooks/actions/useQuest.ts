@@ -11,10 +11,9 @@ interface UseQuestProps {
   showNotification: (msg: string, type: 'error' | 'success') => void;
   setReturnResult: (result: { results: any[], totalTokens: number } | null) => void;
   farcasterUser?: any;
-  refetchBalance?: () => Promise<void>;
 }
 
-export const useQuest = ({ gameState, setGameState, showNotification, setReturnResult, farcasterUser, refetchBalance }: UseQuestProps) => {
+export const useQuest = ({ gameState, setGameState, showNotification, setReturnResult, farcasterUser }: UseQuestProps) => {
   
   // Exposed Helper: Calculate Prediction for UI
   const getQuestPrediction = (config: QuestConfig, partyHeroes: Hero[]) => {
@@ -238,12 +237,6 @@ export const useQuest = ({ gameState, setGameState, showNotification, setReturnR
 
     playDepart();
     
-    // Refetch Balance after cost deduction (Consume)
-    if (refetchBalance) {
-        console.log("Refetching balance after Quest Depart");
-        refetchBalance();
-    }
-    
     return true;
   };
 
@@ -395,8 +388,6 @@ export const useQuest = ({ gameState, setGameState, showNotification, setReturnR
     if (resultList.length > 0) {
         setReturnResult({ results: resultList, totalTokens: actualTotalReward });
     }
-    
-    // NO refetchBalance here (Gain, not consume)
     
     return true;
   };
