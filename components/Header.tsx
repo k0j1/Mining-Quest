@@ -38,46 +38,57 @@ const Header: React.FC<HeaderProps> = ({
 }) => {
   const [tapCount, setTapCount] = useState(0);
   
-  // Refs for animation
-  const tokenRef = useRef<HTMLSpanElement>(null);
-  const previousTokenValue = useRef<number>(tokens);
-  
   // Farcasterユーザーかつオンチェーン残高が取得できている場合はそちらを表示
   // そうでない場合はゲーム内トークンを表示
   const currentTokenValue = (farcasterUser && onChainBalance !== null && onChainBalance !== undefined) 
     ? onChainBalance 
     : tokens;
 
+  // Refs for animation
+  const tokenRef = useRef<HTMLSpanElement>(null);
+  
+  // Initialize with current value to prevent hydration mismatch or initial jump
+  const previousTokenValue = useRef<number>(currentTokenValue);
+  
   // GSAP Token Counting Animation
   useEffect(() => {
     if (!tokenRef.current) return;
     
-    // Create a proxy object to animate
-    const proxy = { value: previousTokenValue.current };
-    
-    gsap.to(proxy, {
-      value: currentTokenValue,
-      duration: 1.5,
-      ease: "power2.out",
-      onUpdate: () => {
-        if (tokenRef.current) {
-          // Format based on magnitude
-          tokenRef.current.innerText = formatCompactNumber(Math.floor(proxy.value));
-        }
-      },
-      onComplete: () => {
+    // Prevent animation if value hasn't changed significantly (less than 1)
+    if (Math.abs(currentTokenValue - previousTokenValue.current) < 1) {
+        // Just update text directly to ensure consistency
+        tokenRef.current.innerText = formatCompactNumber(Math.floor(currentTokenValue));
         previousTokenValue.current = currentTokenValue;
-      }
-    });
-    
-    // Scale bump effect when tokens change significantly
-    if (Math.abs(currentTokenValue - previousTokenValue.current) > 0) {
-       gsap.fromTo(tokenRef.current, 
-         { scale: 1.5, color: '#fff' }, 
-         { scale: 1, color: farcasterUser ? '#818cf8' : '#fbbf24', duration: 0.3, ease: "back.out(1.7)" }
-       );
+        return;
     }
+    
+    const startValue = previousTokenValue.current;
+    const proxy = { value: startValue };
+    
+    const ctx = gsap.context(() => {
+        // Number counting animation
+        gsap.to(proxy, {
+          value: currentTokenValue,
+          duration: 1.5,
+          ease: "power2.out",
+          onUpdate: () => {
+            if (tokenRef.current) {
+              tokenRef.current.innerText = formatCompactNumber(Math.floor(proxy.value));
+            }
+          }
+        });
+        
+        // Scale bump effect
+        gsap.fromTo(tokenRef.current, 
+            { scale: 1.5, color: '#fff' }, 
+            { scale: 1, color: farcasterUser ? '#818cf8' : '#fbbf24', duration: 0.3, ease: "back.out(1.7)" }
+        );
+    });
 
+    // Update ref for next time
+    previousTokenValue.current = currentTokenValue;
+
+    return () => ctx.revert();
   }, [currentTokenValue, farcasterUser]);
 
   useEffect(() => {
@@ -108,7 +119,8 @@ const Header: React.FC<HeaderProps> = ({
     window.location.reload();
   };
 
-  const displayTokens = formatCompactNumber(currentTokenValue);
+  // Initial display value
+  const displayTokens = formatCompactNumber(Math.floor(currentTokenValue));
 
   // Farcasterユーザーの場合はテーマカラーを変える
   const themeColorClass = farcasterUser ? 'text-indigo-400' : 'text-amber-400';
@@ -172,7 +184,6 @@ const Header: React.FC<HeaderProps> = ({
                 ref={tokenRef} 
                 className={`text-sm font-black tabular-nums ${themeColorClass}`}
               >
-                {/* Initial Render fallback */}
                 {displayTokens}
               </span>
               <span className={`text-[10px] font-bold uppercase tracking-wide ${farcasterUser ? 'text-indigo-400' : 'text-amber-500'}`}>
