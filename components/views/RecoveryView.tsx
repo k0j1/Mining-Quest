@@ -1,7 +1,8 @@
 
 import React from 'react';
-import { GameState } from '../../types';
+import { GameState, Hero } from '../../types';
 import Header from '../Header';
+import { playClick } from '../../utils/sound';
 
 interface RecoveryViewProps {
   gameState: GameState;
@@ -28,6 +29,112 @@ const RecoveryView: React.FC<RecoveryViewProps> = ({
 }) => {
   // Get list of heroes currently on quests
   const activeQuestHeroIds = gameState.activeQuests.flatMap(q => q.heroIds);
+  
+  // Get list of heroes assigned to any party
+  const allAssignedHeroIds = gameState.partyPresets.flat().filter((id): id is string => !!id);
+
+  // Split heroes into groups
+  const assignedHeroes = gameState.heroes.filter(h => allAssignedHeroIds.includes(h.id));
+  const unassignedHeroes = gameState.heroes.filter(h => !allAssignedHeroIds.includes(h.id));
+
+  // Render Helper for Hero Card
+  const renderHeroCard = (hero: Hero) => {
+    const hpPercent = (hero.hp / hero.maxHp) * 100;
+    const isFull = hero.hp >= hero.maxHp;
+    const isQuesting = activeQuestHeroIds.includes(hero.id);
+    const isAssigned = allAssignedHeroIds.includes(hero.id);
+    
+    const canAffordPotion = gameState.tokens >= 100;
+    const canAffordElixir = gameState.tokens >= 500;
+
+    return (
+      <div key={hero.id} className={`bg-slate-800/80 rounded-xl border flex flex-col relative overflow-hidden transition-all group ${
+          isQuesting 
+            ? 'border-slate-800 opacity-60' 
+            : isAssigned 
+                ? 'border-indigo-500/30 shadow-sm' 
+                : 'border-slate-700'
+      }`}>
+          {/* Questing Overlay */}
+          {isQuesting && (
+            <div className="absolute inset-0 bg-slate-950/70 z-20 flex items-center justify-center backdrop-blur-[1px]">
+              <span className="text-[8px] font-black text-amber-500 border border-amber-500/30 bg-amber-950/90 px-1.5 py-0.5 rounded uppercase tracking-wider transform -rotate-6">
+                  MISSION
+              </span>
+            </div>
+          )}
+
+          {/* Top: Image & Status */}
+          <div className="relative aspect-square w-full bg-slate-900">
+              <img 
+                src={hero.imageUrl} 
+                className="w-full h-full object-cover opacity-90 group-hover:opacity-100 transition-opacity" 
+                alt={hero.name} 
+              />
+              
+              {/* HP Badge */}
+              <div className="absolute top-1 right-1 bg-black/60 px-1 rounded backdrop-blur-sm border border-white/10">
+                  <span className={`text-[8px] font-bold ${hero.hp < hero.maxHp * 0.3 ? 'text-rose-400 animate-pulse' : 'text-emerald-400'}`}>
+                      HP {hero.hp}
+                  </span>
+              </div>
+
+              {/* Party Badge */}
+              {isAssigned && !isQuesting && (
+                  <div className="absolute top-1 left-1 bg-indigo-600/90 px-1 py-0.5 rounded text-[7px] font-black text-white border border-white/10 shadow-sm">
+                      PT
+                  </div>
+              )}
+          </div>
+
+          {/* Bottom: Info & Actions */}
+          <div className="p-2 flex flex-col gap-1.5 bg-slate-800/90">
+              <div className="flex flex-col gap-0.5">
+                  <h3 className="font-bold text-[9px] text-slate-200 truncate">{hero.name}</h3>
+                  {/* HP Bar */}
+                  <div className="h-1 bg-slate-950 rounded-full overflow-hidden border border-slate-700/50 w-full">
+                      <div 
+                        className={`h-full transition-all duration-500 ${hero.hp < hero.maxHp * 0.3 ? 'bg-rose-500' : 'bg-emerald-500'}`} 
+                        style={{ width: `${hpPercent}%` }}
+                      />
+                  </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-1 mt-0.5">
+                  {/* Potion Button */}
+                  <button 
+                    onClick={() => onPotion(hero.id)}
+                    disabled={isFull || isQuesting} 
+                    className={`h-8 rounded-lg flex flex-col items-center justify-center border transition-all active:scale-95 ${
+                        isFull || isQuesting 
+                          ? 'bg-slate-900 border-slate-800 opacity-30 cursor-not-allowed grayscale' 
+                          : 'bg-slate-700 border-slate-600 hover:bg-slate-600 hover:border-slate-500'
+                    }`}
+                    title="Potion (+10 HP)"
+                  >
+                      <span className="text-xs leading-none">🩹</span>
+                      <span className={`text-[8px] font-bold leading-tight ${canAffordPotion ? 'text-slate-300' : 'text-rose-500'}`}>100</span>
+                  </button>
+                  
+                  {/* Elixir Button */}
+                  <button 
+                      onClick={() => onElixir(hero.id)}
+                      disabled={isFull || isQuesting} 
+                      className={`h-8 rounded-lg flex flex-col items-center justify-center border transition-all active:scale-95 ${
+                          isFull || isQuesting
+                            ? 'bg-slate-900 border-slate-800 opacity-30 cursor-not-allowed grayscale'
+                            : 'bg-indigo-900/40 border-indigo-500/40 hover:bg-indigo-900/60 hover:border-indigo-400/60'
+                      }`}
+                      title="Elixir (Full Heal)"
+                  >
+                      <span className="text-xs leading-none">🧪</span>
+                      <span className={`text-[8px] font-bold leading-tight ${canAffordElixir ? 'text-indigo-300' : 'text-rose-500'}`}>500</span>
+                  </button>
+              </div>
+          </div>
+      </div>
+    );
+  };
 
   return (
     <div className="flex flex-col h-full bg-slate-900">
@@ -42,82 +149,39 @@ const RecoveryView: React.FC<RecoveryViewProps> = ({
          onAccountClick={onAccountClick}
        />
 
-       <div className="flex-1 overflow-y-auto p-4 pb-24 bg-slate-900 custom-scrollbar">
-          <p className="text-xs text-slate-500 mb-2 font-bold uppercase tracking-wide">
-            Select Hero to Recover
-          </p>
-          <div className="grid grid-cols-2 gap-3">
-            {gameState.heroes.map((hero) => {
-              const hpPercent = (hero.hp / hero.maxHp) * 100;
-              const isFull = hero.hp >= hero.maxHp;
-              const isQuesting = activeQuestHeroIds.includes(hero.id);
-              
-              const canAffordPotion = gameState.tokens >= 100;
-              const canAffordElixir = gameState.tokens >= 500;
-
-              return (
-                <div key={hero.id} className={`glass-panel p-2.5 rounded-xl border flex flex-col gap-2 relative overflow-hidden transition-all ${isQuesting ? 'border-slate-800 bg-slate-900/40 opacity-70' : 'border-slate-700 bg-slate-800/60'}`}>
-                   {/* Questing Overlay */}
-                   {isQuesting && (
-                     <div className="absolute inset-0 bg-slate-950/60 z-20 flex items-center justify-center backdrop-blur-[1px]">
-                        <span className="text-[10px] font-black text-amber-500 border border-amber-500/30 bg-amber-950/80 px-2 py-1 rounded uppercase tracking-wider shadow-lg transform -rotate-6">
-                           On Mission
-                        </span>
-                     </div>
-                   )}
-
-                   {/* Hero Info */}
-                   <div className="flex items-center gap-2.5">
-                      <div className="relative w-10 h-10 shrink-0">
-                        <img src={hero.imageUrl} className="w-full h-full rounded-lg object-cover border border-slate-600 bg-slate-900" alt={hero.name} />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                         <h3 className="font-bold text-[10px] text-slate-200 truncate leading-tight mb-1">{hero.name}</h3>
-                         <div className="flex justify-between items-center">
-                            <span className={`text-[9px] font-black ${hero.hp < 30 ? 'text-rose-400' : 'text-emerald-400'}`}>
-                               HP {hero.hp}/{hero.maxHp}
-                            </span>
-                         </div>
-                         <div className="h-1.5 bg-slate-900 rounded-full mt-1 overflow-hidden border border-slate-700/50">
-                            <div className={`h-full transition-all duration-500 ${hero.hp < 30 ? 'bg-rose-500' : 'bg-emerald-500'}`} style={{ width: `${hpPercent}%` }}></div>
-                         </div>
-                      </div>
-                   </div>
-
-                   {/* Action Buttons */}
-                   <div className="grid grid-cols-2 gap-2 mt-auto relative z-10">
-                      <button 
-                        onClick={() => onPotion(hero.id)}
-                        disabled={isFull || isQuesting} 
-                        className={`py-2 px-1 rounded-lg transition-all flex flex-col items-center justify-center gap-0.5 border ${
-                            isFull || isQuesting 
-                              ? 'bg-slate-800 border-slate-800 opacity-40 cursor-not-allowed' 
-                              : 'bg-slate-800 border-slate-600 hover:bg-slate-700 active:scale-95 hover:border-slate-500'
-                        }`}
-                      >
-                         <span className="text-sm leading-none mb-0.5">🩹</span>
-                         <span className="text-[8px] font-bold text-slate-300 leading-none">+10</span>
-                         <span className={`text-[8px] font-orbitron font-bold mt-0.5 ${canAffordPotion ? 'text-amber-500' : 'text-rose-500'}`}>100</span>
-                      </button>
-                      
-                      <button 
-                         onClick={() => onElixir(hero.id)}
-                         disabled={isFull || isQuesting} 
-                         className={`py-2 px-1 rounded-lg transition-all flex flex-col items-center justify-center gap-0.5 border ${
-                             isFull || isQuesting
-                               ? 'bg-slate-800 border-slate-800 opacity-40 cursor-not-allowed'
-                               : 'bg-indigo-900/30 border-indigo-500/30 hover:bg-indigo-900/50 active:scale-95 hover:border-indigo-400/50'
-                         }`}
-                      >
-                         <span className="text-sm leading-none mb-0.5">🧪</span>
-                         <span className="text-[8px] font-bold text-indigo-300 leading-none">MAX</span>
-                         <span className={`text-[8px] font-orbitron font-bold mt-0.5 ${canAffordElixir ? 'text-amber-500' : 'text-rose-500'}`}>500</span>
-                      </button>
-                   </div>
+       <div className="flex-1 overflow-y-auto px-3 py-4 pb-24 bg-slate-900 custom-scrollbar">
+          
+          {/* Section: Party Members */}
+          {assignedHeroes.length > 0 && (
+            <div className="mb-6">
+                <div className="flex items-center gap-2 mb-2 px-1">
+                    <span className="w-1.5 h-4 bg-indigo-500 rounded-full"></span>
+                    <h2 className="text-xs font-bold text-slate-400 uppercase tracking-widest">Party Members</h2>
                 </div>
-              );
-            })}
+                <div className="grid grid-cols-3 gap-2">
+                    {assignedHeroes.map(renderHeroCard)}
+                </div>
+            </div>
+          )}
+
+          {/* Section: Standby */}
+          <div>
+              <div className="flex items-center gap-2 mb-2 px-1">
+                  <span className="w-1.5 h-4 bg-slate-600 rounded-full"></span>
+                  <h2 className="text-xs font-bold text-slate-400 uppercase tracking-widest">Standby</h2>
+              </div>
+              
+              {unassignedHeroes.length > 0 ? (
+                  <div className="grid grid-cols-3 gap-2">
+                      {unassignedHeroes.map(renderHeroCard)}
+                  </div>
+              ) : (
+                  <div className="p-8 text-center border border-dashed border-slate-800 rounded-xl text-slate-600 text-xs font-bold">
+                      NO HEROES
+                  </div>
+              )}
           </div>
+
        </div>
     </div>
   );
