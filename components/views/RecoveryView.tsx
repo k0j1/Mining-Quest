@@ -37,6 +37,17 @@ const RecoveryView: React.FC<RecoveryViewProps> = ({
   const assignedHeroes = gameState.heroes.filter(h => allAssignedHeroIds.includes(h.id));
   const unassignedHeroes = gameState.heroes.filter(h => !allAssignedHeroIds.includes(h.id));
 
+  // Helper to identify parties
+  const getHeroParties = (heroId: string) => {
+    const parties: number[] = [];
+    gameState.partyPresets.forEach((preset, index) => {
+      if (preset.includes(heroId)) {
+        parties.push(index + 1);
+      }
+    });
+    return parties;
+  };
+
   // Render Helper for Hero Card
   const renderHeroCard = (hero: Hero) => {
     const hpPercent = (hero.hp / hero.maxHp) * 100;
@@ -46,6 +57,9 @@ const RecoveryView: React.FC<RecoveryViewProps> = ({
     
     const canAffordPotion = gameState.tokens >= 100;
     const canAffordElixir = gameState.tokens >= 500;
+
+    const partyIndices = getHeroParties(hero.id);
+    const partyLabel = partyIndices.length > 0 ? `PT ${partyIndices.join(',')}` : '';
 
     return (
       <div key={hero.id} className={`bg-slate-800/80 rounded-xl border flex flex-col relative overflow-hidden transition-all group ${
@@ -73,7 +87,7 @@ const RecoveryView: React.FC<RecoveryViewProps> = ({
               />
               
               {/* HP Badge */}
-              <div className="absolute top-1 right-1 bg-black/60 px-1 rounded backdrop-blur-sm border border-white/10">
+              <div className="absolute top-1 right-1 bg-black/60 px-1 rounded backdrop-blur-sm border border-white/10 z-10">
                   <span className={`text-[8px] font-bold ${hero.hp < hero.maxHp * 0.3 ? 'text-rose-400 animate-pulse' : 'text-emerald-400'}`}>
                       HP {hero.hp}
                   </span>
@@ -81,8 +95,8 @@ const RecoveryView: React.FC<RecoveryViewProps> = ({
 
               {/* Party Badge */}
               {isAssigned && !isQuesting && (
-                  <div className="absolute top-1 left-1 bg-indigo-600/90 px-1 py-0.5 rounded text-[7px] font-black text-white border border-white/10 shadow-sm">
-                      PT
+                  <div className="absolute top-1 left-1 bg-indigo-600/90 px-1.5 py-0.5 rounded text-[7px] font-black text-white border border-white/10 shadow-sm z-10">
+                      {partyLabel}
                   </div>
               )}
           </div>
