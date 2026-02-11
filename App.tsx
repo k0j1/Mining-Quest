@@ -288,6 +288,7 @@ const App: React.FC = () => {
             onShowLightpaper={() => setCurrentView(View.LIGHTPAPER)}
             onDebugCompleteQuest={actions.debugCompleteQuest}
             onToggleDebug={() => setIsDebugMode(p => !p)}
+            onNavigate={(view) => setCurrentView(view)} 
             {...commonProps} 
           />
         );

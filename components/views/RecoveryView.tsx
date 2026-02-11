@@ -33,20 +33,16 @@ const RecoveryView: React.FC<RecoveryViewProps> = ({
   // Get list of heroes assigned to any party
   const allAssignedHeroIds = gameState.partyPresets.flat().filter((id): id is string => !!id);
 
-  // Split heroes into groups
-  const assignedHeroes = gameState.heroes.filter(h => allAssignedHeroIds.includes(h.id));
-  const unassignedHeroes = gameState.heroes.filter(h => !allAssignedHeroIds.includes(h.id));
+  // Group assigned heroes by party
+  const parties = [0, 1, 2].map(partyIndex => {
+      const heroIds = gameState.partyPresets[partyIndex];
+      const heroes = heroIds
+          .map(id => gameState.heroes.find(h => h.id === id))
+          .filter((h): h is Hero => !!h);
+      return { id: partyIndex, heroes };
+  });
 
-  // Helper to identify parties
-  const getHeroParties = (heroId: string) => {
-    const parties: number[] = [];
-    gameState.partyPresets.forEach((preset, index) => {
-      if (preset.includes(heroId)) {
-        parties.push(index + 1);
-      }
-    });
-    return parties;
-  };
+  const unassignedHeroes = gameState.heroes.filter(h => !allAssignedHeroIds.includes(h.id));
 
   // Render Helper for Hero Card
   const renderHeroCard = (hero: Hero) => {
@@ -57,9 +53,6 @@ const RecoveryView: React.FC<RecoveryViewProps> = ({
     
     const canAffordPotion = gameState.tokens >= 100;
     const canAffordElixir = gameState.tokens >= 500;
-
-    const partyIndices = getHeroParties(hero.id);
-    const partyLabel = partyIndices.length > 0 ? `PT ${partyIndices.join(',')}` : '';
 
     return (
       <div key={hero.id} className={`bg-slate-800/80 rounded-xl border flex flex-col relative overflow-hidden transition-all group ${
@@ -92,13 +85,6 @@ const RecoveryView: React.FC<RecoveryViewProps> = ({
                       HP {hero.hp}
                   </span>
               </div>
-
-              {/* Party Badge */}
-              {isAssigned && !isQuesting && (
-                  <div className="absolute top-1 left-1 bg-indigo-600/90 px-1.5 py-0.5 rounded text-[7px] font-black text-white border border-white/10 shadow-sm z-10">
-                      {partyLabel}
-                  </div>
-              )}
           </div>
 
           {/* Bottom: Info & Actions */}
@@ -165,21 +151,30 @@ const RecoveryView: React.FC<RecoveryViewProps> = ({
 
        <div className="flex-1 overflow-y-auto px-3 py-4 pb-24 bg-slate-900 custom-scrollbar">
           
-          {/* Section: Party Members */}
-          {assignedHeroes.length > 0 && (
-            <div className="mb-6">
-                <div className="flex items-center gap-2 mb-2 px-1">
-                    <span className="w-1.5 h-4 bg-indigo-500 rounded-full"></span>
-                    <h2 className="text-xs font-bold text-slate-400 uppercase tracking-widest">Party Members</h2>
-                </div>
-                <div className="grid grid-cols-3 gap-2">
-                    {assignedHeroes.map(renderHeroCard)}
-                </div>
-            </div>
-          )}
+          {/* Section: Party Groups */}
+          {parties.map(party => {
+              if (party.heroes.length === 0) return null;
+              
+              const isUnlocked = gameState.unlockedParties[party.id];
+              if (!isUnlocked) return null;
+
+              return (
+                  <div key={party.id} className="mb-6">
+                      <div className="flex items-center gap-2 mb-2 px-1">
+                          <span className="w-1.5 h-4 bg-indigo-500 rounded-full"></span>
+                          <h2 className="text-xs font-bold text-slate-400 uppercase tracking-widest">
+                              Party 0{party.id + 1}
+                          </h2>
+                      </div>
+                      <div className="grid grid-cols-3 gap-2 p-2 rounded-2xl bg-slate-800/30 border border-slate-800/50">
+                          {party.heroes.map(renderHeroCard)}
+                      </div>
+                  </div>
+              );
+          })}
 
           {/* Section: Standby */}
-          <div>
+          <div className="mt-8 border-t border-slate-800 pt-6">
               <div className="flex items-center gap-2 mb-2 px-1">
                   <span className="w-1.5 h-4 bg-slate-600 rounded-full"></span>
                   <h2 className="text-xs font-bold text-slate-400 uppercase tracking-widest">Standby</h2>

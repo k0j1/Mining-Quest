@@ -1,6 +1,6 @@
 
 import React, { useState, useMemo, useRef, useEffect, useLayoutEffect } from 'react';
-import { GameState, Hero } from '../../types';
+import { GameState, Hero, Species } from '../../types';
 import HeroCard from '../HeroCard';
 import EquipmentSelector from '../EquipmentSelector';
 import PartySlotGrid from '../PartySlotGrid';
@@ -48,6 +48,9 @@ const PartyView: React.FC<PartyViewProps> = ({
   const [unlockingIndex, setUnlockingIndex] = useState<number | null>(null);
   const [inspectingHero, setInspectingHero] = useState<Hero | null>(null);
   const [showTeamStatus, setShowTeamStatus] = useState(false);
+  
+  // Filter State
+  const [filterSpecies, setFilterSpecies] = useState<'ALL' | Species>('ALL');
   
   // Intersection Observer State
   const [isMainPartyVisible, setIsMainPartyVisible] = useState(true);
@@ -223,6 +226,10 @@ const PartyView: React.FC<PartyViewProps> = ({
     }
   };
 
+  const filteredHeroes = gameState.heroes
+    .filter(h => !allAssignedHeroIds.includes(h.id))
+    .filter(h => filterSpecies === 'ALL' || h.species === filterSpecies);
+
   return (
     <>
       <div className="flex flex-col h-full bg-slate-900">
@@ -344,19 +351,39 @@ const PartyView: React.FC<PartyViewProps> = ({
 
             {/* Barracks List */}
             <div>
-              <h2 className="text-xs font-bold text-slate-500 mb-4 uppercase tracking-widest flex items-center sticky top-0 bg-slate-900/95 py-2 backdrop-blur-sm z-10 border-b border-slate-800/50">
-                <span className="w-1 h-3 bg-slate-600 mr-2 rounded-full"></span>
-                Barracks
-                {selectedSlotIndex !== null && (
-                    <span className="ml-auto text-[9px] text-indigo-400 bg-indigo-900/20 px-2 py-0.5 rounded animate-pulse">
-                        Select Hero for Slot {selectedSlotIndex + 1}
-                    </span>
-                )}
-              </h2>
+              <div className="sticky top-0 bg-slate-900/95 pt-2 pb-3 backdrop-blur-sm z-10 border-b border-slate-800/50 mb-4">
+                  <div className="flex items-center justify-between mb-2">
+                     <h2 className="text-xs font-bold text-slate-500 uppercase tracking-widest flex items-center">
+                        <span className="w-1 h-3 bg-slate-600 mr-2 rounded-full"></span>
+                        Barracks
+                     </h2>
+                     {selectedSlotIndex !== null && (
+                        <span className="text-[9px] text-indigo-400 bg-indigo-900/20 px-2 py-0.5 rounded animate-pulse">
+                            Select Hero for Slot {selectedSlotIndex + 1}
+                        </span>
+                     )}
+                  </div>
+
+                  {/* Filter Buttons */}
+                  <div className="flex gap-1.5 overflow-x-auto pb-1 custom-scrollbar">
+                     {(['ALL', 'Dog', 'Cat', 'Bird', 'Other'] as const).map(type => (
+                        <button
+                           key={type}
+                           onClick={() => { playClick(); setFilterSpecies(type); }}
+                           className={`px-3 py-1 rounded-full text-[9px] font-bold border transition-colors whitespace-nowrap ${
+                              filterSpecies === type 
+                                ? 'bg-slate-200 text-slate-900 border-white' 
+                                : 'bg-slate-800 text-slate-500 border-slate-700 hover:bg-slate-700'
+                           }`}
+                        >
+                           {type}
+                        </button>
+                     ))}
+                  </div>
+              </div>
+
               <div className="grid grid-cols-2 gap-3">
-                  {gameState.heroes
-                    .filter(h => !allAssignedHeroIds.includes(h.id))
-                    .map((hero, idx) => {
+                  {filteredHeroes.map((hero, idx) => {
                       const isQuesting = activeQuestHeroIds.includes(hero.id);
                       const isHeroSelected = selectedHeroId === hero.id;
 
@@ -375,9 +402,9 @@ const PartyView: React.FC<PartyViewProps> = ({
                       </div>
                     );
                   })}
-                  {gameState.heroes.filter(h => !allAssignedHeroIds.includes(h.id)).length === 0 && (
+                  {filteredHeroes.length === 0 && (
                       <div className="col-span-2 text-center py-8 text-slate-600 text-xs font-bold">
-                          NO HEROES IN BARRACKS
+                          {gameState.heroes.length === 0 ? "NO HEROES IN BARRACKS" : "NO HEROES MATCH FILTER"}
                       </div>
                   )}
               </div>

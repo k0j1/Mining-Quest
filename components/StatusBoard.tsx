@@ -21,11 +21,18 @@ interface StatusBoardProps {
   onShowLightpaper?: () => void;
   onDebugCompleteQuest?: (questId: string) => void;
   onToggleDebug?: () => void;
+  onNavigate?: (view: View) => void;
 }
 
 const ADMIN_FIDS = [406233];
 
-const QuestItem: React.FC<{ quest: any; config?: QuestConfig; farcasterUser?: any; onDebugComplete?: (id: string) => void }> = ({ quest, config, farcasterUser, onDebugComplete }) => {
+const QuestItem: React.FC<{ 
+    quest: any; 
+    config?: QuestConfig; 
+    farcasterUser?: any; 
+    onDebugComplete?: (id: string) => void;
+    onClick?: () => void;
+}> = ({ quest, config, farcasterUser, onDebugComplete, onClick }) => {
   const [timeLeft, setTimeLeft] = useState(Math.max(0, Math.floor((quest.endTime - Date.now()) / 1000)));
   const [debugClicks, setDebugClicks] = useState(0);
 
@@ -38,7 +45,9 @@ const QuestItem: React.FC<{ quest: any; config?: QuestConfig; farcasterUser?: an
     return () => clearInterval(interval);
   }, [quest.endTime]);
 
-  const handleDebugClick = () => {
+  const handleDebugClick = (e: React.MouseEvent) => {
+    e.stopPropagation(); // Stop propagation to parent onClick
+    
     if (farcasterUser) return;
     
     // Only allow if onDebugComplete is provided
@@ -69,9 +78,17 @@ const QuestItem: React.FC<{ quest: any; config?: QuestConfig; farcasterUser?: an
   const maxReward = config ? config.maxReward : '?';
 
   return (
-    <div className={`relative p-4 rounded-2xl border transition-all ${
-      isCompleted ? 'bg-emerald-900/10 border-emerald-500/30' : 'bg-slate-800 border-slate-700'
-    }`}>
+    <div 
+        onClick={() => {
+            if (onClick) {
+                playClick();
+                onClick();
+            }
+        }}
+        className={`relative p-4 rounded-2xl border transition-all cursor-pointer hover:bg-slate-800/80 active:scale-[0.98] ${
+            isCompleted ? 'bg-emerald-900/10 border-emerald-500/30' : 'bg-slate-800 border-slate-700'
+        }`}
+    >
       <div className="flex justify-between items-center">
         <div className="flex flex-col gap-1">
           <div className="flex items-center gap-2">
@@ -93,7 +110,7 @@ const QuestItem: React.FC<{ quest: any; config?: QuestConfig; farcasterUser?: an
               </div>
             </div>
           ) : (
-            <div className="flex flex-col items-end cursor-pointer">
+            <div className="flex flex-col items-end">
               <span className="text-[8px] font-bold text-slate-500 uppercase tracking-wider mb-1">残り時間</span>
               <div className="font-bold text-lg text-slate-200 tabular-nums">
                 {minutes}:{seconds.toString().padStart(2, '0')}
@@ -107,7 +124,7 @@ const QuestItem: React.FC<{ quest: any; config?: QuestConfig; farcasterUser?: an
 };
 
 const StatusBoard: React.FC<StatusBoardProps> = ({ 
-  state, actionButtonLabel, onAction, title, view, isSoundOn, onToggleSound, onDebugAddTokens, farcasterUser, onChainBalance, onAccountClick, onShowLightpaper, onDebugCompleteQuest, onToggleDebug
+  state, actionButtonLabel, onAction, title, view, isSoundOn, onToggleSound, onDebugAddTokens, farcasterUser, onChainBalance, onAccountClick, onShowLightpaper, onDebugCompleteQuest, onToggleDebug, onNavigate
 }) => {
   const isAdmin = farcasterUser && ADMIN_FIDS.includes(farcasterUser.fid);
 
@@ -185,6 +202,7 @@ const StatusBoard: React.FC<StatusBoardProps> = ({
                     config={state.questConfigs.find(c => c.rank === q.rank)}
                     farcasterUser={farcasterUser} 
                     onDebugComplete={onDebugCompleteQuest} // Always pass it if provided
+                    onClick={() => view === View.HOME && onNavigate?.(View.RETURN)}
                   />
                 ))
               ) : (
