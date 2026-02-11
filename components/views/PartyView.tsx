@@ -1,6 +1,6 @@
 
 import React, { useState, useMemo, useRef, useEffect, useLayoutEffect } from 'react';
-import { GameState, Hero, Species } from '../../types';
+import { GameState, Hero, QuestRank } from '../../types';
 import HeroCard from '../HeroCard';
 import EquipmentSelector from '../EquipmentSelector';
 import PartySlotGrid from '../PartySlotGrid';
@@ -28,6 +28,8 @@ interface PartyViewProps {
   onAccountClick?: () => void;
 }
 
+type SortMode = 'RARITY' | 'HP_ASC' | 'HP_DESC';
+
 const PartyView: React.FC<PartyViewProps> = ({ 
   gameState, 
   onEquipItem, 
@@ -49,8 +51,9 @@ const PartyView: React.FC<PartyViewProps> = ({
   const [inspectingHero, setInspectingHero] = useState<Hero | null>(null);
   const [showTeamStatus, setShowTeamStatus] = useState(false);
   
-  // Filter State
-  const [filterSpecies, setFilterSpecies] = useState<'ALL' | Species>('ALL');
+  // Filter & Sort State
+  const [filterRarity, setFilterRarity] = useState<'ALL' | QuestRank>('ALL');
+  const [sortMode, setSortMode] = useState<SortMode>('RARITY');
   
   // Intersection Observer State
   const [isMainPartyVisible, setIsMainPartyVisible] = useState(true);
@@ -226,9 +229,42 @@ const PartyView: React.FC<PartyViewProps> = ({
     }
   };
 
-  const filteredHeroes = gameState.heroes
-    .filter(h => !allAssignedHeroIds.includes(h.id))
-    .filter(h => filterSpecies === 'ALL' || h.species === filterSpecies);
+  const handleToggleSort = () => {
+    playClick();
+    setSortMode(prev => {
+      if (prev === 'RARITY') return 'HP_ASC';
+      if (prev === 'HP_ASC') return 'HP_DESC';
+      return 'RARITY';
+    });
+  };
+
+  const filteredHeroes = useMemo(() => {
+    let result = gameState.heroes.filter(h => !allAssignedHeroIds.includes(h.id));
+
+    // Filter by Rarity
+    if (filterRarity !== 'ALL') {
+      result = result.filter(h => h.rarity === filterRarity);
+    }
+
+    // Sort
+    result.sort((a, b) => {
+      if (sortMode === 'RARITY') {
+        const priority = { L: 5, E: 4, R: 3, UC: 2, C: 1 };
+        const diff = priority[b.rarity] - priority[a.rarity];
+        if (diff !== 0) return diff;
+        return b.hp - a.hp; // Secondary sort by HP (High to Low)
+      }
+      if (sortMode === 'HP_ASC') {
+        return a.hp - b.hp;
+      }
+      if (sortMode === 'HP_DESC') {
+        return b.hp - a.hp;
+      }
+      return 0;
+    });
+
+    return result;
+  }, [gameState.heroes, allAssignedHeroIds, filterRarity, sortMode]);
 
   return (
     <>
@@ -352,7 +388,7 @@ const PartyView: React.FC<PartyViewProps> = ({
             {/* Barracks List */}
             <div>
               <div className="sticky top-0 bg-slate-900/95 pt-2 pb-3 backdrop-blur-sm z-10 border-b border-slate-800/50 mb-4">
-                  <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center justify-between mb-3">
                      <h2 className="text-xs font-bold text-slate-500 uppercase tracking-widest flex items-center">
                         <span className="w-1 h-3 bg-slate-600 mr-2 rounded-full"></span>
                         Barracks
@@ -364,21 +400,36 @@ const PartyView: React.FC<PartyViewProps> = ({
                      )}
                   </div>
 
-                  {/* Filter Buttons */}
-                  <div className="flex gap-1.5 overflow-x-auto pb-1 custom-scrollbar">
-                     {(['ALL', 'Dog', 'Cat', 'Bird', 'Other'] as const).map(type => (
-                        <button
-                           key={type}
-                           onClick={() => { playClick(); setFilterSpecies(type); }}
-                           className={`px-3 py-1 rounded-full text-[9px] font-bold border transition-colors whitespace-nowrap ${
-                              filterSpecies === type 
-                                ? 'bg-slate-200 text-slate-900 border-white' 
-                                : 'bg-slate-800 text-slate-500 border-slate-700 hover:bg-slate-700'
-                           }`}
-                        >
-                           {type}
-                        </button>
-                     ))}
+                  <div className="flex items-center gap-2">
+                      {/* Filter Buttons */}
+                      <div className="flex-1 flex gap-1.5 overflow-x-auto pb-1 custom-scrollbar">
+                        {(['ALL', 'L', 'E', 'R', 'UC', 'C'] as const).map(rarity => (
+                            <button
+                              key={rarity}
+                              onClick={() => { playClick(); setFilterRarity(rarity); }}
+                              className={`px-3 py-1.5 rounded-lg text-[9px] font-bold border transition-colors whitespace-nowrap ${
+                                  filterRarity === rarity 
+                                    ? 'bg-slate-200 text-slate-900 border-white shadow-sm' 
+                                    : 'bg-slate-800 text-slate-500 border-slate-700 hover:bg-slate-750'
+                              }`}
+                            >
+                              {rarity}
+                            </button>
+                        ))}
+                      </div>
+
+                      {/* Sort Button */}
+                      <button 
+                        onClick={handleToggleSort}
+                        className="shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-900/30 border border-indigo-500/30 text-indigo-300 font-bold text-[9px] hover:bg-indigo-900/50 transition-colors"
+                      >
+                        <span className="text-xs">
+                            {sortMode === 'RARITY' ? '⭐' : sortMode === 'HP_ASC' ? '💓' : '💪'}
+                        </span>
+                        <span>
+                            {sortMode === 'RARITY' ? 'レア度順' : sortMode === 'HP_ASC' ? 'HP低い順' : 'HP高い順'}
+                        </span>
+                      </button>
                   </div>
               </div>
 
