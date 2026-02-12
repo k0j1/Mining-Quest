@@ -387,7 +387,7 @@ const PartyView: React.FC<PartyViewProps> = ({
 
             {/* Barracks List */}
             <div>
-              <div className="sticky top-0 bg-slate-900/95 pt-2 pb-3 backdrop-blur-sm z-10 border-b border-slate-800/50 mb-4">
+              <div className="sticky top-0 bg-slate-900/95 pt-2 pb-3 backdrop-blur-sm z-40 border-b border-slate-800/50 mb-4">
                   <div className="flex items-center justify-between mb-3">
                      <h2 className="text-xs font-bold text-slate-500 uppercase tracking-widest flex items-center">
                         <span className="w-1 h-3 bg-slate-600 mr-2 rounded-full"></span>
@@ -466,7 +466,7 @@ const PartyView: React.FC<PartyViewProps> = ({
         {!isMainPartyVisible && (
             <div 
                 ref={floatRef}
-                className="fixed top-20 right-3 z-40 bg-slate-900/80 backdrop-blur-md border border-slate-700/50 rounded-2xl p-2 shadow-2xl flex flex-col gap-2"
+                className="fixed top-20 right-3 z-50 bg-slate-900/80 backdrop-blur-md border border-slate-700/50 rounded-2xl p-2 shadow-2xl flex flex-col gap-2"
             >
                 <div className="text-[8px] font-bold text-slate-400 text-center uppercase tracking-widest border-b border-slate-700/50 pb-1">
                     Party {activePartyIndex + 1}
