@@ -83,8 +83,9 @@ const LightpaperView: React.FC<LightpaperViewProps> = ({
               </p>
               <ul className="list-disc list-inside space-y-1 text-slate-400 ml-2">
                 <li><strong>レアリティ</strong>: C / UC / R / E / L (Lが最高)</li>
-                <li><strong>装備スロット</strong>: レアリティが高いほど、装備スロットが増えます。</li>
-                <li><strong>HP</strong>: レアリティにより最大値が異なります。</li>
+                <li><strong>装備スロット</strong>: 全てのヒーローが3枠 (Pickaxe, Helmet, Boots) を装備可能です。</li>
+                <li><strong>スキル (特性)</strong>: 各ヒーローは固有の能力を持ち、条件を満たすと報酬アップやダメージ軽減などの効果を発揮します。</li>
+                <li><strong>HP</strong>: レアリティが高いほど最大HPが高く設定されています。</li>
               </ul>
             </div>
           </section>
@@ -131,31 +132,31 @@ const LightpaperView: React.FC<LightpaperViewProps> = ({
                   <tr>
                     <td className="py-2 font-bold text-slate-400">C</td>
                     <td className="py-2">0</td>
-                    <td className="py-2">15m</td>
+                    <td className="py-2">30m</td>
                     <td className="py-2 text-slate-500">とても低い</td>
                   </tr>
                   <tr>
                     <td className="py-2 font-bold text-emerald-500">UC</td>
                     <td className="py-2">20</td>
-                    <td className="py-2">30m</td>
+                    <td className="py-2">60m</td>
                     <td className="py-2 text-slate-500">低</td>
                   </tr>
                   <tr>
                     <td className="py-2 font-bold text-indigo-400">R</td>
                     <td className="py-2">50</td>
-                    <td className="py-2">1h</td>
+                    <td className="py-2">120m</td>
                     <td className="py-2 text-orange-300">中</td>
                   </tr>
                   <tr>
                     <td className="py-2 font-bold text-fuchsia-400">E</td>
                     <td className="py-2">150</td>
-                    <td className="py-2">3h</td>
+                    <td className="py-2">360m</td>
                     <td className="py-2 text-red-400">高 (大ダメージ)</td>
                   </tr>
                   <tr>
                     <td className="py-2 font-bold text-amber-500">L</td>
                     <td className="py-2">300</td>
-                    <td className="py-2">8h</td>
+                    <td className="py-2">960m</td>
                     <td className="py-2 text-red-600 font-bold">一撃死亡有り</td>
                   </tr>
                 </tbody>
