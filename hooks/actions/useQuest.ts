@@ -179,7 +179,7 @@ export const useQuest = ({ gameState, setGameState, showNotification, setReturnR
 
     // Create Local Quest Object with Results
     const newQuest: Quest = {
-      id: Math.random().toString(), // Temp ID
+      id: Math.random().toString(), // Temp ID, will be updated if DB succeeds
       name: config.name,
       rank: rank,
       duration: config.duration,
@@ -223,7 +223,7 @@ export const useQuest = ({ gameState, setGameState, showNotification, setReturnR
             }).select('quest_pid').single();
 
             if (!error && inserted) {
-                newQuest.id = inserted.quest_pid.toString();
+                newQuest.id = inserted.quest_pid.toString(); // Update ID to DB ID
             } else {
                 console.error("Quest Start DB Error:", error);
             }
@@ -256,8 +256,10 @@ export const useQuest = ({ gameState, setGameState, showNotification, setReturnR
 
     let accumulatedTotalReward = 0;
     const resultList: any[] = [];
+    // We clone heroes array to update HP locally
     const newHeroes = [...gameState.heroes];
     let deadHeroIds: string[] = [];
+    const processedQuestIds: string[] = []; // Track IDs that are successfully processed in DB
 
     // Process sequentially for async DB
     for (const quest of completed) {
@@ -304,14 +306,14 @@ export const useQuest = ({ gameState, setGameState, showNotification, setReturnR
 
         if (damageTaken >= 9999) {
              newHp = 0;
-             deadHeroIds.push(hero.id);
+             if (!deadHeroIds.includes(hero.id)) deadHeroIds.push(hero.id);
              logs.push(`💀 悲報: ${hero.name} は帰らぬ犬となりました...`);
              isDead = true;
         } else {
              newHeroes[idx] = { ...hero, hp: newHp };
              
              if (newHp === 0) {
-               deadHeroIds.push(hero.id);
+               if (!deadHeroIds.includes(hero.id)) deadHeroIds.push(hero.id);
                logs.push(`💀 ${hero.name} は力尽きた... (HP 0)`);
                isDead = true;
              } else {
@@ -331,25 +333,88 @@ export const useQuest = ({ gameState, setGameState, showNotification, setReturnR
       if (survivors === 0 && questHeroes.length > 0) {
         finalReward = 0;
         logs.push(`❌ パーティ全滅！クエスト失敗。報酬は得られません。`);
-      } else {
-        accumulatedTotalReward += finalReward;
       }
 
-      // Update DB for this quest
-      let isDuplicate = false;
+      // --- CRITICAL: DB Synchronization ---
+      let dbSuccess = true;
 
       if (farcasterUser?.fid) {
           const questPid = parseInt(quest.id);
-          try {
-              // Integrity Check & DB Updates (omitted for brevity, same as before)
-              // ...
-              // Mark completion locally
-          } catch (e) {
-              console.error(`Error processing quest completion for ${quest.id}:`, e);
+          const { data: questData } = await supabase.from('quest_process').select('party_id, quest_id').eq('quest_pid', questPid).single();
+          
+          if (!questData) {
+              console.error(`Quest ${questPid} not found in DB`);
+              dbSuccess = false; 
+          } else {
+              try {
+                  // 1. Archive to history
+                  const { error: insertError } = await supabase
+                    .from('quest_process_complete')
+                    .insert({
+                        fid: farcasterUser.fid,
+                        quest_id: questData.quest_id,
+                        party_id: questData.party_id,
+                        reward: finalReward,
+                        created_at: new Date().toISOString()
+                    });
+
+                  if (insertError) throw insertError;
+
+                  // 2. Delete from active
+                  const { error: deleteError } = await supabase
+                    .from('quest_process')
+                    .delete()
+                    .eq('quest_pid', questPid);
+
+                  if (deleteError) throw deleteError;
+
+                  // 3. Update Hero HP in DB
+                  for (const hero of questHeroes) {
+                      const updatedHero = newHeroes.find(h => h.id === hero.id);
+                      if (updatedHero) {
+                          if (updatedHero.hp <= 0 && !heroDamages[hero.id] || heroDamages[hero.id] < 9999) {
+                              // If just HP 0 but not insta-death (Lost), still update HP to 0. 
+                              // Actual Lost logic (deleting from player_hero and moving to player_hero_lost)
+                              // should ideally be handled here if we want permanent death.
+                              // For now, we just update HP.
+                              await supabase.from('quest_player_hero')
+                                .update({ hp: updatedHero.hp })
+                                .eq('player_hid', parseInt(hero.id));
+                          }
+                      }
+                  }
+                  
+                  // 4. Handle Permanent Death (Lost) in DB
+                  // If hero is in deadHeroIds, we should execute the Lost Logic (Move to Graveyard)
+                  // Implementing basic Lost logic:
+                  for (const deadId of deadHeroIds) {
+                      if (quest.heroIds.includes(deadId)) {
+                          // Check if already processed (in case multiple quests finish same time)
+                          const { data: heroRow } = await supabase.from('quest_player_hero').select('*').eq('player_hid', parseInt(deadId)).single();
+                          if (heroRow) {
+                              await supabase.from('quest_player_hero_lost').insert({
+                                  fid: farcasterUser.fid,
+                                  hero_id: heroRow.hero_id,
+                                  lost_at: new Date().toISOString()
+                              });
+                              await supabase.from('quest_player_hero').delete().eq('player_hid', parseInt(deadId));
+                          }
+                      }
+                  }
+
+              } catch (e) {
+                  console.error(`Error syncing quest completion for ${quest.id}:`, e);
+                  dbSuccess = false;
+                  showNotification(`クエスト同期エラー (ID: ${quest.id})。再試行してください。`, 'error');
+              }
           }
       }
 
-      if (!isDuplicate) {
+      // Only proceed if DB sync was successful (or we are in local mode)
+      if (dbSuccess) {
+          processedQuestIds.push(quest.id);
+          accumulatedTotalReward += finalReward;
+          
           resultList.push({
             questName: quest.name,
             rank: quest.rank,
@@ -363,43 +428,38 @@ export const useQuest = ({ gameState, setGameState, showNotification, setReturnR
       }
     }
 
-    const actualTotalReward = resultList.reduce((acc, r) => acc + r.totalReward, 0);
+    if (processedQuestIds.length === 0) {
+        // All failed
+        return false;
+    }
 
     // Update Total Reward Stats for valid reward
-    if (farcasterUser?.fid && actualTotalReward > 0) {
+    if (farcasterUser?.fid && accumulatedTotalReward > 0) {
         const { error: rewardError } = await supabase.rpc('increment_player_stat', { 
             player_fid: farcasterUser.fid, 
             column_name: 'total_reward', 
-            amount: actualTotalReward 
+            amount: accumulatedTotalReward 
         });
         
         if (rewardError) {
              const { data } = await supabase.from('quest_player_stats').select('total_reward').eq('fid', farcasterUser.fid).single();
              if (data) {
-                await supabase.from('quest_player_stats').update({ total_reward: (data.total_reward || 0) + actualTotalReward }).eq('fid', farcasterUser.fid);
+                await supabase.from('quest_player_stats').update({ total_reward: (data.total_reward || 0) + accumulatedTotalReward }).eq('fid', farcasterUser.fid);
              }
         }
     }
 
     setGameState(prev => ({
       ...prev,
-      tokens: prev.tokens + actualTotalReward,
+      tokens: prev.tokens + accumulatedTotalReward,
       heroes: newHeroes.filter(h => !deadHeroIds.includes(h.id)),
-      activeQuests: prev.activeQuests.filter(q => q.endTime > now),
+      // Only remove quests that were successfully processed in DB
+      activeQuests: prev.activeQuests.filter(q => !processedQuestIds.includes(q.id)),
       partyPresets: prev.partyPresets.map(p => p.map(id => (id && deadHeroIds.includes(id)) ? null : id))
     }));
     
-    // Also refetch after receiving rewards
-    if (actualTotalReward > 0) {
-        // Wait slightly to ensure on-chain could possibly reflect? (Though usually local sync is fine)
-        // Just keeping it local sync via refetch if needed, though usually rewards are off-chain until claimed.
-        // But if rewards are just game tokens, we simply update state.
-        // If the game uses on-chain tokens for rewards, we might want to refetch, but here it seems strictly game tokens.
-        // However, keeping consistent balance check is fine.
-    }
-
     if (resultList.length > 0) {
-        setReturnResult({ results: resultList, totalTokens: actualTotalReward });
+        setReturnResult({ results: resultList, totalTokens: accumulatedTotalReward });
     }
     
     return true;
