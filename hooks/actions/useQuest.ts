@@ -353,7 +353,7 @@ export const useQuest = ({ gameState, setGameState, showNotification, setReturnR
                     .insert({
                         fid: farcasterUser.fid,
                         quest_id: questData.quest_id,
-                        party_id: questData.party_id,
+                        // party_id: questData.party_id, // Removed: Column missing in DB
                         reward: finalReward,
                         created_at: new Date().toISOString()
                     });
