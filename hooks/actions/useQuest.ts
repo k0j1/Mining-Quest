@@ -355,7 +355,7 @@ export const useQuest = ({ gameState, setGameState, showNotification, setReturnR
                         quest_id: questData.quest_id,
                         // party_id: questData.party_id, // Removed: Column missing in DB
                         reward: finalReward,
-                        created_at: new Date().toISOString()
+                        // created_at removed to rely on DB default
                     });
 
                   if (insertError) throw insertError;
@@ -402,10 +402,11 @@ export const useQuest = ({ gameState, setGameState, showNotification, setReturnR
                       }
                   }
 
-              } catch (e) {
+              } catch (e: any) {
                   console.error(`Error syncing quest completion for ${quest.id}:`, e);
                   dbSuccess = false;
-                  showNotification(`クエスト同期エラー (ID: ${quest.id})。再試行してください。`, 'error');
+                  // Improved error message
+                  showNotification(`クエスト同期エラー (ID: ${quest.id}): ${e.message || 'Unknown Error'}`, 'error');
               }
           }
       }
