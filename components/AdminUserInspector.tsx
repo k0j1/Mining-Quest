@@ -236,7 +236,7 @@ const AdminUserInspector: React.FC = () => {
     }
   };
 
-  // 3. Just Delete (No Rewards)
+  // 3. Just Delete (No Rewards) - NOT USED IN UI ANYMORE
   const handleForceArchive = async (quest: any) => {
     if (!confirm(`クエスト「${quest.quest_mining?.name || quest.quest_pid}」を強制的に履歴へ移動（報酬なし）しますか？\n\n注意:\n・Activeテーブルから削除され、Completeテーブルに追加されます。\n・報酬、HP変動、ロスト判定は一切行われません。`)) return;
 
@@ -557,7 +557,7 @@ const AdminUserInspector: React.FC = () => {
                                             className="bg-emerald-600 hover:bg-emerald-500 text-white text-[8px] font-bold px-2 py-1 rounded shadow-sm border border-emerald-400 transition-all active:scale-95"
                                             title="Force Complete (Claim Rewards & Apply Damage)"
                                           >
-                                            💰 CLAIM
+                                            ✅ 強制完了
                                           </button>
                                           <button 
                                             onClick={() => handleInstantComplete(q.quest_pid)}
@@ -565,13 +565,6 @@ const AdminUserInspector: React.FC = () => {
                                             title="Speed Up (Finish Now)"
                                           >
                                             ⚡ SPEED
-                                          </button>
-                                          <button 
-                                            onClick={() => handleForceArchive(q)}
-                                            className="bg-slate-700 hover:bg-slate-600 text-slate-300 text-[8px] font-bold px-2 py-1 rounded shadow-sm border border-slate-500 transition-all active:scale-95"
-                                            title="Archive (No Rewards)"
-                                          >
-                                            📂 ARCHIVE
                                           </button>
                                         </div>
                                     </div>
