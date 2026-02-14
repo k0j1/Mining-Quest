@@ -102,9 +102,37 @@ export const rollGachaItem = async (type: 'Hero' | 'Equipment', forceRarity?: Qu
   }
 
   // ---------------------------------------------------------
-  // EQUIPMENT LOGIC (Keep Client-Side for now, or move later)
+  // EQUIPMENT LOGIC (DB RPC Priority)
   // ---------------------------------------------------------
   else {
+    if (fid) {
+        const { data, error } = await supabase.rpc('roll_equipment_gacha', { 
+            p_fid: fid, 
+            p_min_rarity: forceRarity || null 
+        });
+
+        if (error) {
+            console.error("Gacha RPC Error (Equip):", error);
+            throw new Error(`Gacha Transaction Failed: ${error.message}`);
+        }
+
+        if (!data || data.length === 0) {
+            throw new Error("Gacha RPC returned no data");
+        }
+
+        const result = data[0];
+
+        return { 
+            id: result.res_id,
+            name: result.name, 
+            type: result.type, 
+            rarity: result.rarity, 
+            bonus: result.bonus,
+            isPersisted: true
+        };
+    }
+
+    // --- FALLBACK: Local Logic ---
     const targetRarity = forceRarity || determineRarity(type);
     const { data, error } = await supabase
       .from('quest_equipment')
