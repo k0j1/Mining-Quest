@@ -79,7 +79,7 @@ export const useGameLogic = () => {
 
   // --- 1. Farcaster Integration ---
   // Expose refetchBalance to pass to action hooks
-  const { farcasterUser, onChainBalanceRaw, refetchBalance } = useFarcasterAuth(showNotification);
+  const { farcasterUser, onChainBalanceRaw, refetchBalance, isFrameAdded, addFrame } = useFarcasterAuth(showNotification);
 
   // Sync On-chain balance to game tokens if available
   useEffect(() => {
@@ -194,7 +194,7 @@ export const useGameLogic = () => {
              console.log(`[useGameLogic] Party raw data count: ${partyData?.length || 0}`);
         }
 
-        const newPartyPresets: (string | null)[][] = [
+        const newPartyPresets: (string | null)[][]= [
             [null, null, null],
             [null, null, null],
             [null, null, null]
@@ -332,6 +332,8 @@ export const useGameLogic = () => {
     farcasterUser,
     onChainBalanceRaw,
     isBlocked, // Export Blocked State
+    isFrameAdded, // Export Add Frame Status
+    addFrame, // Export Add Frame Action
     ui: { 
       gachaResult, setGachaResult, 
       isGachaRolling, 

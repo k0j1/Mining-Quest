@@ -45,7 +45,7 @@ const App: React.FC = () => {
   // GSAP Ref for view transitions
   const contentRef = useRef<HTMLDivElement>(null);
 
-  const { gameState, farcasterUser, onChainBalanceRaw, isBlocked, ui, actions } = useGameLogic();
+  const { gameState, farcasterUser, onChainBalanceRaw, isBlocked, ui, actions, isFrameAdded, addFrame } = useGameLogic();
 
   // Admin Auto-Debug Mode
   useEffect(() => {
@@ -289,6 +289,8 @@ const App: React.FC = () => {
             onDebugCompleteQuest={actions.debugCompleteQuest}
             onToggleDebug={() => setIsDebugMode(p => !p)}
             onNavigate={(view) => setCurrentView(view)} 
+            isFrameAdded={isFrameAdded}
+            onAddApp={addFrame}
             {...commonProps} 
           />
         );

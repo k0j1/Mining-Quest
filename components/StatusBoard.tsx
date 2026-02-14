@@ -4,7 +4,7 @@ import { GameState, View, QuestConfig } from '../types';
 import { playClick } from '../utils/sound';
 import Header from './Header';
 import PartySlotGrid from './PartySlotGrid';
-import { IS_TEST_MODE } from '../constants';
+import { IS_TEST_MODE, APP_VERSION } from '../constants';
 
 interface StatusBoardProps {
   state: GameState;
@@ -22,6 +22,8 @@ interface StatusBoardProps {
   onDebugCompleteQuest?: (questId: string) => void;
   onToggleDebug?: () => void;
   onNavigate?: (view: View) => void;
+  isFrameAdded?: boolean;
+  onAddApp?: () => void;
 }
 
 const ADMIN_FIDS = [406233];
@@ -70,7 +72,7 @@ const QuestItem: React.FC<{
   const seconds = timeLeft % 60;
 
   const rankColors: Record<string, string> = {
-    C: 'text-slate-400', UC: 'text-emerald-500', R: 'text-indigo-400', E: 'text-fuchsia-400', L: 'text-amber-500'
+    C: 'text-slate-400', UC: 'text-emerald-50', R: 'text-indigo-400', E: 'text-fuchsia-400', L: 'text-amber-500'
   };
 
   // Fallback display if config not found (shouldn't happen if loaded)
@@ -124,7 +126,7 @@ const QuestItem: React.FC<{
 };
 
 const StatusBoard: React.FC<StatusBoardProps> = ({ 
-  state, actionButtonLabel, onAction, title, view, isSoundOn, onToggleSound, onDebugAddTokens, farcasterUser, onChainBalance, onAccountClick, onShowLightpaper, onDebugCompleteQuest, onToggleDebug, onNavigate
+  state, actionButtonLabel, onAction, title, view, isSoundOn, onToggleSound, onDebugAddTokens, farcasterUser, onChainBalance, onAccountClick, onShowLightpaper, onDebugCompleteQuest, onToggleDebug, onNavigate, isFrameAdded, onAddApp
 }) => {
   const isAdmin = farcasterUser && ADMIN_FIDS.includes(farcasterUser.fid);
 
@@ -153,28 +155,53 @@ const StatusBoard: React.FC<StatusBoardProps> = ({
             )}
           </div>
           
-          <div className="mt-3 flex justify-end gap-2">
-            {isAdmin && onToggleDebug && view === View.HOME && (
-              <button 
-                onClick={() => { playClick(); onToggleDebug(); }}
-                className="flex items-center gap-2 px-3 py-1.5 bg-rose-900/30 hover:bg-rose-900/50 rounded-full border border-rose-800 transition-all active:scale-95 group"
-              >
-                <span className="text-lg">🐛</span>
-                <span className="text-[10px] font-bold text-rose-300 group-hover:text-rose-200">DEBUG</span>
-              </button>
-            )}
+          {/* Changed Layout: Version on right (top-aligned), Buttons on left */}
+          <div className="mt-3 flex items-start justify-between gap-2 flex-wrap min-h-[32px]">
+            
+            {/* Action Buttons (Left) */}
+            <div className="flex gap-2 justify-start flex-wrap">
+              {view === View.HOME && onShowLightpaper && (
+                <button 
+                  onClick={() => { playClick(); onShowLightpaper(); }}
+                  className="flex items-center gap-2 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 rounded-full border border-slate-700 transition-all active:scale-95 group"
+                >
+                  <span className="text-lg">📜</span>
+                  <span className="text-[10px] font-bold text-slate-400 group-hover:text-slate-200">View Lightpaper</span>
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-3 h-3 text-slate-500">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+                  </svg>
+                </button>
+              )}
 
-            {view === View.HOME && onShowLightpaper && (
-              <button 
-                onClick={() => { playClick(); onShowLightpaper(); }}
-                className="flex items-center gap-2 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 rounded-full border border-slate-700 transition-all active:scale-95 group"
-              >
-                <span className="text-lg">📜</span>
-                <span className="text-[10px] font-bold text-slate-400 group-hover:text-slate-200">View Lightpaper</span>
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-3 h-3 text-slate-500">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
-                </svg>
-              </button>
+              {/* Add App Button - Only if not added */}
+              {view === View.HOME && !isFrameAdded && onAddApp && (
+                <button 
+                  onClick={() => { playClick(); onAddApp(); }}
+                  className="flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-500 hover:to-teal-400 rounded-full border border-emerald-400/50 shadow-lg shadow-emerald-900/20 transition-all active:scale-95 group animate-pulse"
+                >
+                  <span className="text-sm">📱</span>
+                  <span className="text-[10px] font-bold text-white tracking-wide">アプリを登録</span>
+                </button>
+              )}
+
+              {isAdmin && onToggleDebug && view === View.HOME && (
+                <button 
+                  onClick={() => { playClick(); onToggleDebug(); }}
+                  className="flex items-center gap-2 px-3 py-1.5 bg-rose-900/30 hover:bg-rose-900/50 rounded-full border border-rose-800 transition-all active:scale-95 group"
+                >
+                  <span className="text-lg">🐛</span>
+                  <span className="text-[10px] font-bold text-rose-300 group-hover:text-rose-200">DEBUG</span>
+                </button>
+              )}
+            </div>
+
+            {/* Version Display (Right) */}
+            {view === View.HOME ? (
+               <span className="text-[10px] text-slate-600 font-mono font-bold pt-1 opacity-70">
+                 Ver.{APP_VERSION}
+               </span>
+            ) : (
+               <div></div>
             )}
           </div>
         </div>

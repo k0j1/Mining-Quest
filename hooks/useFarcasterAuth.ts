@@ -9,6 +9,7 @@ const BASE_RPC_URL = 'https://mainnet.base.org';
 export const useFarcasterAuth = (setNotification: (msg: string, type: 'error' | 'success') => void) => {
   const [farcasterUser, setFarcasterUser] = useState<any>(null);
   const [onChainBalanceRaw, setOnChainBalanceRaw] = useState<number | null>(null);
+  const [isFrameAdded, setIsFrameAdded] = useState(true); // Default to true (hidden) to avoid flashing on unsupported envs
   
   // Guard to ensure initialization runs only once
   const isInitialized = useRef(false);
@@ -67,6 +68,17 @@ export const useFarcasterAuth = (setNotification: (msg: string, type: 'error' | 
     }
   }, [farcasterUser, fetchBalance]);
 
+  const addFrame = useCallback(async () => {
+    try {
+      await sdk.actions.addFrame();
+      setIsFrameAdded(true);
+      setNotification("MiniAppとして登録しました！", 'success');
+    } catch (e: any) {
+      console.error("Add Frame Error:", e);
+      // Don't show error notification as user might have just cancelled
+    }
+  }, [setNotification]);
+
   useEffect(() => {
     // Strict Mode / Double-Render Guard
     if (isInitialized.current) return;
@@ -80,6 +92,12 @@ export const useFarcasterAuth = (setNotification: (msg: string, type: 'error' | 
             const context = await sdk.context;
             console.log("SDK Context Loaded:", context);
             
+            // Check if frame is added (MiniApp installed)
+            if (context?.client) {
+                console.log("Client Context:", context.client);
+                setIsFrameAdded(context.client.added);
+            }
+
             if (context?.user) {
               const u = context.user as any;
               console.log("Raw User Data:", JSON.stringify(u));
@@ -176,5 +194,5 @@ export const useFarcasterAuth = (setNotification: (msg: string, type: 'error' | 
     initFarcasterContext();
   }, [fetchBalance, setNotification]);
 
-  return { farcasterUser, onChainBalanceRaw, refetchBalance };
+  return { farcasterUser, onChainBalanceRaw, refetchBalance, isFrameAdded, addFrame };
 };
