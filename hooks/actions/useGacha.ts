@@ -60,9 +60,13 @@ export const useGacha = ({ gameState, setGameState, showNotification, farcasterU
       }
 
     } else {
-      // Equipment Logic (Still Client-Side Insert)
+      // Equipment Logic
+      let manualInsertsCount = 0;
+
       for (let i = 0; i < persistedItems.length; i++) {
         const item = persistedItems[i];
+        if (item.isPersisted) continue; // FIX: Skip if already saved via RPC to prevent duplicates
+
         const { data: masterData } = await supabase.from('quest_equipment').select('id').eq('name', item.name).single();
         if (masterData) {
             const { data: inserted, error } = await supabase.from('quest_player_equipment').insert({
@@ -72,17 +76,20 @@ export const useGacha = ({ gameState, setGameState, showNotification, farcasterU
 
             if (!error && inserted) {
                 persistedItems[i].id = inserted.player_eid.toString();
+                manualInsertsCount++;
             }
         }
       }
 
-      // Update stats
-      const { error: statError } = await supabase.rpc('increment_player_stat', { 
-          player_fid: fid, 
-          column_name: 'gacha_equipment_count', 
-          amount: items.length 
-      });
-      if (statError) console.error("Stat update error:", statError);
+      // Update stats only for manual inserts
+      if (manualInsertsCount > 0) {
+        const { error: statError } = await supabase.rpc('increment_player_stat', { 
+            player_fid: fid, 
+            column_name: 'gacha_equipment_count', 
+            amount: manualInsertsCount 
+        });
+        if (statError) console.error("Stat update error:", statError);
+      }
     }
 
     return persistedItems;
