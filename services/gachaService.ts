@@ -55,7 +55,7 @@ export const rollGachaItem = async (type: 'Hero' | 'Equipment', forceRarity?: Qu
         const drMap: Record<string, number> = { C: 2, UC: 5, R: 10, E: 15, L: 20 };
 
         return {
-            id: result.id, // This is the actual DB ID (player_hid) from RPC
+            id: result.res_id, // CHANGED: 'id' -> 'res_id' to match corrected RPC
             name: result.name,
             species: result.species,
             rarity: result.rarity,
