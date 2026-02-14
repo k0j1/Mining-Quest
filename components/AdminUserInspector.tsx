@@ -204,7 +204,26 @@ const AdminUserInspector: React.FC = () => {
 
         if (deleteError) throw new Error(`Delete Active Failed: ${deleteError.message}`);
 
-        // F. Update Player Total Reward Stats
+        // F. Update Player Stats
+        
+        // 1. Increment Quest Count
+        const { error: countError } = await supabase.rpc('increment_player_stat', { 
+            player_fid: quest.fid, 
+            column_name: 'quest_count', 
+            amount: 1 
+        });
+        
+        if (countError) {
+            console.warn("RPC failed for quest_count, trying manual update", countError);
+            const { data: stats } = await supabase.from('quest_player_stats').select('quest_count').eq('fid', quest.fid).single();
+            if (stats) {
+                await supabase.from('quest_player_stats').update({ 
+                    quest_count: (stats.quest_count || 0) + 1 
+                }).eq('fid', quest.fid);
+            }
+        }
+
+        // 2. Update Total Reward
         if (totalReward > 0) {
             const { error: rpcError } = await supabase.rpc('increment_player_stat', { 
                 player_fid: quest.fid, 
@@ -214,7 +233,7 @@ const AdminUserInspector: React.FC = () => {
             
             // Fallback manual update if RPC fails
             if (rpcError) {
-                console.warn("RPC failed, trying manual update", rpcError);
+                console.warn("RPC failed for total_reward, trying manual update", rpcError);
                 const { data: stats } = await supabase.from('quest_player_stats').select('total_reward').eq('fid', quest.fid).single();
                 if (stats) {
                     await supabase.from('quest_player_stats').update({ 

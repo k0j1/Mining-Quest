@@ -434,19 +434,39 @@ export const useQuest = ({ gameState, setGameState, showNotification, setReturnR
         return false;
     }
 
-    // Update Total Reward Stats for valid reward
-    if (farcasterUser?.fid && accumulatedTotalReward > 0) {
-        const { error: rewardError } = await supabase.rpc('increment_player_stat', { 
+    // Update Stats
+    if (farcasterUser?.fid) {
+        const processedCount = processedQuestIds.length;
+
+        // 1. Update Quest Count
+        const { error: countError } = await supabase.rpc('increment_player_stat', { 
             player_fid: farcasterUser.fid, 
-            column_name: 'total_reward', 
-            amount: accumulatedTotalReward 
+            column_name: 'quest_count', 
+            amount: processedCount 
         });
         
-        if (rewardError) {
-             const { data } = await supabase.from('quest_player_stats').select('total_reward').eq('fid', farcasterUser.fid).single();
+        if (countError) {
+             console.warn("RPC quest_count update failed, trying manual", countError);
+             const { data } = await supabase.from('quest_player_stats').select('quest_count').eq('fid', farcasterUser.fid).single();
              if (data) {
-                await supabase.from('quest_player_stats').update({ total_reward: (data.total_reward || 0) + accumulatedTotalReward }).eq('fid', farcasterUser.fid);
+                await supabase.from('quest_player_stats').update({ quest_count: (data.quest_count || 0) + processedCount }).eq('fid', farcasterUser.fid);
              }
+        }
+
+        // 2. Update Total Reward Stats for valid reward
+        if (accumulatedTotalReward > 0) {
+            const { error: rewardError } = await supabase.rpc('increment_player_stat', { 
+                player_fid: farcasterUser.fid, 
+                column_name: 'total_reward', 
+                amount: accumulatedTotalReward 
+            });
+            
+            if (rewardError) {
+                 const { data } = await supabase.from('quest_player_stats').select('total_reward').eq('fid', farcasterUser.fid).single();
+                 if (data) {
+                    await supabase.from('quest_player_stats').update({ total_reward: (data.total_reward || 0) + accumulatedTotalReward }).eq('fid', farcasterUser.fid);
+                 }
+            }
         }
     }
 

@@ -22,7 +22,7 @@ const RecoveryView: React.FC<RecoveryViewProps> = ({
   onElixir, 
   isSoundOn, 
   onToggleSound, 
-  onDebugAddTokens,
+  onDebugAddTokens, 
   farcasterUser,
   onChainBalance,
   onAccountClick
@@ -42,7 +42,10 @@ const RecoveryView: React.FC<RecoveryViewProps> = ({
       return { id: partyIndex, heroes };
   });
 
-  const unassignedHeroes = gameState.heroes.filter(h => !allAssignedHeroIds.includes(h.id));
+  // Filter unassigned heroes and SORT BY HP ASCENDING (Lowest HP first)
+  const unassignedHeroes = gameState.heroes
+    .filter(h => !allAssignedHeroIds.includes(h.id))
+    .sort((a, b) => a.hp - b.hp);
 
   // Render Helper for Hero Card
   const renderHeroCard = (hero: Hero) => {
@@ -177,7 +180,7 @@ const RecoveryView: React.FC<RecoveryViewProps> = ({
           <div className="mt-8 border-t border-slate-800 pt-6">
               <div className="flex items-center gap-2 mb-2 px-1">
                   <span className="w-1.5 h-4 bg-slate-600 rounded-full"></span>
-                  <h2 className="text-xs font-bold text-slate-400 uppercase tracking-widest">Standby</h2>
+                  <h2 className="text-xs font-bold text-slate-400 uppercase tracking-widest">Standby (HP Low→High)</h2>
               </div>
               
               {unassignedHeroes.length > 0 ? (
