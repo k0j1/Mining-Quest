@@ -18,7 +18,7 @@ export const useGacha = ({ gameState, setGameState, showNotification, farcasterU
   const [gachaResult, setGachaResult] = useState<{ type: 'Hero' | 'Equipment'; data: any[] } | null>(null);
   const [isGachaRolling, setIsGachaRolling] = useState(false);
 
-  // Helper to save to DB
+  // Helper to save to DB (Only used for Equipment or Local Fallback)
   const persistGachaResults = async (tab: 'Hero' | 'Equipment', items: any[]) => {
     if (!farcasterUser?.fid) return items; // Return as is if no user (local mode)
 
@@ -26,9 +26,11 @@ export const useGacha = ({ gameState, setGameState, showNotification, farcasterU
     const persistedItems = [...items];
 
     if (tab === 'Hero') {
+      // NOTE: This block is now mostly for fallback if RPC wasn't used
       for (let i = 0; i < persistedItems.length; i++) {
         const item = persistedItems[i];
-        
+        if (item.isPersisted) continue; // Skip if already saved via RPC
+
         // 1. Get Master ID
         const { data: masterData } = await supabase.from('quest_hero').select('id').eq('name', item.name).single();
         if (masterData) {
@@ -46,22 +48,19 @@ export const useGacha = ({ gameState, setGameState, showNotification, farcasterU
         }
       }
       
-      // Update stats
-      const { error: statError } = await supabase.rpc('increment_player_stat', { 
-          player_fid: fid, 
-          column_name: 'gacha_hero_count', 
-          amount: items.length 
-      });
-
-      if (statError) {
-          // Fallback if RPC missing (manual update)
-          const { data } = await supabase.from('quest_player_stats').select('gacha_hero_count').eq('fid', fid).single();
-          if (data) {
-              await supabase.from('quest_player_stats').update({ gacha_hero_count: (data.gacha_hero_count || 0) + items.length }).eq('fid', fid);
-          }
+      // Update stats only if we did manual inserts (RPC does it internally)
+      const manualInserts = persistedItems.filter(i => !i.isPersisted).length;
+      if (manualInserts > 0) {
+          const { error: statError } = await supabase.rpc('increment_player_stat', { 
+              player_fid: fid, 
+              column_name: 'gacha_hero_count', 
+              amount: manualInserts 
+          });
+          if (statError) console.error("Stat update error:", statError);
       }
 
     } else {
+      // Equipment Logic (Still Client-Side Insert)
       for (let i = 0; i < persistedItems.length; i++) {
         const item = persistedItems[i];
         const { data: masterData } = await supabase.from('quest_equipment').select('id').eq('name', item.name).single();
@@ -83,13 +82,7 @@ export const useGacha = ({ gameState, setGameState, showNotification, farcasterU
           column_name: 'gacha_equipment_count', 
           amount: items.length 
       });
-
-      if (statError) {
-          const { data } = await supabase.from('quest_player_stats').select('gacha_equipment_count').eq('fid', fid).single();
-          if (data) {
-              await supabase.from('quest_player_stats').update({ gacha_equipment_count: (data.gacha_equipment_count || 0) + items.length }).eq('fid', fid);
-          }
-      }
+      if (statError) console.error("Stat update error:", statError);
     }
 
     return persistedItems;
@@ -102,7 +95,6 @@ export const useGacha = ({ gameState, setGameState, showNotification, farcasterU
       if (tab === 'Hero') {
         const newHeroes = items.map(result => {
            const maxHp = result.hp || 50;
-           // ID is already updated to DB ID if persisted, or random string if local
            return {
             id: result.id || Math.random().toString(),
             name: result.name,
@@ -114,7 +106,12 @@ export const useGacha = ({ gameState, setGameState, showNotification, farcasterU
             hp: maxHp, 
             maxHp: maxHp,
             imageUrl: result.imageUrl || getHeroImageUrl(result.name, 's'),
-            equipmentIds: ['', '', '']
+            equipmentIds: ['', '', ''],
+            // Map skills
+            skillQuest: result.skillQuest,
+            skillDamage: result.skillDamage,
+            skillTime: result.skillTime,
+            skillType: result.skillType
           };
         });
         next.heroes = [...prev.heroes, ...newHeroes];
@@ -142,21 +139,21 @@ export const useGacha = ({ gameState, setGameState, showNotification, farcasterU
     playConfirm();
     setIsGachaRolling(true);
     try {
-      const result = await rollGachaItem(tab);
+      // Pass FID to enable DB-side logic
+      const result = await rollGachaItem(tab, undefined, farcasterUser?.fid);
       
-      // Persist to DB
+      // Handle Persistence (Skip if RPC handled it)
       const persisted = await persistGachaResults(tab, [result]);
       
       setGachaResult({ type: tab, data: persisted });
       setGameState(prev => ({ ...prev, tokens: prev.tokens - cost }));
       processGachaItems(tab, persisted);
       
-      // Refetch balance once
       refetchBalance();
 
-    } catch (e) {
+    } catch (e: any) {
       console.error(e);
-      showNotification("ガチャ処理中にエラーが発生しました", 'error');
+      showNotification(`ガチャエラー: ${e.message}`, 'error');
     } finally {
       setIsGachaRolling(false);
     }
@@ -175,10 +172,13 @@ export const useGacha = ({ gameState, setGameState, showNotification, farcasterU
     setIsGachaRolling(true);
 
     try {
+      // Parallel execution is tricky if we want guaranteed sequence, but Promise.all is fine for independent rolls.
+      // NOTE: For Hero Triple, each call is an independent DB Transaction.
+      // This is acceptable, though a 'bulk_roll' RPC would be more efficient in future.
       const results = await Promise.all([
-        rollGachaItem(tab, undefined),
-        rollGachaItem(tab, undefined),
-        rollGachaItem(tab, 'R')
+        rollGachaItem(tab, undefined, farcasterUser?.fid),
+        rollGachaItem(tab, undefined, farcasterUser?.fid),
+        rollGachaItem(tab, 'R', farcasterUser?.fid) // Guaranteed Slot
       ]);
 
       const persisted = await persistGachaResults(tab, results);
@@ -187,12 +187,11 @@ export const useGacha = ({ gameState, setGameState, showNotification, farcasterU
       setGameState(prev => ({ ...prev, tokens: prev.tokens - cost }));
       processGachaItems(tab, persisted);
       
-      // Refetch balance once
       refetchBalance();
 
-    } catch (e) {
+    } catch (e: any) {
       console.error(e);
-      showNotification("ガチャ処理中にエラーが発生しました", 'error');
+      showNotification(`ガチャエラー: ${e.message}`, 'error');
     } finally {
       setIsGachaRolling(false);
     }

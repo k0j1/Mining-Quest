@@ -3,7 +3,7 @@ import { supabase } from "../lib/supabase";
 import { QuestRank } from "../types";
 import { getHeroImageUrl } from "../utils/heroUtils";
 
-// Rarity Logic
+// Rarity Logic (Fallback for local / equipment)
 // Updated Rates: L:0.1%, E:1.9%, R:16%, UC:32%, C:50%
 export const HERO_RATES = { C: 50, UC: 32, R: 16, E: 1.9, L: 0.1 };
 export const EQUIPMENT_RATES = { C: 50, UC: 32, R: 16, E: 1.9, L: 0.1 };
@@ -19,13 +19,6 @@ const determineRarity = (type: 'Hero' | 'Equipment', minRarity: QuestRank = 'C')
     return 'L';
   }
 
-  // Normal Pull Rates
-  // C: 50%  (0   - 49.9)
-  // UC: 32% (50  - 81.9)
-  // R: 16%  (82  - 97.9)
-  // E: 1.9% (98  - 99.89)
-  // L: 0.1% (99.9 - 100)
-  
   if (rand < 50) return 'C';
   if (rand < 82) return 'UC';
   if (rand < 98) return 'R';
@@ -33,34 +26,63 @@ const determineRarity = (type: 'Hero' | 'Equipment', minRarity: QuestRank = 'C')
   return 'L';
 };
 
-export const rollGachaItem = async (type: 'Hero' | 'Equipment', forceRarity?: QuestRank) => {
-  
-  // 1. Determine Rarity
-  const targetRarity = forceRarity || determineRarity(type);
+export const rollGachaItem = async (type: 'Hero' | 'Equipment', forceRarity?: QuestRank, fid?: number) => {
   
   // ---------------------------------------------------------
-  // HERO LOGIC
+  // HERO LOGIC (DB RPC Priority)
   // ---------------------------------------------------------
   if (type === 'Hero') {
-    // Strictly fetch from DB
+    // If we have a user FID, run the logic on the DB side for security
+    if (fid) {
+        const { data, error } = await supabase.rpc('roll_hero_gacha', { 
+            p_fid: fid, 
+            p_min_rarity: forceRarity || null 
+        });
+
+        if (error) {
+            console.error("Gacha RPC Error:", error);
+            throw new Error(`Gacha Transaction Failed: ${error.message}`);
+        }
+
+        if (!data || data.length === 0) {
+            throw new Error("Gacha RPC returned no data");
+        }
+
+        const result = data[0]; // RPC returns an array
+
+        // Map RPC result to Hero object format
+        // Approximate damage reduction mapping for UI consistency if needed
+        const drMap: Record<string, number> = { C: 2, UC: 5, R: 10, E: 15, L: 20 };
+
+        return {
+            id: result.id, // This is the actual DB ID (player_hid) from RPC
+            name: result.name,
+            species: result.species,
+            rarity: result.rarity,
+            trait: result.ability,
+            damageReduction: drMap[result.rarity] || 0,
+            hp: result.hp,
+            imageUrl: getHeroImageUrl(result.name, 's'),
+            skillQuest: result.skill_quest || 0,
+            skillDamage: result.skill_damage || 0,
+            skillTime: result.skill_time || 0,
+            skillType: result.skill_type || 0,
+            isPersisted: true // Flag to indicate this doesn't need client-side insert
+        };
+    }
+
+    // --- FALLBACK: Local Logic (No FID) ---
+    const targetRarity = forceRarity || determineRarity(type);
+    
     const { data, error } = await supabase
       .from('quest_hero')
       .select('*')
       .eq('rarity', targetRarity);
     
-    if (error) {
-      console.error("Gacha DB Error:", error);
-      throw new Error("Failed to fetch hero data from database");
-    }
-
-    if (!data || data.length === 0) {
-      throw new Error(`No hero data found in database for rarity ${targetRarity}`);
-    }
+    if (error) throw new Error("Failed to fetch hero data");
+    if (!data || data.length === 0) throw new Error("No hero data found");
     
-    // Pick one random hero from the pool
     const selectedHero = data[Math.floor(Math.random() * data.length)];
-    
-    // Map approximate damage reduction based on rarity (since it might not be in DB schema provided)
     const drMap: Record<string, number> = { C: 2, UC: 5, R: 10, E: 15, L: 20 };
 
     return {
@@ -71,32 +93,26 @@ export const rollGachaItem = async (type: 'Hero' | 'Equipment', forceRarity?: Qu
       damageReduction: drMap[selectedHero.rarity] || 0,
       hp: selectedHero.hp,
       imageUrl: getHeroImageUrl(selectedHero.name, 's'),
-      // Map New Skill Columns
       skillQuest: selectedHero.skill_quest || 0,
       skillDamage: selectedHero.skill_damage || 0,
       skillTime: selectedHero.skill_time || 0,
-      skillType: selectedHero.skill_type || 0
+      skillType: selectedHero.skill_type || 0,
+      isPersisted: false
     };
   }
 
   // ---------------------------------------------------------
-  // EQUIPMENT LOGIC
+  // EQUIPMENT LOGIC (Keep Client-Side for now, or move later)
   // ---------------------------------------------------------
   else {
-    // Strictly fetch from DB
+    const targetRarity = forceRarity || determineRarity(type);
     const { data, error } = await supabase
       .from('quest_equipment')
       .select('*')
       .eq('rarity', targetRarity);
 
-    if (error) {
-      console.error("Gacha DB Error:", error);
-      throw new Error("Failed to fetch equipment data from database");
-    }
-
-    if (!data || data.length === 0) {
-       throw new Error(`No equipment data found in database for rarity ${targetRarity}`);
-    }
+    if (error) throw new Error("Failed to fetch equipment data");
+    if (!data || data.length === 0) throw new Error("No equipment data found");
 
     const selectedEquip = data[Math.floor(Math.random() * data.length)];
 
@@ -104,7 +120,8 @@ export const rollGachaItem = async (type: 'Hero' | 'Equipment', forceRarity?: Qu
       name: selectedEquip.name, 
       type: selectedEquip.type, 
       rarity: selectedEquip.rarity, 
-      bonus: selectedEquip.bonus 
+      bonus: selectedEquip.bonus,
+      isPersisted: false
     };
   }
 };
