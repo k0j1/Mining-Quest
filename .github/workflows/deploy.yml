@@ -32,6 +32,11 @@ jobs:
           API_KEY: ${{ secrets.API_KEY }}
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
 
+      - name: Copy Backend API
+        run: |
+          mkdir -p dist/api
+          cp api/sign_claim.php dist/api/
+
       - name: Upload artifact for GitHub Pages
         uses: actions/upload-pages-artifact@v3
         with:
