@@ -44,6 +44,7 @@ const ResultModal: React.FC<ResultModalProps> = ({ results, totalTokens, onClose
   const totalRef = useRef<HTMLDivElement>(null);
   const [isPreparingClaim, setIsPreparingClaim] = useState(false);
   const [statusMsg, setStatusMsg] = useState('');
+  const [errorMsg, setErrorMsg] = useState<string | null>(null); // Error state instead of alert
 
   useEffect(() => {
     playFanfare();
@@ -91,13 +92,14 @@ const ResultModal: React.FC<ResultModalProps> = ({ results, totalTokens, onClose
 
   const handleOnChainClaim = async () => {
     if (!farcasterUser?.fid) {
-      alert("Farcaster user not found. Cannot claim on-chain.");
+      setErrorMsg("Farcaster user not found. Cannot claim on-chain.");
       return;
     }
     
     playClick();
     setIsPreparingClaim(true);
     setStatusMsg('Initializing...');
+    setErrorMsg(null); // Clear previous errors
 
     try {
       // 1. Check if we have a valid provider
@@ -108,7 +110,7 @@ const ResultModal: React.FC<ResultModalProps> = ({ results, totalTokens, onClose
       // 2. Find valid result to claim (Currently claims one quest at a time)
       const targetResult = results.find(r => r.totalReward > 0 && r.questId && r.questMasterId);
       if (!targetResult) {
-        alert("No claimable reward found in this result set.");
+        setErrorMsg("No claimable reward found in this result set.");
         setIsPreparingClaim(false);
         return;
       }
@@ -127,10 +129,6 @@ const ResultModal: React.FC<ResultModalProps> = ({ results, totalTokens, onClose
 
       // Calculate parameters based on user request
       const claimAmount = targetResult.totalReward;
-      
-      // FIX: totalReward sent to contract should be the value STORED in DB (which acts as the cap).
-      // Since `returnFromQuest` already updated the DB with the new reward, `stats.total_reward` includes `claimAmount`.
-      // Therefore, we pass `stats.total_reward` as is.
       const totalRewardForContract = stats.total_reward || 0;
 
       const params = {
@@ -160,11 +158,14 @@ const ResultModal: React.FC<ResultModalProps> = ({ results, totalTokens, onClose
              // Try to parse JSON error if possible
              try {
                  const jsonError = JSON.parse(bodyText);
-                 if (jsonError.error) bodyText = jsonError.error;
+                 if (jsonError.error) {
+                    bodyText = jsonError.error;
+                    if (jsonError.file) bodyText += `\n(${jsonError.file}:${jsonError.line})`;
+                 }
              } catch {}
          } catch {}
          
-         throw new Error(`API Error: ${errorText}\nDetails: ${bodyText}`);
+         throw new Error(`API Error: ${errorText}\n${bodyText}`);
       }
 
       const { signature, error: apiErr } = await apiResponse.json();
@@ -200,14 +201,15 @@ const ResultModal: React.FC<ResultModalProps> = ({ results, totalTokens, onClose
       });
 
       console.log("Transaction Hash:", hash);
-      alert(`Transaction Submitted!\nHash: ${hash}`);
+      // Success - Ideally show a success message but for now we just close
+      // alert(`Transaction Submitted!\nHash: ${hash}`); // Alert is blocked
       
       // Close modal on success to update local state
       onClose();
 
     } catch (e: any) {
       console.error(e);
-      alert(`Claim Error: ${e.message}`);
+      setErrorMsg(`${e.message}`);
     } finally {
       setIsPreparingClaim(false);
       setStatusMsg('');
@@ -279,6 +281,14 @@ const ResultModal: React.FC<ResultModalProps> = ({ results, totalTokens, onClose
           <div className="text-4xl font-black text-white mb-6">
             +{totalTokens.toLocaleString()} <span className="text-lg text-amber-500">$CHH</span>
           </div>
+
+          {/* Error Message Area */}
+          {errorMsg && (
+            <div className="mb-4 bg-red-900/20 border border-red-500/50 p-3 rounded-lg text-left overflow-auto max-h-32">
+                <p className="text-red-400 text-xs font-bold mb-1">CLAIM ERROR</p>
+                <p className="text-red-300 text-[10px] font-mono whitespace-pre-wrap">{errorMsg}</p>
+            </div>
+          )}
 
           <div className="flex gap-3">
              <button 
