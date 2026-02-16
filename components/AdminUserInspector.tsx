@@ -172,6 +172,7 @@ const AdminUserInspector: React.FC = () => {
                     await supabase.from('quest_player_hero_lost').insert({
                         fid: quest.fid,
                         hero_id: heroData.hero_id,
+                        quest_id: quest.quest_id, // Add Quest ID
                         lost_at: new Date().toISOString()
                     });
                     await supabase.from('quest_player_hero').delete().eq('player_hid', slot.id);

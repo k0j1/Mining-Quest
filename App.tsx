@@ -383,6 +383,7 @@ const App: React.FC = () => {
         <ResultModal 
           results={ui.returnResult.results}
           totalTokens={ui.returnResult.totalTokens}
+          farcasterUser={farcasterUser}
           onClose={() => { 
             playConfirm(); 
             ui.setReturnResult(null); 

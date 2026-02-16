@@ -192,7 +192,8 @@ export const useQuest = ({ gameState, setGameState, showNotification, setReturnR
           baseReward,
           addHeroReward,
           addEquipmentReward,
-          heroDamages
+          heroDamages,
+          questMasterId: config.id // Store Master ID for contract interaction
       }
     };
 
@@ -206,6 +207,9 @@ export const useQuest = ({ gameState, setGameState, showNotification, setReturnR
            .single();
 
         if (questMaster && partyRow) {
+            // Update local quest with correct master ID
+            if (newQuest.results) newQuest.results.questMasterId = questMaster.id;
+
             const { data: inserted, error } = await supabase.from('quest_process').insert({
                 fid: farcasterUser.fid,
                 quest_id: questMaster.id,
@@ -272,8 +276,8 @@ export const useQuest = ({ gameState, setGameState, showNotification, setReturnR
         .filter((h): h is Hero => !!h);
 
       // Retrieve Pre-calculated Results
-      let { baseReward, addHeroReward, addEquipmentReward, heroDamages } = quest.results || { 
-          baseReward: 0, addHeroReward: 0, addEquipmentReward: 0, heroDamages: {} 
+      let { baseReward, addHeroReward, addEquipmentReward, heroDamages, questMasterId } = quest.results || { 
+          baseReward: 0, addHeroReward: 0, addEquipmentReward: 0, heroDamages: {}, questMasterId: config.id
       };
 
       if (!baseReward || baseReward === 0) {
@@ -346,6 +350,9 @@ export const useQuest = ({ gameState, setGameState, showNotification, setReturnR
               console.error(`Quest ${questPid} not found in DB`);
               dbSuccess = false; 
           } else {
+              // Ensure questMasterId is correct from DB
+              questMasterId = questData.quest_id;
+
               try {
                   // 1. Archive to history
                   const { error: insertError } = await supabase
@@ -353,7 +360,6 @@ export const useQuest = ({ gameState, setGameState, showNotification, setReturnR
                     .insert({
                         fid: farcasterUser.fid,
                         quest_id: questData.quest_id,
-                        // party_id: questData.party_id, // Removed: Column missing in DB
                         reward: finalReward,
                         // created_at removed to rely on DB default
                     });
@@ -373,10 +379,6 @@ export const useQuest = ({ gameState, setGameState, showNotification, setReturnR
                       const updatedHero = newHeroes.find(h => h.id === hero.id);
                       if (updatedHero) {
                           if (updatedHero.hp <= 0 && !heroDamages[hero.id] || heroDamages[hero.id] < 9999) {
-                              // If just HP 0 but not insta-death (Lost), still update HP to 0. 
-                              // Actual Lost logic (deleting from player_hero and moving to player_hero_lost)
-                              // should ideally be handled here if we want permanent death.
-                              // For now, we just update HP.
                               await supabase.from('quest_player_hero')
                                 .update({ hp: updatedHero.hp })
                                 .eq('player_hid', parseInt(hero.id));
@@ -385,16 +387,14 @@ export const useQuest = ({ gameState, setGameState, showNotification, setReturnR
                   }
                   
                   // 4. Handle Permanent Death (Lost) in DB
-                  // If hero is in deadHeroIds, we should execute the Lost Logic (Move to Graveyard)
-                  // Implementing basic Lost logic:
                   for (const deadId of deadHeroIds) {
                       if (quest.heroIds.includes(deadId)) {
-                          // Check if already processed (in case multiple quests finish same time)
                           const { data: heroRow } = await supabase.from('quest_player_hero').select('*').eq('player_hid', parseInt(deadId)).single();
                           if (heroRow) {
                               await supabase.from('quest_player_hero_lost').insert({
                                   fid: farcasterUser.fid,
                                   hero_id: heroRow.hero_id,
+                                  quest_id: questMasterId, // Add Quest ID relation
                                   lost_at: new Date().toISOString()
                               });
                               await supabase.from('quest_player_hero').delete().eq('player_hid', parseInt(deadId));
@@ -405,7 +405,6 @@ export const useQuest = ({ gameState, setGameState, showNotification, setReturnR
               } catch (e: any) {
                   console.error(`Error syncing quest completion for ${quest.id}:`, e);
                   dbSuccess = false;
-                  // Improved error message
                   showNotification(`クエスト同期エラー (ID: ${quest.id}): ${e.message || 'Unknown Error'}`, 'error');
               }
           }
@@ -419,18 +418,19 @@ export const useQuest = ({ gameState, setGameState, showNotification, setReturnR
           resultList.push({
             questName: quest.name,
             rank: quest.rank,
+            questMasterId: questMasterId, // Pass Master ID for contract
             totalReward: finalReward,
             baseReward: finalReward === 0 ? 0 : baseReward,
             bonusReward: finalReward === 0 ? 0 : bonusReward,
             heroBonus: finalReward === 0 ? 0 : addHeroReward,
             equipmentBonus: finalReward === 0 ? 0 : addEquipmentReward,
-            logs: logs
+            logs: logs,
+            questId: quest.id // Needed for contract interaction (quest_pid)
           });
       }
     }
 
     if (processedQuestIds.length === 0) {
-        // All failed
         return false;
     }
 
@@ -446,7 +446,6 @@ export const useQuest = ({ gameState, setGameState, showNotification, setReturnR
         });
         
         if (countError) {
-             console.warn("RPC quest_count update failed, trying manual", countError);
              const { data } = await supabase.from('quest_player_stats').select('quest_count').eq('fid', farcasterUser.fid).single();
              if (data) {
                 await supabase.from('quest_player_stats').update({ quest_count: (data.quest_count || 0) + processedCount }).eq('fid', farcasterUser.fid);

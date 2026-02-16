@@ -58,10 +58,12 @@ export interface Quest {
     addHeroReward: number;
     addEquipmentReward: number;
     heroDamages: Record<string, number>; // heroId -> damage
+    questMasterId?: number; // Added for contract interaction
   };
 }
 
 export interface QuestConfig {
+  id?: number; // DB ID
   rank: QuestRank;
   name: string;
   duration: number; // seconds
