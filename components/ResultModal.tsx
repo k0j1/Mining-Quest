@@ -1,6 +1,6 @@
 
 import React, { useEffect, useRef, useLayoutEffect, useState } from 'react';
-import { playFanfare, playClick } from '../utils/sound';
+import { playFanfare, playClick, playConfirm } from '../utils/sound';
 import gsap from 'gsap';
 import { QuestResult } from '../types';
 import { createWalletClient, custom, parseAbi } from 'viem';
@@ -30,16 +30,21 @@ const ResultModal: React.FC<ResultModalProps> = ({ results, totalTokens, onClose
   const containerRef = useRef<HTMLDivElement>(null);
   const itemsRef = useRef<HTMLDivElement[]>([]);
   const totalRef = useRef<HTMLDivElement>(null);
+  
   const [isPreparingClaim, setIsPreparingClaim] = useState(false);
   const [statusMsg, setStatusMsg] = useState('');
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  
+  // Success State
+  const [claimSuccess, setClaimSuccess] = useState(false);
+  const [txHash, setTxHash] = useState<string | null>(null);
 
   useEffect(() => {
     playFanfare();
   }, []);
 
   useLayoutEffect(() => {
-    if (!containerRef.current) return;
+    if (!containerRef.current || claimSuccess) return;
 
     const ctx = gsap.context(() => {
       const tl = gsap.timeline();
@@ -76,7 +81,7 @@ const ResultModal: React.FC<ResultModalProps> = ({ results, totalTokens, onClose
     }, containerRef);
 
     return () => ctx.revert();
-  }, []);
+  }, [claimSuccess]);
 
   const handleConfirmClaim = async () => {
       playClick();
@@ -90,13 +95,10 @@ const ResultModal: React.FC<ResultModalProps> = ({ results, totalTokens, onClose
         await onConfirm(results, false);
 
         // 2. Check if we should proceed to On-Chain Claim
-        // Conditions: Has Farcaster User, Has Rewards, Has Wallet Provider
+        let hash: string | null = null;
         if (farcasterUser?.fid && totalTokens > 0 && sdk.wallet.ethProvider) {
             
             // Find valid result to claim (Currently claims one quest at a time or aggregates)
-            // Note: The contract currently takes one Quest PID per transaction.
-            // For simplicity, we claim the FIRST valid result with a reward in this batch.
-            // TODO: In future, loop or batch claim.
             const targetResult = results.find(r => r.totalReward > 0 && r.questId && r.questMasterId);
             
             if (targetResult) {
@@ -147,7 +149,7 @@ const ResultModal: React.FC<ResultModalProps> = ({ results, totalTokens, onClose
 
                 const [address] = await walletClient.requestAddresses();
 
-                const hash = await walletClient.writeContract({
+                hash = await walletClient.writeContract({
                     address: REWARD_CONTRACT_ADDRESS as `0x${string}`,
                     abi: CLAIM_ABI,
                     functionName: 'claimReward',
@@ -165,22 +167,74 @@ const ResultModal: React.FC<ResultModalProps> = ({ results, totalTokens, onClose
                 });
                 
                 console.log("Claim Tx:", hash);
+                setTxHash(hash);
                 setStatusMsg('Success!');
             }
         }
         
-        // Close modal after success (or after DB save if no wallet/reward)
-        onClose();
+        // Switch to Success View
+        setClaimSuccess(true);
+        playConfirm();
 
       } catch (e: any) {
         console.error("Claim Error:", e);
         // Even if on-chain fails, DB is updated, so we show error but allow close
         setErrorMsg(e.message || "エラーが発生しました");
+        // If DB save succeeded but chain failed, user still "claimed" locally.
+        // But for now let's just show error on the result screen so they can try again or close.
       } finally {
         setIsPreparingClaim(false);
         setStatusMsg('');
       }
   };
+
+  if (claimSuccess) {
+      return (
+          <div className="fixed inset-0 z-[200] flex items-center justify-center bg-slate-950/90 backdrop-blur-sm p-4 animate-fade-in">
+              <div className="w-full max-w-sm bg-slate-900 border border-emerald-500/30 rounded-3xl p-8 text-center shadow-2xl relative overflow-hidden">
+                  {/* Background Glow */}
+                  <div className="absolute inset-0 bg-emerald-500/5 pointer-events-none"></div>
+                  <div className="absolute -top-10 -left-10 w-40 h-40 bg-emerald-500/20 blur-3xl rounded-full pointer-events-none"></div>
+                  <div className="absolute -bottom-10 -right-10 w-40 h-40 bg-amber-500/10 blur-3xl rounded-full pointer-events-none"></div>
+                  
+                  <div className="relative z-10 flex flex-col items-center">
+                      <div className="text-6xl mb-6 animate-bounce drop-shadow-lg">💎</div>
+                      <h2 className="text-2xl font-black text-white mb-2 font-orbitron tracking-wider drop-shadow-md">GET REWARD</h2>
+                      <p className="text-slate-400 text-xs font-bold uppercase tracking-widest mb-6">Mission Accomplished</p>
+                      
+                      <div className="text-4xl font-black text-amber-400 mb-8 drop-shadow-md bg-slate-800/50 py-4 px-6 rounded-2xl border border-amber-500/20 w-full">
+                          +{totalTokens.toLocaleString()} <span className="text-lg text-amber-500">$CHH</span>
+                      </div>
+                      
+                      {txHash && (
+                          <a 
+                            href={`https://basescan.org/tx/${txHash}`} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="flex items-center justify-center gap-1 mb-8 text-[10px] text-indigo-400 hover:text-indigo-300 transition-colors bg-indigo-900/20 py-2 px-4 rounded-full border border-indigo-500/30"
+                          >
+                              <span>🔗</span> View Transaction on BaseScan
+                          </a>
+                      )}
+
+                      <button 
+                          onClick={() => { playClick(); onClose(); }}
+                          className="w-full py-4 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-bold shadow-lg shadow-emerald-900/30 transition-all active:scale-95 border-b-4 border-emerald-800"
+                      >
+                          確認 (CLOSE)
+                      </button>
+                  </div>
+              </div>
+              <style>{`
+                @keyframes fade-in {
+                  from { opacity: 0; transform: scale(0.95); }
+                  to { opacity: 1; transform: scale(1); }
+                }
+                .animate-fade-in { animation: fade-in 0.3s ease-out forwards; }
+              `}</style>
+          </div>
+      );
+  }
 
   return (
     <div className="fixed inset-0 z-[200] flex items-center justify-center bg-slate-950/90 backdrop-blur-sm p-4">
