@@ -76,10 +76,10 @@ try {
     $packedData .= str_replace('0x', '', strtolower($contractAddress));
 
     // --- 署名生成 ---
-    // 実際に動作させるにはライブラリが必要です。
-    // 以下は kornrunner/keccak と elliptic-php を想定したロジックです。
+    // 動作には `composer require kornrunner/keccak simplito/elliptic-php` が必要です。
+    // 環境に合わせてオートローダーを読み込んでください。
+    require_once __DIR__ . '/vendor/autoload.php';
     
-    /*
     use kornrunner\Keccak;
     use Elliptic\EC;
 
@@ -101,17 +101,10 @@ try {
     $v = dechex($signatureObj->recoveryParam + 27);
     
     $signature = '0x' . $r . $s . $v;
-    */
-
-    // --- モック署名 (ライブラリがない場合用) ---
-    // ライブラリ導入済みの場合は上記ロジックを有効化し、以下を削除してください。
-    // これはテスト用のダミー署名であり、コントラクト検証は通りません。
-    $signature = "0x0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001b";
 
     echo json_encode([
         'success' => true,
-        'signature' => $signature,
-        'debug_packed' => $packedData
+        'signature' => $signature
     ]);
 
 } catch (Exception $e) {

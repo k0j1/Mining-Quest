@@ -328,14 +328,9 @@ export const useQuest = ({ gameState, setGameState, showNotification, setReturnR
           heroDamages = calculated.heroDamages;
       }
       
-      // Calculate final reward with safeguard
+      // Calculate final reward
       const bonusReward = addEquipmentReward + addHeroReward;
       let finalReward = baseReward + bonusReward;
-      
-      // Safety Cap against Contract Limits (redundant if calculateQuestResults is correct, but safe)
-      if (finalReward > config.maxReward) {
-          finalReward = config.maxReward;
-      }
       
       let survivors = 0;
 
@@ -464,7 +459,7 @@ export const useQuest = ({ gameState, setGameState, showNotification, setReturnR
             rank: quest.rank,
             questMasterId: questMasterId, // Pass Master ID for contract
             totalReward: finalReward,
-            baseReward: finalReward === 0 ? 0 : baseReward,
+            baseReward: baseReward, // Pass original baseReward
             bonusReward: finalReward === 0 ? 0 : bonusReward,
             heroBonus: finalReward === 0 ? 0 : addHeroReward,
             equipmentBonus: finalReward === 0 ? 0 : addEquipmentReward,
