@@ -56,6 +56,7 @@ export const useGameLogic = () => {
 
         if (data) {
           const configs: QuestConfig[] = data.map((d: any) => ({
+            id: d.id, // Store ID
             rank: d.rank as QuestRank,
             name: d.name,
             duration: d.duration,
@@ -273,7 +274,8 @@ export const useGameLogic = () => {
                     baseReward: q.base_reward || 0,
                     addHeroReward: q.add_hero_reward || 0,
                     addEquipmentReward: q.add_equipment_reward || 0,
-                    heroDamages: damages
+                    heroDamages: damages,
+                    questMasterId: q.quest_id // CORRECTLY MAP QUEST ID HERE
                 }
             });
             return acc;

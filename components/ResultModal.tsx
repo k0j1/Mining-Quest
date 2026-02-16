@@ -2,21 +2,7 @@
 import React, { useEffect, useRef, useLayoutEffect, useState } from 'react';
 import { playFanfare, playClick } from '../utils/sound';
 import gsap from 'gsap';
-import { supabase } from '../lib/supabase';
-import { createWalletClient, custom, parseAbi } from 'viem';
-import { base } from 'viem/chains';
-import { sdk } from '@farcaster/frame-sdk';
 import { QuestResult } from '../types';
-
-// Contract Address
-const REWARD_CONTRACT_ADDRESS = "0x193708bB0AC212E59fc44d6D6F3507F25Bc97fd4";
-
-// API Endpoint
-const SIGN_API_ENDPOINT = "/api/sign_claim.php"; 
-
-const CLAIM_ABI = parseAbi([
-  'function claimReward(uint256 fid, uint256 questPid, uint256 questId, uint256 questReward, uint256 reward, uint256 totalReward, bytes signature) external'
-]);
 
 interface ResultModalProps {
   results: QuestResult[];
@@ -31,7 +17,6 @@ const ResultModal: React.FC<ResultModalProps> = ({ results, totalTokens, onClose
   const itemsRef = useRef<HTMLDivElement[]>([]);
   const totalRef = useRef<HTMLDivElement>(null);
   const [isPreparingClaim, setIsPreparingClaim] = useState(false);
-  const [statusMsg, setStatusMsg] = useState('');
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   useEffect(() => {
@@ -80,126 +65,17 @@ const ResultModal: React.FC<ResultModalProps> = ({ results, totalTokens, onClose
 
   const handleConfirmClaim = async () => {
       playClick();
-      // Standard Claim (DB Save) and Close
-      await onConfirm(results, true);
-  };
-
-  const handleOnChainClaim = async () => {
-    if (!farcasterUser?.fid) {
-      setErrorMsg("Farcaster user not found. Cannot claim on-chain.");
-      return;
-    }
-    
-    playClick();
-    setIsPreparingClaim(true);
-    setStatusMsg('Saving Progress...');
-    setErrorMsg(null); 
-
-    try {
-      if (!sdk.wallet.ethProvider) {
-        throw new Error("No wallet provider found.");
-      }
-
-      // 1. Save to DB first! (Crucial for total_reward update)
-      // Pass closeModal=false to keep modal open
-      await onConfirm(results, false);
-
-      // 2. Find valid result to claim (Currently claims one quest at a time)
-      const targetResult = results.find(r => r.totalReward > 0 && r.questId && r.questMasterId);
-      if (!targetResult) {
-        setErrorMsg("No claimable reward found in this result set.");
+      setIsPreparingClaim(true);
+      setErrorMsg(null);
+      try {
+        // Standard Claim (DB Save) and Close
+        await onConfirm(results, true);
+      } catch (e: any) {
+        console.error(e);
+        setErrorMsg(e.message || "エラーが発生しました");
+      } finally {
         setIsPreparingClaim(false);
-        // Even if failed here, we already saved to DB, so we should close eventually or let user close
-        return;
       }
-
-      // 3. Fetch User Total Reward Stats (Required for Contract Validation)
-      // Must re-fetch to get the UPDATED total_reward after onConfirm
-      setStatusMsg('Fetching stats...');
-      const { data: stats, error } = await supabase
-        .from('quest_player_stats')
-        .select('total_reward')
-        .eq('fid', farcasterUser.fid)
-        .single();
-
-      if (error || !stats) {
-        throw new Error("Failed to fetch player stats for claim verification.");
-      }
-
-      // Calculate parameters based on user request
-      const claimAmount = targetResult.totalReward;
-      const totalRewardForContract = stats.total_reward || 0;
-
-      const params = {
-        fid: farcasterUser.fid,
-        questPid: parseInt(targetResult.questId || "0"),
-        questId: targetResult.questMasterId || 0,
-        questReward: targetResult.baseReward, // Use baseReward for contract range check
-        reward: claimAmount,                  // Actual payout amount
-        totalReward: totalRewardForContract   // Cumulative limit check
-      };
-
-      // 4. Request Signature from Backend
-      setStatusMsg('Requesting signature...');
-      console.log("Requesting signature with:", params);
-      
-      const apiResponse = await fetch(SIGN_API_ENDPOINT, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(params)
-      });
-
-      if (!apiResponse.ok) {
-         const errorText = apiResponse.statusText || `Status ${apiResponse.status}`;
-         let bodyText = '';
-         try { bodyText = await apiResponse.text(); } catch {}
-         throw new Error(`API Error: ${errorText}\n${bodyText}`);
-      }
-
-      const { signature, error: apiErr } = await apiResponse.json();
-      
-      if (apiErr) throw new Error(`Sign API Error: ${apiErr}`);
-      if (!signature) throw new Error("No signature returned from API");
-
-      // 5. Submit Transaction using Viem
-      setStatusMsg('Submitting transaction...');
-      
-      const walletClient = createWalletClient({
-        chain: base,
-        transport: custom(sdk.wallet.ethProvider)
-      });
-
-      const [address] = await walletClient.requestAddresses();
-
-      const hash = await walletClient.writeContract({
-        address: REWARD_CONTRACT_ADDRESS as `0x${string}`,
-        abi: CLAIM_ABI,
-        functionName: 'claimReward',
-        args: [
-            BigInt(params.fid),
-            BigInt(params.questPid),
-            BigInt(params.questId),
-            BigInt(params.questReward),
-            BigInt(params.reward),
-            BigInt(params.totalReward),
-            signature
-        ],
-        account: address,
-        chain: base
-      });
-
-      console.log("Transaction Hash:", hash);
-      
-      // Close modal on success (DB already saved)
-      onClose();
-
-    } catch (e: any) {
-      console.error(e);
-      setErrorMsg(`${e.message}`);
-    } finally {
-      setIsPreparingClaim(false);
-      setStatusMsg('');
-    }
   };
 
   return (
@@ -210,7 +86,7 @@ const ResultModal: React.FC<ResultModalProps> = ({ results, totalTokens, onClose
           <h2 className="text-2xl font-black text-amber-500 mb-1">
             MISSION COMPLETE
           </h2>
-          <p className="text-slate-500 text-xs font-bold tracking-[0.2em] uppercase">Quest Report (Preview)</p>
+          <p className="text-slate-500 text-xs font-bold tracking-[0.2em] uppercase">Quest Report</p>
         </div>
 
         {/* Scrollable List */}
@@ -271,7 +147,7 @@ const ResultModal: React.FC<ResultModalProps> = ({ results, totalTokens, onClose
           {/* Error Message Area */}
           {errorMsg && (
             <div className="mb-4 bg-red-900/20 border border-red-500/50 p-3 rounded-lg text-left overflow-auto max-h-32">
-                <p className="text-red-400 text-xs font-bold mb-1">CLAIM ERROR</p>
+                <p className="text-red-400 text-xs font-bold mb-1">ERROR</p>
                 <p className="text-red-300 text-[10px] font-mono whitespace-pre-wrap">{errorMsg}</p>
             </div>
           )}
@@ -280,39 +156,24 @@ const ResultModal: React.FC<ResultModalProps> = ({ results, totalTokens, onClose
              {/* Cancel Button */}
              <button 
                 onClick={() => { playClick(); onClose(); }}
+                disabled={isPreparingClaim}
                 className="flex-1 min-w-[120px] py-4 bg-slate-800 hover:bg-slate-700 border border-slate-600 text-slate-400 rounded-xl font-bold transition-all active:scale-95"
              >
                 キャンセル
              </button>
 
-             {/* Claim Button (DB only) */}
+             {/* Claim Button */}
              <button 
                 onClick={handleConfirmClaim}
                 disabled={isPreparingClaim}
-                className="flex-1 min-w-[120px] py-4 bg-emerald-700 hover:bg-emerald-600 text-white rounded-xl font-bold transition-all active:scale-95 shadow-lg border-b-4 border-emerald-900"
+                className="flex-1 min-w-[120px] py-4 bg-emerald-700 hover:bg-emerald-600 text-white rounded-xl font-bold transition-all active:scale-95 shadow-lg border-b-4 border-emerald-900 flex items-center justify-center gap-2"
              >
-                報酬を受け取る
+                {isPreparingClaim ? (
+                  <span className="w-4 h-4 border-2 border-white/50 border-t-white rounded-full animate-spin"></span>
+                ) : (
+                  "報酬を受け取る"
+                )}
              </button>
-
-             {/* Claim On-Chain Button */}
-             {farcasterUser && totalTokens > 0 && (
-                 <button 
-                    onClick={handleOnChainClaim}
-                    disabled={isPreparingClaim}
-                    className="w-full py-3 bg-indigo-600 hover:bg-indigo-500 rounded-xl font-bold text-white shadow-md transition-all active:scale-95 flex items-center justify-center gap-2 relative overflow-hidden"
-                 >
-                    {isPreparingClaim ? (
-                      <span className="flex items-center gap-2">
-                        <span className="w-4 h-4 border-2 border-white/50 border-t-white rounded-full animate-spin"></span>
-                        {statusMsg || 'Processing...'}
-                      </span>
-                    ) : (
-                        <>
-                           <span>⛓️</span> Claim On-Chain (Verify & Send)
-                        </>
-                    )}
-                 </button>
-             )}
           </div>
         </div>
       </div>

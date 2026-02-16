@@ -289,6 +289,11 @@ export const useQuest = ({ gameState, setGameState, showNotification, setReturnR
           baseReward: 0, addHeroReward: 0, addEquipmentReward: 0, heroDamages: {}, questMasterId: config.id
       };
 
+      // Safeguard: If questMasterId is missing from results (e.g. legacy data or load issue), recover from config
+      if (!questMasterId && config.id) {
+          questMasterId = config.id;
+      }
+
       if (!baseReward || baseReward === 0) {
           // Fallback Recalculation (if state lost, though unlikely with pre-calc)
           console.log(`[useQuest] Results missing or zero for quest ${quest.id}. Recalculating...`);
@@ -393,6 +398,7 @@ export const useQuest = ({ gameState, setGameState, showNotification, setReturnR
             
             try {
                 // 1. Archive to history
+                // Need valid quest_id. questMasterId comes from previewQuestReturn which ensures logic.
                 const { error: insertError } = await supabase
                   .from('quest_process_complete')
                   .insert({
