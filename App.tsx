@@ -97,10 +97,29 @@ const App: React.FC = () => {
   // Global Error Handling
   useEffect(() => {
     const handleError = (event: ErrorEvent) => {
+      // Ignore ResizeObserver loop limit exceeded
+      if (event.message === 'ResizeObserver loop limit exceeded') return;
+      
       setAppError(event.message || "Unknown error occurred");
     };
+
     const handleRejection = (event: PromiseRejectionEvent) => {
-      setAppError(`Promise Rejected: ${event.reason?.message || event.reason}`);
+      const reason = event.reason;
+      const message = reason?.message || String(reason);
+
+      // Filter out Farcaster SDK internal fetch errors (getUnseen, etc.)
+      // These are background polling errors and shouldn't crash the app
+      if (
+        message.includes('FarcasterApiClient') || 
+        message.includes('UnhandledFetchError') ||
+        (reason?.name === 'UnhandledFetchError')
+      ) {
+        console.warn('Suppressed Farcaster SDK Error:', message);
+        event.preventDefault(); // Prevent logging to console as error if possible
+        return;
+      }
+
+      setAppError(`Promise Rejected: ${message}`);
     };
 
     window.addEventListener('error', handleError);

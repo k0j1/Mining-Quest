@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import AdminUserInspector from './AdminUserInspector';
 import AdminDbBrowser from './AdminDbBrowser';
+import AdminContractPanel from './AdminContractPanel';
 
 interface AdminDashboardProps {
   onClose: () => void;
@@ -9,7 +10,7 @@ interface AdminDashboardProps {
 }
 
 const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose, onTriggerMaintenance }) => {
-  const [activeTab, setActiveTab] = useState<'DB' | 'USER'>('USER'); 
+  const [activeTab, setActiveTab] = useState<'DB' | 'USER' | 'CONTRACT'>('USER'); 
 
   return (
     <div className="fixed inset-0 z-[300] bg-slate-950 flex flex-col animate-fade-in">
@@ -32,6 +33,12 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose, onTriggerMaint
               >
                 DB
               </button>
+              <button 
+                onClick={() => setActiveTab('CONTRACT')}
+                className={`px-3 py-1 rounded text-xs font-bold transition-all ${activeTab === 'CONTRACT' ? 'bg-indigo-600 text-white shadow' : 'text-slate-400 hover:text-white'}`}
+              >
+                Contract
+              </button>
            </div>
            
            {/* Maintenance Test Button */}
@@ -53,7 +60,9 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose, onTriggerMaint
       </div>
 
       {/* Content Area */}
-      {activeTab === 'DB' ? <AdminDbBrowser /> : <AdminUserInspector />}
+      {activeTab === 'DB' && <AdminDbBrowser />}
+      {activeTab === 'USER' && <AdminUserInspector />}
+      {activeTab === 'CONTRACT' && <AdminContractPanel />}
     </div>
   );
 };
