@@ -14,8 +14,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit(0);
 }
 
-// エラーをキャッチしてJSONで返すための設定
-ini_set('display_errors', 0); 
+// デバッグ用にエラーを表示する設定に変更
+ini_set('display_errors', 1); 
 ini_set('log_errors', 1);
 error_reporting(E_ALL);
 
@@ -24,7 +24,8 @@ function jsonError($message, $code = 500) {
     if (!headers_sent()) {
         http_response_code($code);
     }
-    echo json_encode(['error' => $message]);
+    // エラー詳細を返す
+    echo json_encode(['error' => $message], JSON_PRETTY_PRINT);
     exit;
 }
 
@@ -36,14 +37,14 @@ register_shutdown_function(function() {
             http_response_code(500);
             header('Content-Type: application/json');
         }
-        echo json_encode(['error' => 'Fatal Error: ' . $error['message']]);
+        echo json_encode(['error' => 'Fatal Error: ' . $error['message'] . ' in ' . $error['file'] . ' on line ' . $error['line']]);
     }
 });
 
 // --- 1. 依存ライブラリのチェック ---
 $autoloadPath = __DIR__ . '/vendor/autoload.php';
 if (!file_exists($autoloadPath)) {
-    jsonError("Dependency Error: 'vendor/autoload.php' not found. Please check deployment.", 500);
+    jsonError("Dependency Error: 'vendor/autoload.php' not found at " . $autoloadPath . ". Please check deployment and Composer install.", 500);
 }
 require_once $autoloadPath;
 
@@ -72,7 +73,7 @@ function bigIntToHex($value) {
     } 
     // どちらもない場合はエラー
     else {
-        throw new Exception("Server Configuration Error: PHP extension 'gmp' or 'bcmath' is required.");
+        throw new Exception("Server Configuration Error: PHP extension 'gmp' or 'bcmath' is required for BigInt processing.");
     }
 
     if (strlen($hex) % 2 != 0) { $hex = '0' . $hex; }
@@ -94,7 +95,7 @@ if (!$signerPrivateKey) {
 $contractAddress = "0x193708bB0AC212E59fc44d6D6F3507F25Bc97fd4";
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-    jsonError("Method Not Allowed", 405);
+    jsonError("Method Not Allowed (Only POST is accepted)", 405);
 }
 
 // リクエストボディ取得
@@ -102,7 +103,7 @@ $rawInput = file_get_contents('php://input');
 $input = json_decode($rawInput, true);
 
 if (!$input) {
-    jsonError("Invalid JSON body", 400);
+    jsonError("Invalid JSON body received: " . json_last_error_msg(), 400);
 }
 
 // パラメータ取得
@@ -115,7 +116,15 @@ $totalReward = $input['totalReward'] ?? null;
 
 // バリデーション
 if ($fid === null || $questPid === null || $questId === null || $questReward === null || $reward === null || $totalReward === null) {
-    jsonError("Missing required parameters (fid, questPid, questId, questReward, reward, totalReward)", 400);
+    $missing = [];
+    if ($fid === null) $missing[] = 'fid';
+    if ($questPid === null) $missing[] = 'questPid';
+    if ($questId === null) $missing[] = 'questId';
+    if ($questReward === null) $missing[] = 'questReward';
+    if ($reward === null) $missing[] = 'reward';
+    if ($totalReward === null) $missing[] = 'totalReward';
+    
+    jsonError("Missing required parameters: " . implode(', ', $missing), 400);
 }
 
 try {
@@ -156,6 +165,7 @@ try {
     ]);
 
 } catch (Throwable $e) {
-    jsonError("Processing Error: " . $e->getMessage(), 500);
+    // 例外発生時の詳細情報を返す
+    jsonError("Processing Error: " . $e->getMessage() . " in " . $e->getFile() . " on line " . $e->getLine(), 500);
 }
 ?>

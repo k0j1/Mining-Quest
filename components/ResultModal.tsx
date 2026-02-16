@@ -155,8 +155,16 @@ const ResultModal: React.FC<ResultModalProps> = ({ results, totalTokens, onClose
       if (!apiResponse.ok) {
          const errorText = apiResponse.statusText || `Status ${apiResponse.status}`;
          let bodyText = '';
-         try { bodyText = await apiResponse.text(); } catch {}
-         throw new Error(`API Error: ${errorText} ${bodyText ? `\nResponse: ${bodyText.slice(0, 100)}...` : ''}`);
+         try { 
+             bodyText = await apiResponse.text();
+             // Try to parse JSON error if possible
+             try {
+                 const jsonError = JSON.parse(bodyText);
+                 if (jsonError.error) bodyText = jsonError.error;
+             } catch {}
+         } catch {}
+         
+         throw new Error(`API Error: ${errorText}\nDetails: ${bodyText}`);
       }
 
       const { signature, error: apiErr } = await apiResponse.json();
