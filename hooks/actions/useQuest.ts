@@ -290,6 +290,7 @@ export const useQuest = ({ gameState, setGameState, showNotification, setReturnR
       };
 
       // Safeguard: If questMasterId is missing from results (e.g. legacy data or load issue), recover from config
+      // This is crucial to prevent Foreign Key Violation on 'quest_process_complete'
       if (!questMasterId && config.id) {
           questMasterId = config.id;
       }
@@ -403,7 +404,7 @@ export const useQuest = ({ gameState, setGameState, showNotification, setReturnR
                   .from('quest_process_complete')
                   .insert({
                       fid: farcasterUser.fid,
-                      quest_id: questMasterId,
+                      quest_id: questMasterId, // This must be the master ID
                       reward: finalReward,
                   });
 

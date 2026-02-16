@@ -3,6 +3,20 @@ import React, { useEffect, useRef, useLayoutEffect, useState } from 'react';
 import { playFanfare, playClick } from '../utils/sound';
 import gsap from 'gsap';
 import { QuestResult } from '../types';
+import { createWalletClient, custom, parseAbi } from 'viem';
+import { base } from 'viem/chains';
+import { sdk } from '@farcaster/frame-sdk';
+import { supabase } from '../lib/supabase';
+
+// Contract Address
+const REWARD_CONTRACT_ADDRESS = "0x193708bB0AC212E59fc44d6D6F3507F25Bc97fd4";
+
+// API Endpoint
+const SIGN_API_ENDPOINT = "/api/sign_claim.php"; 
+
+const CLAIM_ABI = parseAbi([
+  'function claimReward(uint256 fid, uint256 questPid, uint256 questId, uint256 questReward, uint256 reward, uint256 totalReward, bytes signature) external'
+]);
 
 interface ResultModalProps {
   results: QuestResult[];
@@ -17,6 +31,7 @@ const ResultModal: React.FC<ResultModalProps> = ({ results, totalTokens, onClose
   const itemsRef = useRef<HTMLDivElement[]>([]);
   const totalRef = useRef<HTMLDivElement>(null);
   const [isPreparingClaim, setIsPreparingClaim] = useState(false);
+  const [statusMsg, setStatusMsg] = useState('');
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   useEffect(() => {
@@ -67,14 +82,103 @@ const ResultModal: React.FC<ResultModalProps> = ({ results, totalTokens, onClose
       playClick();
       setIsPreparingClaim(true);
       setErrorMsg(null);
+      setStatusMsg('Saving...');
+
       try {
-        // Standard Claim (DB Save) and Close
-        await onConfirm(results, true);
+        // 1. DB Save First (Always required)
+        // Pass closeModal=false because we might proceed to on-chain claim
+        await onConfirm(results, false);
+
+        // 2. Check if we should proceed to On-Chain Claim
+        // Conditions: Has Farcaster User, Has Rewards, Has Wallet Provider
+        if (farcasterUser?.fid && totalTokens > 0 && sdk.wallet.ethProvider) {
+            
+            // Find valid result to claim (Currently claims one quest at a time or aggregates)
+            // Note: The contract currently takes one Quest PID per transaction.
+            // For simplicity, we claim the FIRST valid result with a reward in this batch.
+            // TODO: In future, loop or batch claim.
+            const targetResult = results.find(r => r.totalReward > 0 && r.questId && r.questMasterId);
+            
+            if (targetResult) {
+                setStatusMsg('Verifying...');
+                
+                // Fetch Updated Stats (Important: onConfirm just updated the DB, we need the new total_reward)
+                const { data: stats, error } = await supabase
+                    .from('quest_player_stats')
+                    .select('total_reward')
+                    .eq('fid', farcasterUser.fid)
+                    .single();
+
+                if (error || !stats) {
+                    throw new Error("Failed to fetch player stats for claim verification.");
+                }
+
+                // Prepare Params
+                const params = {
+                    fid: farcasterUser.fid,
+                    questPid: parseInt(targetResult.questId || "0"),
+                    questId: targetResult.questMasterId || 0,
+                    questReward: targetResult.baseReward, 
+                    reward: targetResult.totalReward,
+                    totalReward: stats.total_reward || 0
+                };
+
+                // Request Signature
+                setStatusMsg('Signing...');
+                const apiResponse = await fetch(SIGN_API_ENDPOINT, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(params)
+                });
+
+                if (!apiResponse.ok) {
+                    throw new Error(`Sign API Error: ${apiResponse.statusText}`);
+                }
+
+                const { signature, error: apiErr } = await apiResponse.json();
+                if (apiErr) throw new Error(`API Error: ${apiErr}`);
+                
+                // Submit Transaction
+                setStatusMsg('Confirm in Wallet...');
+                const walletClient = createWalletClient({
+                    chain: base,
+                    transport: custom(sdk.wallet.ethProvider)
+                });
+
+                const [address] = await walletClient.requestAddresses();
+
+                const hash = await walletClient.writeContract({
+                    address: REWARD_CONTRACT_ADDRESS as `0x${string}`,
+                    abi: CLAIM_ABI,
+                    functionName: 'claimReward',
+                    args: [
+                        BigInt(params.fid),
+                        BigInt(params.questPid),
+                        BigInt(params.questId),
+                        BigInt(params.questReward),
+                        BigInt(params.reward),
+                        BigInt(params.totalReward),
+                        signature
+                    ],
+                    account: address,
+                    chain: base
+                });
+                
+                console.log("Claim Tx:", hash);
+                setStatusMsg('Success!');
+            }
+        }
+        
+        // Close modal after success (or after DB save if no wallet/reward)
+        onClose();
+
       } catch (e: any) {
-        console.error(e);
+        console.error("Claim Error:", e);
+        // Even if on-chain fails, DB is updated, so we show error but allow close
         setErrorMsg(e.message || "エラーが発生しました");
       } finally {
         setIsPreparingClaim(false);
+        setStatusMsg('');
       }
   };
 
@@ -147,7 +251,7 @@ const ResultModal: React.FC<ResultModalProps> = ({ results, totalTokens, onClose
           {/* Error Message Area */}
           {errorMsg && (
             <div className="mb-4 bg-red-900/20 border border-red-500/50 p-3 rounded-lg text-left overflow-auto max-h-32">
-                <p className="text-red-400 text-xs font-bold mb-1">ERROR</p>
+                <p className="text-red-400 text-xs font-bold mb-1">CLAIM ERROR (Progress Saved)</p>
                 <p className="text-red-300 text-[10px] font-mono whitespace-pre-wrap">{errorMsg}</p>
             </div>
           )}
@@ -157,21 +261,24 @@ const ResultModal: React.FC<ResultModalProps> = ({ results, totalTokens, onClose
              <button 
                 onClick={() => { playClick(); onClose(); }}
                 disabled={isPreparingClaim}
-                className="flex-1 min-w-[120px] py-4 bg-slate-800 hover:bg-slate-700 border border-slate-600 text-slate-400 rounded-xl font-bold transition-all active:scale-95"
+                className="flex-1 min-w-[100px] py-4 bg-slate-800 hover:bg-slate-700 border border-slate-600 text-slate-400 rounded-xl font-bold transition-all active:scale-95"
              >
-                キャンセル
+                閉じる
              </button>
 
              {/* Claim Button */}
              <button 
                 onClick={handleConfirmClaim}
                 disabled={isPreparingClaim}
-                className="flex-1 min-w-[120px] py-4 bg-emerald-700 hover:bg-emerald-600 text-white rounded-xl font-bold transition-all active:scale-95 shadow-lg border-b-4 border-emerald-900 flex items-center justify-center gap-2"
+                className="flex-[2] py-4 bg-emerald-700 hover:bg-emerald-600 text-white rounded-xl font-bold transition-all active:scale-95 shadow-lg border-b-4 border-emerald-900 flex items-center justify-center gap-2"
              >
                 {isPreparingClaim ? (
-                  <span className="w-4 h-4 border-2 border-white/50 border-t-white rounded-full animate-spin"></span>
+                  <span className="flex items-center gap-2">
+                    <span className="w-4 h-4 border-2 border-white/50 border-t-white rounded-full animate-spin"></span>
+                    <span>{statusMsg}</span>
+                  </span>
                 ) : (
-                  "報酬を受け取る"
+                  <span>報酬を受け取る</span>
                 )}
              </button>
           </div>
