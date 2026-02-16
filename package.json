@@ -14,7 +14,8 @@
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "@supabase/supabase-js": "^2.39.0",
-    "gsap": "^3.12.5"
+    "gsap": "^3.12.5",
+    "viem": "^2.21.5"
   },
   "devDependencies": {
     "@types/node": "^22.10.1",
