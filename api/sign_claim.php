@@ -2,21 +2,28 @@
 <?php
 // api/sign_claim.php
 // フロントエンドからのリクエストを受け、SolidityのclaimReward関数用の署名を生成します。
-// 必要なパラメータ: fid, questPid, questId, questReward, reward, totalReward
-// 依存ライブラリ: kornrunner/keccak (composer require kornrunner/keccak)
-//                simplito/elliptic-php (composer require simplito/elliptic-php) 
 
-header('Content-Type: application/json');
+// エラー時でもCORSヘッダーを返すために最初に記述
 header('Access-Control-Allow-Origin: *'); 
-header('Access-Control-Allow-Methods: POST');
+header('Access-Control-Allow-Methods: POST, GET, OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type');
+header('Content-Type: application/json');
+
+// OPTIONSメソッド（プリフライトリクエスト）への対応
+if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+    exit(0);
+}
 
 // エラーをキャッチしてJSONで返すための設定
-ini_set('display_errors', 0); // HTMLエラー出力を抑制
+ini_set('display_errors', 0); 
+ini_set('log_errors', 1);
 error_reporting(E_ALL);
 
 function jsonError($message, $code = 500) {
-    http_response_code($code);
+    // 既にヘッダーが送られていない場合のみステータスコード設定
+    if (!headers_sent()) {
+        http_response_code($code);
+    }
     echo json_encode(['error' => $message]);
     exit;
 }
@@ -25,28 +32,62 @@ function jsonError($message, $code = 500) {
 register_shutdown_function(function() {
     $error = error_get_last();
     if ($error && ($error['type'] === E_ERROR || $error['type'] === E_PARSE || $error['type'] === E_COMPILE_ERROR)) {
-        http_response_code(500);
+        if (!headers_sent()) {
+            http_response_code(500);
+            header('Content-Type: application/json');
+        }
         echo json_encode(['error' => 'Fatal Error: ' . $error['message']]);
     }
 });
 
-// --- 依存関係チェック ---
+// --- 1. 依存ライブラリのチェック ---
 $autoloadPath = __DIR__ . '/vendor/autoload.php';
 if (!file_exists($autoloadPath)) {
-    jsonError("Vendor autoload not found at $autoloadPath. Please run 'composer install' or check deployment.", 500);
+    jsonError("Dependency Error: 'vendor/autoload.php' not found. Please check deployment.", 500);
 }
-
-if (!extension_loaded('gmp')) {
-    // GMPがないと大きな整数の16進変換が難しい
-    jsonError("PHP GMP extension is required.", 500);
-}
-
 require_once $autoloadPath;
 
-// --- 設定 ---
+// --- 2. 拡張モジュールチェックとヘルパー関数定義 ---
+
+// 大きな数を16進数文字列(64文字パディング)に変換する関数
+function bigIntToHex($value) {
+    // 値を文字列として正規化
+    $value = (string)$value;
+
+    // GMPが使える場合
+    if (extension_loaded('gmp')) {
+        $hex = gmp_strval(gmp_init($value), 16);
+    } 
+    // BCMathが使える場合 (GMPがない環境へのフォールバック)
+    elseif (extension_loaded('bcmath')) {
+        $hex = '';
+        $current = $value;
+        do {
+            $mod = bcmod($current, '16');
+            $hex = dechex((int)$mod) . $hex;
+            $current = bcdiv($current, '16', 0);
+        } while (bccomp($current, '0') > 0);
+        // 0の場合
+        if ($hex === '') $hex = '0';
+    } 
+    // どちらもない場合はエラー
+    else {
+        throw new Exception("Server Configuration Error: PHP extension 'gmp' or 'bcmath' is required.");
+    }
+
+    if (strlen($hex) % 2 != 0) { $hex = '0' . $hex; }
+    return str_pad($hex, 64, '0', STR_PAD_LEFT);
+}
+
+// --- 3. 設定チェック ---
 $signerPrivateKey = getenv('SIGNER_PRIVATE_KEY'); 
 if (!$signerPrivateKey) {
-    jsonError("Server configuration error: SIGNER_PRIVATE_KEY is missing.", 500);
+    // サーバーによっては $_SERVER や apache_getenv で取れる場合があるためフォールバック
+    $signerPrivateKey = $_SERVER['SIGNER_PRIVATE_KEY'] ?? null;
+}
+
+if (!$signerPrivateKey) {
+    jsonError("Server Configuration Error: Environment variable 'SIGNER_PRIVATE_KEY' is missing.", 500);
 }
 
 // コントラクトアドレス (リプレイ攻撃防止のためハッシュに含める)
@@ -57,7 +98,8 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 }
 
 // リクエストボディ取得
-$input = json_decode(file_get_contents('php://input'), true);
+$rawInput = file_get_contents('php://input');
+$input = json_decode($rawInput, true);
 
 if (!$input) {
     jsonError("Invalid JSON body", 400);
@@ -80,25 +122,13 @@ try {
     use kornrunner\Keccak;
     use Elliptic\EC;
 
-    // --- ABI Encode Packed の再現 ---
-    // Solidity: keccak256(abi.encodePacked(fid, questPid, questId, questReward, reward, totalReward, address(this)))
-    // uint256: 32bytes (big endian), address: 20bytes
-    
-    // GMP関数を使用して数値を16進数文字列に変換し、32バイト(64文字)にパディング
-    function toUint256Hex($val) {
-        $hex = gmp_strval(gmp_init($val), 16);
-        if (strlen($hex) % 2 != 0) { $hex = '0' . $hex; }
-        return str_pad($hex, 64, '0', STR_PAD_LEFT);
-    }
-
     $packedData = '';
-    $packedData .= toUint256Hex($fid);
-    $packedData .= toUint256Hex($questPid);
-    $packedData .= toUint256Hex($questId);
-    $packedData .= toUint256Hex($questReward);
-    $packedData .= toUint256Hex($reward);
-    $packedData .= toUint256Hex($totalReward);
-    // アドレスは '0x' を除き小文字化
+    $packedData .= bigIntToHex($fid);
+    $packedData .= bigIntToHex($questPid);
+    $packedData .= bigIntToHex($questId);
+    $packedData .= bigIntToHex($questReward);
+    $packedData .= bigIntToHex($reward);
+    $packedData .= bigIntToHex($totalReward);
     $packedData .= str_replace('0x', '', strtolower($contractAddress));
 
     // 1. メッセージハッシュ
@@ -126,6 +156,6 @@ try {
     ]);
 
 } catch (Throwable $e) {
-    jsonError($e->getMessage(), 500);
+    jsonError("Processing Error: " . $e->getMessage(), 500);
 }
 ?>

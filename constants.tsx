@@ -8,7 +8,7 @@ import { getHeroImageUrl } from './utils/heroUtils';
 export const IS_TEST_MODE = true;
 
 // App Version
-export const APP_VERSION = '0.1.12';
+export const APP_VERSION = '0.1.13';
 
 // Equipment Stats Configuration
 export const EQUIPMENT_STATS = {
