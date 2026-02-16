@@ -54,6 +54,50 @@ try {
     }
     require_once $autoloadPath;
 
+    // --- 1.5 環境変数の読み込み (.env対応) ---
+    
+    // Dotenvライブラリがある場合は利用
+    if (class_exists('Dotenv\Dotenv')) {
+        try {
+            // カレントディレクトリと親ディレクトリを探索
+            $dotenv = Dotenv\Dotenv::createImmutable([__DIR__, __DIR__ . '/..']);
+            $dotenv->safeLoad();
+        } catch (Exception $e) {
+            // エラーは無視して続行
+        }
+    }
+
+    // .envの手動フォールバック読み込み関数
+    if (!function_exists('manualLoadEnv')) {
+        function manualLoadEnv($path) {
+            if (!file_exists($path)) return;
+            $lines = file($path, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+            foreach ($lines as $line) {
+                $line = trim($line);
+                if ($line === '' || strpos($line, '#') === 0) continue;
+                $parts = explode('=', $line, 2);
+                if (count($parts) !== 2) continue;
+                $name = trim($parts[0]);
+                $value = trim($parts[1]);
+                // クォート削除
+                if (preg_match('/^"(.*)"$/', $value, $m)) $value = $m[1];
+                elseif (preg_match("/^'(.*)'$/", $value, $m)) $value = $m[1];
+                
+                // 環境変数が未設定の場合のみセット
+                if (getenv($name) === false) {
+                    putenv("$name=$value");
+                    $_ENV[$name] = $value;
+                    $_SERVER[$name] = $value;
+                }
+            }
+        }
+    }
+
+    // 手動読み込み実行 (カレントディレクトリと親ディレクトリ)
+    manualLoadEnv(__DIR__ . '/.env');
+    manualLoadEnv(__DIR__ . '/../.env');
+
+
     // --- 2. 拡張モジュールチェックとヘルパー関数 ---
     function bigIntToHex($value) {
         $value = (string)$value;
@@ -76,10 +120,11 @@ try {
     }
 
     // --- 3. 設定チェック ---
+    // getenv, $_SERVER, $_ENV の順で確認
     $signerPrivateKey = getenv('SIGNER_PRIVATE_KEY'); 
-    if (!$signerPrivateKey) {
-        $signerPrivateKey = $_SERVER['SIGNER_PRIVATE_KEY'] ?? null;
-    }
+    if (!$signerPrivateKey) $signerPrivateKey = $_SERVER['SIGNER_PRIVATE_KEY'] ?? null;
+    if (!$signerPrivateKey) $signerPrivateKey = $_ENV['SIGNER_PRIVATE_KEY'] ?? null;
+
     if (!$signerPrivateKey) {
         throw new Exception("Server Configuration Error: Environment variable 'SIGNER_PRIVATE_KEY' is missing.");
     }
@@ -116,8 +161,6 @@ try {
     }
 
     // --- 5. 署名生成処理 ---
-    // 名前空間のインポートは関数/メソッド内ではできないため、完全修飾名かグローバルスコープでのuseが必要だが、
-    // ここではrequire後なのでクラスが使えるはず。
     
     // kornrunner\Keccak や Elliptic\EC が存在するか確認
     if (!class_exists('kornrunner\Keccak') || !class_exists('Elliptic\EC')) {
