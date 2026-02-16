@@ -1,6 +1,6 @@
 
 import { Dispatch, SetStateAction } from 'react';
-import { GameState, Quest, Hero, QuestRank, QuestConfig } from '../../types';
+import { GameState, Quest, Hero, QuestRank, QuestConfig, QuestResult } from '../../types';
 import { playClick, playDepart, playError } from '../../utils/sound';
 import { supabase } from '../../lib/supabase';
 import { calculatePartyStats, calculateHeroDamageReduction } from '../../utils/mechanics';
@@ -9,7 +9,7 @@ interface UseQuestProps {
   gameState: GameState;
   setGameState: Dispatch<SetStateAction<GameState>>;
   showNotification: (msg: string, type: 'error' | 'success') => void;
-  setReturnResult: (result: { results: any[], totalTokens: number } | null) => void;
+  setReturnResult: (result: { results: QuestResult[], totalTokens: number } | null) => void;
   farcasterUser?: any;
   refetchBalance: () => Promise<void>;
 }
@@ -258,7 +258,11 @@ export const useQuest = ({ gameState, setGameState, showNotification, setReturnR
     return true;
   };
 
-  const returnFromQuest = async () => {
+  /**
+   * Calculates results for completed quests and opens the result modal.
+   * DOES NOT commit changes to DB or State yet.
+   */
+  const previewQuestReturn = async () => {
     const now = Date.now();
     const completed = gameState.activeQuests.filter(q => q.endTime <= now);
     
@@ -268,21 +272,16 @@ export const useQuest = ({ gameState, setGameState, showNotification, setReturnR
       return false;
     }
 
-    let accumulatedTotalReward = 0;
-    const resultList: any[] = [];
-    // We clone heroes array to update HP locally
-    const newHeroes = [...gameState.heroes];
-    let deadHeroIds: string[] = [];
-    const processedQuestIds: string[] = []; // Track IDs that are successfully processed in DB
+    let totalPendingReward = 0;
+    const resultList: QuestResult[] = [];
 
-    // Process sequentially for async DB
     for (const quest of completed) {
       const config = gameState.questConfigs.find(q => q.rank === quest.rank);
       if (!config) continue;
 
       const logs: string[] = [];
       const questHeroes = quest.heroIds
-        .map(id => newHeroes.find(h => h.id === id))
+        .map(id => gameState.heroes.find(h => h.id === id))
         .filter((h): h is Hero => !!h);
 
       // Retrieve Pre-calculated Results
@@ -291,7 +290,7 @@ export const useQuest = ({ gameState, setGameState, showNotification, setReturnR
       };
 
       if (!baseReward || baseReward === 0) {
-          // Fallback Recalculation (if state lost)
+          // Fallback Recalculation (if state lost, though unlikely with pre-calc)
           console.log(`[useQuest] Results missing or zero for quest ${quest.id}. Recalculating...`);
           const calculated = calculateQuestResults(config, questHeroes);
           baseReward = calculated.baseReward;
@@ -300,35 +299,27 @@ export const useQuest = ({ gameState, setGameState, showNotification, setReturnR
           heroDamages = calculated.heroDamages;
       }
       
-      // Calculate final reward
       const bonusReward = addEquipmentReward + addHeroReward;
       let finalReward = baseReward + bonusReward;
       
       let survivors = 0;
+      const heroUpdates: { id: string, hp: number, isDead: boolean, damage: number }[] = [];
+      const deadHeroIds: string[] = [];
 
       questHeroes.forEach(hero => {
-        const idx = newHeroes.findIndex(h => h.id === hero.id);
-        if (idx === -1) return;
-
         let isDead = false;
-        
-        // Use pre-calculated damage
         const damageTaken = heroDamages[hero.id] || 0;
-
-        // Check death condition
         const currentHp = hero.hp;
         let newHp = Math.max(0, currentHp - damageTaken);
 
         if (damageTaken >= 9999) {
              newHp = 0;
-             if (!deadHeroIds.includes(hero.id)) deadHeroIds.push(hero.id);
+             deadHeroIds.push(hero.id);
              logs.push(`💀 悲報: ${hero.name} は帰らぬ犬となりました...`);
              isDead = true;
         } else {
-             newHeroes[idx] = { ...hero, hp: newHp };
-             
              if (newHp === 0) {
-               if (!deadHeroIds.includes(hero.id)) deadHeroIds.push(hero.id);
+               deadHeroIds.push(hero.id);
                logs.push(`💀 ${hero.name} は力尽きた... (HP 0)`);
                isDead = true;
              } else {
@@ -340,9 +331,14 @@ export const useQuest = ({ gameState, setGameState, showNotification, setReturnR
              }
         }
 
-        if (!isDead) {
-          survivors++;
-        }
+        if (!isDead) survivors++;
+        
+        heroUpdates.push({
+            id: hero.id,
+            hp: newHp,
+            isDead: isDead,
+            damage: damageTaken
+        });
       });
 
       if (survivors === 0 && questHeroes.length > 0) {
@@ -350,150 +346,160 @@ export const useQuest = ({ gameState, setGameState, showNotification, setReturnR
         logs.push(`❌ パーティ全滅！クエスト失敗。報酬は得られません。`);
       }
 
-      // --- CRITICAL: DB Synchronization ---
-      let dbSuccess = true;
+      totalPendingReward += finalReward;
 
-      if (farcasterUser?.fid) {
-          const questPid = parseInt(quest.id);
-          const { data: questData } = await supabase.from('quest_process').select('party_id, quest_id').eq('quest_pid', questPid).single();
-          
-          if (!questData) {
-              console.error(`Quest ${questPid} not found in DB`);
-              dbSuccess = false; 
-          } else {
-              // Ensure questMasterId is correct from DB
-              questMasterId = questData.quest_id;
-
-              try {
-                  // 1. Archive to history
-                  const { error: insertError } = await supabase
-                    .from('quest_process_complete')
-                    .insert({
-                        fid: farcasterUser.fid,
-                        quest_id: questData.quest_id,
-                        reward: finalReward,
-                        // created_at removed to rely on DB default
-                    });
-
-                  if (insertError) throw insertError;
-
-                  // 2. Delete from active
-                  const { error: deleteError } = await supabase
-                    .from('quest_process')
-                    .delete()
-                    .eq('quest_pid', questPid);
-
-                  if (deleteError) throw deleteError;
-
-                  // 3. Update Hero HP in DB
-                  for (const hero of questHeroes) {
-                      const updatedHero = newHeroes.find(h => h.id === hero.id);
-                      if (updatedHero) {
-                          if (updatedHero.hp <= 0 && !heroDamages[hero.id] || heroDamages[hero.id] < 9999) {
-                              await supabase.from('quest_player_hero')
-                                .update({ hp: updatedHero.hp })
-                                .eq('player_hid', parseInt(hero.id));
-                          }
-                      }
-                  }
-                  
-                  // 4. Handle Permanent Death (Lost) in DB
-                  for (const deadId of deadHeroIds) {
-                      if (quest.heroIds.includes(deadId)) {
-                          const { data: heroRow } = await supabase.from('quest_player_hero').select('*').eq('player_hid', parseInt(deadId)).single();
-                          if (heroRow) {
-                              await supabase.from('quest_player_hero_lost').insert({
-                                  fid: farcasterUser.fid,
-                                  hero_id: heroRow.hero_id,
-                                  quest_id: questMasterId, // Add Quest ID relation
-                                  lost_at: new Date().toISOString()
-                              });
-                              await supabase.from('quest_player_hero').delete().eq('player_hid', parseInt(deadId));
-                          }
-                      }
-                  }
-
-              } catch (e: any) {
-                  console.error(`Error syncing quest completion for ${quest.id}:`, e);
-                  dbSuccess = false;
-                  showNotification(`クエスト同期エラー (ID: ${quest.id}): ${e.message || 'Unknown Error'}`, 'error');
-              }
-          }
-      }
-
-      // Only proceed if DB sync was successful (or we are in local mode)
-      if (dbSuccess) {
-          processedQuestIds.push(quest.id);
-          accumulatedTotalReward += finalReward;
-          
-          resultList.push({
-            questName: quest.name,
-            rank: quest.rank,
-            questMasterId: questMasterId, // Pass Master ID for contract
-            totalReward: finalReward,
-            baseReward: baseReward, // Pass original baseReward
-            bonusReward: finalReward === 0 ? 0 : bonusReward,
-            heroBonus: finalReward === 0 ? 0 : addHeroReward,
-            equipmentBonus: finalReward === 0 ? 0 : addEquipmentReward,
-            logs: logs,
-            questId: quest.id // Needed for contract interaction (quest_pid)
-          });
-      }
-    }
-
-    if (processedQuestIds.length === 0) {
-        return false;
-    }
-
-    // Update Stats
-    if (farcasterUser?.fid) {
-        const processedCount = processedQuestIds.length;
-
-        // 1. Update Quest Count
-        const { error: countError } = await supabase.rpc('increment_player_stat', { 
-            player_fid: farcasterUser.fid, 
-            column_name: 'quest_count', 
-            amount: processedCount 
-        });
-        
-        if (countError) {
-             const { data } = await supabase.from('quest_player_stats').select('quest_count').eq('fid', farcasterUser.fid).single();
-             if (data) {
-                await supabase.from('quest_player_stats').update({ quest_count: (data.quest_count || 0) + processedCount }).eq('fid', farcasterUser.fid);
-             }
+      // Prepare Result Object
+      resultList.push({
+        questName: quest.name,
+        rank: quest.rank,
+        questMasterId: questMasterId,
+        questId: quest.id, // pid
+        totalReward: finalReward,
+        baseReward: baseReward,
+        bonusReward: finalReward === 0 ? 0 : bonusReward,
+        heroBonus: finalReward === 0 ? 0 : addHeroReward,
+        equipmentBonus: finalReward === 0 ? 0 : addEquipmentReward,
+        logs: logs,
+        // Data for Commit
+        pendingUpdates: {
+            questPid: parseInt(quest.id),
+            questMasterId: questMasterId || 0,
+            finalReward: finalReward,
+            heroUpdates: heroUpdates,
+            deadHeroIds: deadHeroIds
         }
+      });
+    }
 
-        // 2. Update Total Reward Stats for valid reward
-        if (accumulatedTotalReward > 0) {
-            const { error: rewardError } = await supabase.rpc('increment_player_stat', { 
-                player_fid: farcasterUser.fid, 
-                column_name: 'total_reward', 
-                amount: accumulatedTotalReward 
-            });
+    setReturnResult({ results: resultList, totalTokens: totalPendingReward });
+    return true;
+  };
+
+  /**
+   * Commits the pending quest results to DB and updates local state.
+   */
+  const confirmQuestReturn = async (results: QuestResult[], closeModal: boolean = true) => {
+    let dbSuccess = true;
+    const processedQuestPids: string[] = [];
+    const allDeadHeroIds: string[] = [];
+    let accumulatedTotalReward = 0;
+
+    // We modify a clone of heroes to update state later
+    let newHeroes = [...gameState.heroes];
+
+    if (farcasterUser?.fid) {
+        for (const res of results) {
+            const { questPid, questMasterId, finalReward, heroUpdates, deadHeroIds } = res.pendingUpdates;
             
-            if (rewardError) {
-                 const { data } = await supabase.from('quest_player_stats').select('total_reward').eq('fid', farcasterUser.fid).single();
-                 if (data) {
-                    await supabase.from('quest_player_stats').update({ total_reward: (data.total_reward || 0) + accumulatedTotalReward }).eq('fid', farcasterUser.fid);
-                 }
+            try {
+                // 1. Archive to history
+                const { error: insertError } = await supabase
+                  .from('quest_process_complete')
+                  .insert({
+                      fid: farcasterUser.fid,
+                      quest_id: questMasterId,
+                      reward: finalReward,
+                  });
+
+                if (insertError) throw insertError;
+
+                // 2. Delete from active
+                const { error: deleteError } = await supabase
+                  .from('quest_process')
+                  .delete()
+                  .eq('quest_pid', questPid);
+
+                if (deleteError) throw deleteError;
+
+                // 3. Update Hero HP in DB
+                for (const update of heroUpdates) {
+                    // Update Local State logic (accumulate for later)
+                    const heroIdx = newHeroes.findIndex(h => h.id === update.id);
+                    if (heroIdx !== -1) {
+                        newHeroes[heroIdx] = { ...newHeroes[heroIdx], hp: update.hp };
+                    }
+
+                    // DB Update (Only if alive or standard death, Lost handled below)
+                    // If damageTaken was >= 9999 (Instant Death), we assume logic below handles Lost.
+                    // But we still need to update HP to 0 if it was normal damage death.
+                    if (!update.isDead || update.damage < 9999) {
+                         await supabase.from('quest_player_hero')
+                            .update({ hp: update.hp })
+                            .eq('player_hid', parseInt(update.id));
+                    }
+                }
+
+                // 4. Handle Permanent Death (Lost) in DB
+                for (const deadId of deadHeroIds) {
+                    const { data: heroRow } = await supabase.from('quest_player_hero').select('*').eq('player_hid', parseInt(deadId)).single();
+                    if (heroRow) {
+                        await supabase.from('quest_player_hero_lost').insert({
+                            fid: farcasterUser.fid,
+                            hero_id: heroRow.hero_id,
+                            quest_id: questMasterId,
+                            lost_at: new Date().toISOString()
+                        });
+                        await supabase.from('quest_player_hero').delete().eq('player_hid', parseInt(deadId));
+                    }
+                }
+
+                processedQuestPids.push(questPid.toString());
+                allDeadHeroIds.push(...deadHeroIds);
+                accumulatedTotalReward += finalReward;
+
+            } catch (e: any) {
+                console.error(`Error syncing quest completion for PID ${questPid}:`, e);
+                dbSuccess = false;
+                showNotification(`クエスト同期エラー (ID: ${questPid}): ${e.message || 'Unknown Error'}`, 'error');
             }
         }
+
+        // Update Stats
+        if (processedQuestPids.length > 0) {
+            const processedCount = processedQuestPids.length;
+            await supabase.rpc('increment_player_stat', { 
+                player_fid: farcasterUser.fid, 
+                column_name: 'quest_count', 
+                amount: processedCount 
+            });
+
+            if (accumulatedTotalReward > 0) {
+                await supabase.rpc('increment_player_stat', { 
+                    player_fid: farcasterUser.fid, 
+                    column_name: 'total_reward', 
+                    amount: accumulatedTotalReward 
+                });
+            }
+        }
+    } else {
+        // Local Mode Fallback
+        results.forEach(res => {
+            const { questPid, finalReward, heroUpdates, deadHeroIds } = res.pendingUpdates;
+            processedQuestPids.push(questPid.toString());
+            allDeadHeroIds.push(...deadHeroIds);
+            accumulatedTotalReward += finalReward;
+            
+            heroUpdates.forEach(u => {
+                const idx = newHeroes.findIndex(h => h.id === u.id);
+                if (idx !== -1) newHeroes[idx] = { ...newHeroes[idx], hp: u.hp };
+            });
+        });
     }
 
-    setGameState(prev => ({
-      ...prev,
-      tokens: prev.tokens + accumulatedTotalReward,
-      heroes: newHeroes.filter(h => !deadHeroIds.includes(h.id)),
-      // Only remove quests that were successfully processed in DB
-      activeQuests: prev.activeQuests.filter(q => !processedQuestIds.includes(q.id)),
-      partyPresets: prev.partyPresets.map(p => p.map(id => (id && deadHeroIds.includes(id)) ? null : id))
-    }));
-    
-    if (resultList.length > 0) {
-        setReturnResult({ results: resultList, totalTokens: accumulatedTotalReward });
+    // Commit to State
+    if (processedQuestPids.length > 0) {
+        setGameState(prev => ({
+          ...prev,
+          tokens: prev.tokens + accumulatedTotalReward,
+          heroes: newHeroes.filter(h => !allDeadHeroIds.includes(h.id)),
+          activeQuests: prev.activeQuests.filter(q => !processedQuestPids.includes(q.id)),
+          partyPresets: prev.partyPresets.map(p => p.map(id => (id && allDeadHeroIds.includes(id)) ? null : id))
+        }));
     }
-    
-    return true;
+
+    if (closeModal) {
+        setReturnResult(null);
+    }
   };
 
   const debugCompleteQuest = (questId: string) => {
@@ -505,5 +511,5 @@ export const useQuest = ({ gameState, setGameState, showNotification, setReturnR
     }));
   };
 
-  return { depart, returnFromQuest, debugCompleteQuest, getQuestPrediction };
+  return { depart, returnFromQuest: previewQuestReturn, confirmQuestReturn, debugCompleteQuest, getQuestPrediction };
 };

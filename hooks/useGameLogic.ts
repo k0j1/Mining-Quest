@@ -1,6 +1,6 @@
 
 import { useState, useEffect, useCallback } from 'react';
-import { GameState, QuestConfig, QuestRank, Hero, Equipment, Quest, Species } from '../types';
+import { GameState, QuestConfig, QuestRank, Hero, Equipment, Quest, Species, QuestResult } from '../types';
 import { INITIAL_HEROES, INITIAL_EQUIPMENT } from '../constants';
 import { supabase } from '../lib/supabase';
 import { getHeroImageUrl } from '../utils/heroUtils';
@@ -30,7 +30,7 @@ export const useGameLogic = () => {
   });
 
   // --- UI State ---
-  const [returnResult, setReturnResult] = useState<{ results: any[], totalTokens: number } | null>(null);
+  const [returnResult, setReturnResult] = useState<{ results: QuestResult[], totalTokens: number } | null>(null);
   const [notification, setNotification] = useState<{ message: string; type: 'error' | 'success' } | null>(null);
   const [isBlocked, setIsBlocked] = useState(false);
 
@@ -302,7 +302,7 @@ export const useGameLogic = () => {
   // --- 2. Action Hooks (Pass refetchBalance to all hooks that consume tokens) ---
   
   // Quest Logic
-  const { depart, returnFromQuest, debugCompleteQuest, getQuestPrediction } = useQuest({
+  const { depart, returnFromQuest, debugCompleteQuest, getQuestPrediction, confirmQuestReturn } = useQuest({
     gameState, setGameState, showNotification, setReturnResult, farcasterUser, refetchBalance
   });
 
@@ -342,7 +342,8 @@ export const useGameLogic = () => {
     },
     actions: { 
       depart, 
-      returnFromQuest, 
+      returnFromQuest,
+      confirmQuestReturn, // Export Confirm Action
       rollGacha, 
       rollGachaTriple, 
       equipItem, 

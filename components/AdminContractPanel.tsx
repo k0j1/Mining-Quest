@@ -35,8 +35,8 @@ const AdminContractPanel: React.FC = () => {
         abi: TOKEN_ABI,
         functionName: 'balanceOf',
         args: [REWARD_CONTRACT_ADDRESS]
-      });
-      setContractBalance(formatUnits(cBal, 18));
+      } as any);
+      setContractBalance(formatUnits(cBal as bigint, 18));
 
       // 2. User Balance (Try to fetch if wallet connected)
       try {
@@ -56,8 +56,8 @@ const AdminContractPanel: React.FC = () => {
                     abi: TOKEN_ABI,
                     functionName: 'balanceOf',
                     args: [address]
-                });
-                setUserBalance(formatUnits(uBal, 18));
+                } as any);
+                setUserBalance(formatUnits(uBal as bigint, 18));
             }
         }
       } catch (e) {

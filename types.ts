@@ -76,6 +76,27 @@ export interface QuestConfig {
   minHpReq?: number;
 }
 
+export interface QuestResult {
+  questName: string;
+  rank: string;
+  questMasterId?: number; 
+  questId?: string; // unique ID (pid)
+  totalReward: number;
+  baseReward: number;
+  bonusReward: number;
+  heroBonus: number;
+  equipmentBonus: number;
+  logs: string[];
+  // Data required for committing changes to DB/State
+  pendingUpdates: {
+      questPid: number;
+      questMasterId: number;
+      finalReward: number;
+      heroUpdates: { id: string; hp: number; isDead: boolean; damage: number }[];
+      deadHeroIds: string[];
+  };
+}
+
 export interface GameState {
   tokens: number;
   heroes: Hero[];

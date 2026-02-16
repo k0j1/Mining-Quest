@@ -107,14 +107,17 @@ const App: React.FC = () => {
       const reason = event.reason;
       const message = reason?.message || String(reason);
 
-      // Filter out Farcaster SDK internal fetch errors (getUnseen, etc.)
-      // These are background polling errors and shouldn't crash the app
+      // Filter out Farcaster SDK internal fetch errors and Browser Extension errors
       if (
         message.includes('FarcasterApiClient') || 
         message.includes('UnhandledFetchError') ||
-        (reason?.name === 'UnhandledFetchError')
+        message.includes('MessageNotSentError') ||
+        message.includes('Could not establish connection. Receiving end does not exist') ||
+        message.includes('cookieManager') ||
+        (reason?.name === 'UnhandledFetchError') ||
+        (reason?.name === 'MessageNotSentError')
       ) {
-        console.warn('Suppressed Farcaster SDK Error:', message);
+        console.warn('Suppressed External/SDK Error:', message);
         event.preventDefault(); // Prevent logging to console as error if possible
         return;
       }
@@ -404,10 +407,11 @@ const App: React.FC = () => {
           totalTokens={ui.returnResult.totalTokens}
           farcasterUser={farcasterUser}
           onClose={() => { 
-            playConfirm(); 
+            playClick(); 
             ui.setReturnResult(null); 
-            setCurrentView(View.HOME); 
+            // Do NOT force navigate home on cancel, let user decide
           }}
+          onConfirm={actions.confirmQuestReturn} // Pass commit action
         />
       )}
 

@@ -2,11 +2,11 @@
 import React, { useEffect, useRef, useLayoutEffect, useState } from 'react';
 import { playFanfare, playClick } from '../utils/sound';
 import gsap from 'gsap';
-import { MINING_QUEST_REWARD_SOL } from '../utils/contractTemplate';
 import { supabase } from '../lib/supabase';
 import { createWalletClient, custom, parseAbi } from 'viem';
 import { base } from 'viem/chains';
 import { sdk } from '@farcaster/frame-sdk';
+import { QuestResult } from '../types';
 
 // Contract Address
 const REWARD_CONTRACT_ADDRESS = "0x193708bB0AC212E59fc44d6D6F3507F25Bc97fd4";
@@ -18,33 +18,21 @@ const CLAIM_ABI = parseAbi([
   'function claimReward(uint256 fid, uint256 questPid, uint256 questId, uint256 questReward, uint256 reward, uint256 totalReward, bytes signature) external'
 ]);
 
-interface QuestResult {
-  questName: string;
-  rank: string;
-  questMasterId?: number; 
-  questId?: string; // unique ID (pid)
-  totalReward: number;
-  baseReward: number;
-  bonusReward: number;
-  heroBonus: number;
-  equipmentBonus: number;
-  logs: string[];
-}
-
 interface ResultModalProps {
   results: QuestResult[];
   totalTokens: number;
   onClose: () => void;
-  farcasterUser?: any; // Added to get FID
+  onConfirm: (results: QuestResult[], closeModal?: boolean) => Promise<void>; // New Confirm Action
+  farcasterUser?: any; 
 }
 
-const ResultModal: React.FC<ResultModalProps> = ({ results, totalTokens, onClose, farcasterUser }) => {
+const ResultModal: React.FC<ResultModalProps> = ({ results, totalTokens, onClose, onConfirm, farcasterUser }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const itemsRef = useRef<HTMLDivElement[]>([]);
   const totalRef = useRef<HTMLDivElement>(null);
   const [isPreparingClaim, setIsPreparingClaim] = useState(false);
   const [statusMsg, setStatusMsg] = useState('');
-  const [errorMsg, setErrorMsg] = useState<string | null>(null); // Error state instead of alert
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   useEffect(() => {
     playFanfare();
@@ -90,6 +78,12 @@ const ResultModal: React.FC<ResultModalProps> = ({ results, totalTokens, onClose
     return () => ctx.revert();
   }, []);
 
+  const handleConfirmClaim = async () => {
+      playClick();
+      // Standard Claim (DB Save) and Close
+      await onConfirm(results, true);
+  };
+
   const handleOnChainClaim = async () => {
     if (!farcasterUser?.fid) {
       setErrorMsg("Farcaster user not found. Cannot claim on-chain.");
@@ -98,24 +92,29 @@ const ResultModal: React.FC<ResultModalProps> = ({ results, totalTokens, onClose
     
     playClick();
     setIsPreparingClaim(true);
-    setStatusMsg('Initializing...');
-    setErrorMsg(null); // Clear previous errors
+    setStatusMsg('Saving Progress...');
+    setErrorMsg(null); 
 
     try {
-      // 1. Check if we have a valid provider
       if (!sdk.wallet.ethProvider) {
-        throw new Error("No wallet provider found. Are you using a compatible Farcaster client?");
+        throw new Error("No wallet provider found.");
       }
+
+      // 1. Save to DB first! (Crucial for total_reward update)
+      // Pass closeModal=false to keep modal open
+      await onConfirm(results, false);
 
       // 2. Find valid result to claim (Currently claims one quest at a time)
       const targetResult = results.find(r => r.totalReward > 0 && r.questId && r.questMasterId);
       if (!targetResult) {
         setErrorMsg("No claimable reward found in this result set.");
         setIsPreparingClaim(false);
+        // Even if failed here, we already saved to DB, so we should close eventually or let user close
         return;
       }
 
       // 3. Fetch User Total Reward Stats (Required for Contract Validation)
+      // Must re-fetch to get the UPDATED total_reward after onConfirm
       setStatusMsg('Fetching stats...');
       const { data: stats, error } = await supabase
         .from('quest_player_stats')
@@ -153,18 +152,7 @@ const ResultModal: React.FC<ResultModalProps> = ({ results, totalTokens, onClose
       if (!apiResponse.ok) {
          const errorText = apiResponse.statusText || `Status ${apiResponse.status}`;
          let bodyText = '';
-         try { 
-             bodyText = await apiResponse.text();
-             // Try to parse JSON error if possible
-             try {
-                 const jsonError = JSON.parse(bodyText);
-                 if (jsonError.error) {
-                    bodyText = jsonError.error;
-                    if (jsonError.file) bodyText += `\n(${jsonError.file}:${jsonError.line})`;
-                 }
-             } catch {}
-         } catch {}
-         
+         try { bodyText = await apiResponse.text(); } catch {}
          throw new Error(`API Error: ${errorText}\n${bodyText}`);
       }
 
@@ -201,10 +189,8 @@ const ResultModal: React.FC<ResultModalProps> = ({ results, totalTokens, onClose
       });
 
       console.log("Transaction Hash:", hash);
-      // Success - Ideally show a success message but for now we just close
-      // alert(`Transaction Submitted!\nHash: ${hash}`); // Alert is blocked
       
-      // Close modal on success to update local state
+      // Close modal on success (DB already saved)
       onClose();
 
     } catch (e: any) {
@@ -224,7 +210,7 @@ const ResultModal: React.FC<ResultModalProps> = ({ results, totalTokens, onClose
           <h2 className="text-2xl font-black text-amber-500 mb-1">
             MISSION COMPLETE
           </h2>
-          <p className="text-slate-500 text-xs font-bold tracking-[0.2em] uppercase">Quest Report</p>
+          <p className="text-slate-500 text-xs font-bold tracking-[0.2em] uppercase">Quest Report (Preview)</p>
         </div>
 
         {/* Scrollable List */}
@@ -290,19 +276,30 @@ const ResultModal: React.FC<ResultModalProps> = ({ results, totalTokens, onClose
             </div>
           )}
 
-          <div className="flex gap-3">
+          <div className="flex gap-3 flex-wrap">
+             {/* Cancel Button */}
              <button 
-                onClick={onClose}
-                className="flex-1 py-4 bg-slate-800 hover:bg-slate-700 border border-slate-600 text-slate-300 rounded-xl font-bold transition-all active:scale-95"
+                onClick={() => { playClick(); onClose(); }}
+                className="flex-1 min-w-[120px] py-4 bg-slate-800 hover:bg-slate-700 border border-slate-600 text-slate-400 rounded-xl font-bold transition-all active:scale-95"
              >
-                閉じる (DB保存)
+                キャンセル
              </button>
 
+             {/* Claim Button (DB only) */}
+             <button 
+                onClick={handleConfirmClaim}
+                disabled={isPreparingClaim}
+                className="flex-1 min-w-[120px] py-4 bg-emerald-700 hover:bg-emerald-600 text-white rounded-xl font-bold transition-all active:scale-95 shadow-lg border-b-4 border-emerald-900"
+             >
+                報酬を受け取る
+             </button>
+
+             {/* Claim On-Chain Button */}
              {farcasterUser && totalTokens > 0 && (
                  <button 
                     onClick={handleOnChainClaim}
                     disabled={isPreparingClaim}
-                    className="flex-1 py-4 bg-indigo-600 hover:bg-indigo-500 rounded-xl font-bold text-white shadow-md transition-all active:scale-95 flex items-center justify-center gap-2 relative overflow-hidden"
+                    className="w-full py-3 bg-indigo-600 hover:bg-indigo-500 rounded-xl font-bold text-white shadow-md transition-all active:scale-95 flex items-center justify-center gap-2 relative overflow-hidden"
                  >
                     {isPreparingClaim ? (
                       <span className="flex items-center gap-2">
@@ -311,7 +308,7 @@ const ResultModal: React.FC<ResultModalProps> = ({ results, totalTokens, onClose
                       </span>
                     ) : (
                         <>
-                           <span>⛓️</span> Claim On-Chain
+                           <span>⛓️</span> Claim On-Chain (Verify & Send)
                         </>
                     )}
                  </button>

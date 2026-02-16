@@ -112,7 +112,7 @@ const AdminUserInspector: React.FC = () => {
     }
   };
 
-  // 1. Time Skip Only
+  // 1. Time Skip Only (Instant Complete)
   const handleInstantComplete = async (questPid: number) => {
     if (!confirm("クエスト時間を現在時刻に更新し、Result画面で完了可能な状態にしますか？")) return;
     
@@ -133,163 +133,6 @@ const AdminUserInspector: React.FC = () => {
       }
     } catch (e: any) {
       alert(`Error: ${e.message}`);
-    }
-  };
-
-  // 2. Full Claim Logic (New)
-  const handleForceClaim = async (quest: any) => {
-    if (!confirm(`クエスト「${quest.quest_mining?.name}」を強制完了させますか？\n\n【実行される処理】\n・報酬履歴への追加\n・Activeテーブルからの削除\n・ヒーローHPの減少反映\n・死亡(HP0)時のロスト処理\n・累計報酬額の加算\n\n※ユーザーがResult画面を押した時と全く同じ処理を実行します。`)) return;
-
-    try {
-        // A. Calculate Reward
-        const totalReward = (quest.base_reward || 0) + (quest.add_hero_reward || 0) + (quest.add_equipment_reward || 0);
-
-        // B. Identify Party & Calculate HP Updates
-        const party = userDetails?.parties.find(p => p.party_id === quest.party_id);
-        if (!party) throw new Error("このクエストに紐付くパーティ情報が見つかりません (Party ID不一致)");
-
-        const heroSlots = [
-            { id: party.hero1_hid, dmg: quest.hero1_damage },
-            { id: party.hero2_hid, dmg: quest.hero2_damage },
-            { id: party.hero3_hid, dmg: quest.hero3_damage }
-        ];
-
-        // C. Execute Hero Updates (Sequential to ensure safety)
-        for (const slot of heroSlots) {
-            if (!slot.id) continue;
-            
-            // Fetch current hero state fresh from DB to avoid race conditions
-            const { data: heroData } = await supabase.from('quest_player_hero').select('*').eq('player_hid', slot.id).single();
-            
-            if (heroData) {
-                const dmg = slot.dmg || 0;
-                let newHp = Math.max(0, heroData.hp - dmg);
-                const isDead = newHp === 0 || dmg >= 9999;
-
-                if (isDead) {
-                    // Lost Logic
-                    console.log(`[Admin] Hero ${slot.id} is dead. Executing LOST logic.`);
-                    await supabase.from('quest_player_hero_lost').insert({
-                        fid: quest.fid,
-                        hero_id: heroData.hero_id,
-                        quest_id: quest.quest_id, // Add Quest ID
-                        lost_at: new Date().toISOString()
-                    });
-                    await supabase.from('quest_player_hero').delete().eq('player_hid', slot.id);
-                } else {
-                    // Update HP
-                    if (heroData.hp !== newHp) {
-                        await supabase.from('quest_player_hero').update({ hp: newHp }).eq('player_hid', slot.id);
-                    }
-                }
-            }
-        }
-
-        // D. Archive Quest (Insert History)
-        const { error: insertError } = await supabase
-            .from('quest_process_complete')
-            .insert({
-                fid: quest.fid,
-                quest_id: quest.quest_id,
-                reward: totalReward
-                // created_at defaults to now
-            });
-
-        if (insertError) throw new Error(`Insert History Failed: ${insertError.message}`);
-
-        // E. Delete Active Quest
-        const { error: deleteError } = await supabase
-            .from('quest_process')
-            .delete()
-            .eq('quest_pid', quest.quest_pid);
-
-        if (deleteError) throw new Error(`Delete Active Failed: ${deleteError.message}`);
-
-        // F. Update Player Stats
-        
-        // 1. Increment Quest Count
-        const { error: countError } = await supabase.rpc('increment_player_stat', { 
-            player_fid: quest.fid, 
-            column_name: 'quest_count', 
-            amount: 1 
-        });
-        
-        if (countError) {
-            console.warn("RPC failed for quest_count, trying manual update", countError);
-            const { data: stats } = await supabase.from('quest_player_stats').select('quest_count').eq('fid', quest.fid).single();
-            if (stats) {
-                await supabase.from('quest_player_stats').update({ 
-                    quest_count: (stats.quest_count || 0) + 1 
-                }).eq('fid', quest.fid);
-            }
-        }
-
-        // 2. Update Total Reward
-        if (totalReward > 0) {
-            const { error: rpcError } = await supabase.rpc('increment_player_stat', { 
-                player_fid: quest.fid, 
-                column_name: 'total_reward', 
-                amount: totalReward 
-            });
-            
-            // Fallback manual update if RPC fails
-            if (rpcError) {
-                console.warn("RPC failed for total_reward, trying manual update", rpcError);
-                const { data: stats } = await supabase.from('quest_player_stats').select('total_reward').eq('fid', quest.fid).single();
-                if (stats) {
-                    await supabase.from('quest_player_stats').update({ 
-                        total_reward: (stats.total_reward || 0) + totalReward 
-                    }).eq('fid', quest.fid);
-                }
-            }
-        }
-
-        // G. Refresh
-        alert(`強制完了しました。\n報酬: +${totalReward} $CHH`);
-        if (selectedUser) {
-            handleUserSelect(selectedUser);
-        }
-
-    } catch (e: any) {
-        console.error(e);
-        alert(`Error: ${e.message}`);
-    }
-  };
-
-  // 3. Just Delete (No Rewards) - NOT USED IN UI ANYMORE
-  const handleForceArchive = async (quest: any) => {
-    if (!confirm(`クエスト「${quest.quest_mining?.name || quest.quest_pid}」を強制的に履歴へ移動（報酬なし）しますか？\n\n注意:\n・Activeテーブルから削除され、Completeテーブルに追加されます。\n・報酬、HP変動、ロスト判定は一切行われません。`)) return;
-
-    try {
-        // 1. Insert into history (Reward 0 seems appropriate for archive, or keep calculated?)
-        // Let's keep calculated reward in record but NOT add to user balance
-        const totalReward = (quest.base_reward || 0) + (quest.add_hero_reward || 0) + (quest.add_equipment_reward || 0);
-
-        const { error: insertError } = await supabase
-            .from('quest_process_complete')
-            .insert({
-                fid: quest.fid,
-                quest_id: quest.quest_id,
-                reward: totalReward, // Log what it was worth, but user doesn't get it added to stats
-            });
-
-        if (insertError) throw new Error(`Insert Failed: ${insertError.message}`);
-
-        // 2. Delete from active
-        const { error: deleteError } = await supabase
-            .from('quest_process')
-            .delete()
-            .eq('quest_pid', quest.quest_pid);
-
-        if (deleteError) throw new Error(`Delete Failed: ${deleteError.message}`);
-
-        // 3. Refresh
-        if (selectedUser) {
-            handleUserSelect(selectedUser);
-        }
-        alert("移動完了 (報酬加算なし)");
-    } catch (e: any) {
-        alert(`Error: ${e.message}`);
     }
   };
 
@@ -573,18 +416,11 @@ const AdminUserInspector: React.FC = () => {
                                         </div>
                                         <div className="flex flex-wrap gap-1 justify-end max-w-[120px]">
                                           <button 
-                                            onClick={() => handleForceClaim(q)}
-                                            className="bg-emerald-600 hover:bg-emerald-500 text-white text-[8px] font-bold px-2 py-1 rounded shadow-sm border border-emerald-400 transition-all active:scale-95"
-                                            title="Force Complete (Claim Rewards & Apply Damage)"
-                                          >
-                                            ✅ 強制完了
-                                          </button>
-                                          <button 
                                             onClick={() => handleInstantComplete(q.quest_pid)}
                                             className="bg-indigo-600 hover:bg-indigo-500 text-white text-[8px] font-bold px-2 py-1 rounded shadow-sm border border-indigo-400 transition-all active:scale-95"
-                                            title="Speed Up (Finish Now)"
+                                            title="Finish Now (Set time to past)"
                                           >
-                                            ⚡ SPEED
+                                            ✅ クエスト完了
                                           </button>
                                         </div>
                                     </div>
