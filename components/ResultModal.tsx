@@ -9,13 +9,13 @@ import { base } from 'viem/chains';
 import { sdk } from '@farcaster/frame-sdk';
 
 // Contract Address
-const REWARD_CONTRACT_ADDRESS = "0x9344B170580cD3861293805CF6436CA657ed3D72";
+const REWARD_CONTRACT_ADDRESS = "0x193708bB0AC212E59fc44d6D6F3507F25Bc97fd4";
 
 // API Endpoint
 const SIGN_API_ENDPOINT = "/api/sign_claim.php"; 
 
 const CLAIM_ABI = parseAbi([
-  'function claimReward(uint256 fid, uint256 questPid, uint256 questId, uint256 amount, uint256 totalReward, bytes signature) external'
+  'function claimReward(uint256 fid, uint256 questPid, uint256 questId, uint256 questReward, uint256 reward, uint256 totalReward, bytes signature) external'
 ]);
 
 interface QuestResult {
@@ -125,12 +125,18 @@ const ResultModal: React.FC<ResultModalProps> = ({ results, totalTokens, onClose
         throw new Error("Failed to fetch player stats for claim verification.");
       }
 
+      // Calculate parameters based on user request
+      const claimAmount = targetResult.totalReward;
+      // totalReward sent to contract must be (DB stored total) + (current claim amount)
+      const totalRewardForContract = (stats.total_reward || 0) + claimAmount;
+
       const params = {
         fid: farcasterUser.fid,
         questPid: parseInt(targetResult.questId || "0"),
         questId: targetResult.questMasterId || 0,
-        amount: targetResult.totalReward,
-        totalReward: stats.total_reward
+        questReward: targetResult.baseReward, // Use baseReward for contract range check
+        reward: claimAmount,                  // Actual payout amount
+        totalReward: totalRewardForContract   // Cumulative limit check
       };
 
       // 4. Request Signature from Backend
@@ -170,7 +176,8 @@ const ResultModal: React.FC<ResultModalProps> = ({ results, totalTokens, onClose
             BigInt(params.fid),
             BigInt(params.questPid),
             BigInt(params.questId),
-            BigInt(params.amount),
+            BigInt(params.questReward),
+            BigInt(params.reward),
             BigInt(params.totalReward),
             signature
         ],

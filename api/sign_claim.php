@@ -1,7 +1,8 @@
+
 <?php
 // api/sign_claim.php
 // フロントエンドからのリクエストを受け、SolidityのclaimReward関数用の署名を生成します。
-// 必要なパラメータ: fid, questPid, questId, amount, totalReward
+// 必要なパラメータ: fid, questPid, questId, questReward, reward, totalReward
 // 依存ライブラリ: kornrunner/keccak (composer require kornrunner/keccak)
 //                simplito/elliptic-php (composer require simplito/elliptic-php) 
 
@@ -16,7 +17,7 @@ header('Access-Control-Allow-Headers: Content-Type');
 $signerPrivateKey = getenv('SIGNER_PRIVATE_KEY'); 
 
 // コントラクトアドレス (リプレイ攻撃防止のためハッシュに含める)
-$contractAddress = "0x9344B170580cD3861293805CF6436CA657ed3D72";
+$contractAddress = "0x193708bB0AC212E59fc44d6D6F3507F25Bc97fd4";
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     http_response_code(405);
@@ -37,11 +38,12 @@ if (!$input) {
 $fid = $input['fid'] ?? null;
 $questPid = $input['questPid'] ?? null;
 $questId = $input['questId'] ?? null;
-$amount = $input['amount'] ?? null;
+$questReward = $input['questReward'] ?? null;
+$reward = $input['reward'] ?? null;
 $totalReward = $input['totalReward'] ?? null;
 
 // バリデーション
-if ($fid === null || $questPid === null || $questId === null || $amount === null || $totalReward === null) {
+if ($fid === null || $questPid === null || $questId === null || $questReward === null || $reward === null || $totalReward === null) {
     http_response_code(400);
     echo json_encode(['error' => 'Missing parameters']);
     exit;
@@ -49,10 +51,10 @@ if ($fid === null || $questPid === null || $questId === null || $amount === null
 
 try {
     // Note: 本番環境ではここでDBを再度参照し、
-    // $fidのユーザーが本当に$questPidを完了し、$amountが正しいか検証すべきです。
+    // $fidのユーザーが本当に$questPidを完了し、$rewardが正しいか検証すべきです。
 
     // --- ABI Encode Packed の再現 ---
-    // Solidity: keccak256(abi.encodePacked(fid, questPid, questId, amount, totalReward, address(this)))
+    // Solidity: keccak256(abi.encodePacked(fid, questPid, questId, questReward, reward, totalReward, address(this)))
     // uint256: 32bytes (big endian), address: 20bytes
     
     // GMP関数を使用して数値を16進数文字列に変換し、32バイト(64文字)にパディング
@@ -67,7 +69,8 @@ try {
     $packedData .= toUint256Hex($fid);
     $packedData .= toUint256Hex($questPid);
     $packedData .= toUint256Hex($questId);
-    $packedData .= toUint256Hex($amount);
+    $packedData .= toUint256Hex($questReward);
+    $packedData .= toUint256Hex($reward);
     $packedData .= toUint256Hex($totalReward);
     // アドレスは '0x' を除き小文字化
     $packedData .= str_replace('0x', '', strtolower($contractAddress));

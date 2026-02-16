@@ -26,8 +26,12 @@ export const useQuest = ({ gameState, setGameState, showNotification, setReturnR
       } = stats;
 
       // 1. Reward Range
-      const minReward = Math.floor(config.minReward * (1 + totalRewardBonus / 100));
-      const maxReward = Math.floor(config.maxReward * (1 + totalRewardBonus / 100));
+      let minReward = Math.floor(config.minReward * (1 + totalRewardBonus / 100));
+      let maxReward = Math.floor(config.maxReward * (1 + totalRewardBonus / 100));
+
+      // Cap Prediction at Max Reward (to match actual logic limit)
+      if (maxReward > config.maxReward) maxReward = config.maxReward;
+      if (minReward > config.maxReward) minReward = config.maxReward;
 
       // 2. Duration (Speed Calculation)
       const speedMultiplier = 1 + (totalSpeedBonus / 100);
@@ -79,14 +83,48 @@ export const useQuest = ({ gameState, setGameState, showNotification, setReturnR
     const { totalRewardBonus, totalSpeedBonus, teamDamageReduction } = stats;
 
     // 1. Calculate Rewards
-    const baseReward = Math.floor(Math.random() * (config.maxReward - config.minReward + 1)) + config.minReward;
+    let baseReward = Math.floor(Math.random() * (config.maxReward - config.minReward + 1)) + config.minReward;
     
     // Recalculate component parts for DB log
     const pickaxeBonus = stats.breakdown.reward.equip;
     
-    const addHeroReward = Math.floor(baseReward * (totalRewardBonus / 100));
-    const addEquipmentRewardOnly = Math.floor(baseReward * (pickaxeBonus / 100));
-    const addHeroSkillRewardOnly = addHeroReward - addEquipmentRewardOnly;
+    // Temporary variables for calculation
+    const totalBonusMultiplier = totalRewardBonus / 100;
+    const equipBonusMultiplier = pickaxeBonus / 100;
+
+    // Initial Bonus Calculation
+    let totalBonusAmount = Math.floor(baseReward * totalBonusMultiplier);
+    let addEquipmentRewardOnly = Math.floor(baseReward * equipBonusMultiplier);
+    let addHeroSkillRewardOnly = totalBonusAmount - addEquipmentRewardOnly;
+
+    // --- CAP LOGIC: Ensure total does not exceed maxReward ---
+    const currentTotal = baseReward + totalBonusAmount;
+    
+    if (currentTotal > config.maxReward) {
+        const allowedTotal = config.maxReward;
+        const allowedBonus = Math.max(0, allowedTotal - baseReward);
+
+        // Adjust bonuses proportionally if possible
+        if (totalBonusAmount > 0) {
+            const ratio = allowedBonus / totalBonusAmount;
+            addEquipmentRewardOnly = Math.floor(addEquipmentRewardOnly * ratio);
+            addHeroSkillRewardOnly = Math.floor(addHeroSkillRewardOnly * ratio);
+            
+            // Fix rounding errors to ensure we exactly hit maxReward or below
+            // If sum is less than allowed due to floor, add remainder to one bucket (e.g. hero skill)
+            const newTotalBonus = addEquipmentRewardOnly + addHeroSkillRewardOnly;
+            const remainder = allowedBonus - newTotalBonus;
+            if (remainder > 0) {
+                addHeroSkillRewardOnly += remainder;
+            }
+        } else {
+            // Should not happen if baseReward <= maxReward, but safe fallback
+            addEquipmentRewardOnly = 0;
+            addHeroSkillRewardOnly = 0;
+            if (baseReward > config.maxReward) baseReward = config.maxReward;
+        }
+    }
+    // ---------------------------------------------------------
 
     // 2. Calculate Damage
     const heroDamages: Record<string, number> = {};
@@ -290,8 +328,14 @@ export const useQuest = ({ gameState, setGameState, showNotification, setReturnR
           heroDamages = calculated.heroDamages;
       }
       
+      // Calculate final reward with safeguard
       const bonusReward = addEquipmentReward + addHeroReward;
       let finalReward = baseReward + bonusReward;
+      
+      // Safety Cap against Contract Limits (redundant if calculateQuestResults is correct, but safe)
+      if (finalReward > config.maxReward) {
+          finalReward = config.maxReward;
+      }
       
       let survivors = 0;
 
