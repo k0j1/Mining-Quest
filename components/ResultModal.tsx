@@ -127,8 +127,11 @@ const ResultModal: React.FC<ResultModalProps> = ({ results, totalTokens, onClose
 
       // Calculate parameters based on user request
       const claimAmount = targetResult.totalReward;
-      // totalReward sent to contract must be (DB stored total) + (current claim amount)
-      const totalRewardForContract = (stats.total_reward || 0) + claimAmount;
+      
+      // FIX: totalReward sent to contract should be the value STORED in DB (which acts as the cap).
+      // Since `returnFromQuest` already updated the DB with the new reward, `stats.total_reward` includes `claimAmount`.
+      // Therefore, we pass `stats.total_reward` as is.
+      const totalRewardForContract = stats.total_reward || 0;
 
       const params = {
         fid: farcasterUser.fid,
@@ -150,7 +153,10 @@ const ResultModal: React.FC<ResultModalProps> = ({ results, totalTokens, onClose
       });
 
       if (!apiResponse.ok) {
-         throw new Error(`API Error: ${apiResponse.statusText}`);
+         const errorText = apiResponse.statusText || `Status ${apiResponse.status}`;
+         let bodyText = '';
+         try { bodyText = await apiResponse.text(); } catch {}
+         throw new Error(`API Error: ${errorText} ${bodyText ? `\nResponse: ${bodyText.slice(0, 100)}...` : ''}`);
       }
 
       const { signature, error: apiErr } = await apiResponse.json();

@@ -11,27 +11,56 @@ header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: POST');
 header('Access-Control-Allow-Headers: Content-Type');
 
+// エラーをキャッチしてJSONで返すための設定
+ini_set('display_errors', 0); // HTMLエラー出力を抑制
+error_reporting(E_ALL);
+
+function jsonError($message, $code = 500) {
+    http_response_code($code);
+    echo json_encode(['error' => $message]);
+    exit;
+}
+
+// 致命的エラー（構文エラーやrequire失敗など）をキャッチ
+register_shutdown_function(function() {
+    $error = error_get_last();
+    if ($error && ($error['type'] === E_ERROR || $error['type'] === E_PARSE || $error['type'] === E_COMPILE_ERROR)) {
+        http_response_code(500);
+        echo json_encode(['error' => 'Fatal Error: ' . $error['message']]);
+    }
+});
+
+// --- 依存関係チェック ---
+$autoloadPath = __DIR__ . '/vendor/autoload.php';
+if (!file_exists($autoloadPath)) {
+    jsonError("Vendor autoload not found at $autoloadPath. Please run 'composer install' or check deployment.", 500);
+}
+
+if (!extension_loaded('gmp')) {
+    // GMPがないと大きな整数の16進変換が難しい
+    jsonError("PHP GMP extension is required.", 500);
+}
+
+require_once $autoloadPath;
+
 // --- 設定 ---
-// 署名者の秘密鍵 (Solidityの signerAddress = 0xB6eDacfc0dFc759E9AC5b9b8B6eB32310ac1Bb49 に対応するもの)
-// 環境変数から安全に読み込んでください。
 $signerPrivateKey = getenv('SIGNER_PRIVATE_KEY'); 
+if (!$signerPrivateKey) {
+    jsonError("Server configuration error: SIGNER_PRIVATE_KEY is missing.", 500);
+}
 
 // コントラクトアドレス (リプレイ攻撃防止のためハッシュに含める)
 $contractAddress = "0x193708bB0AC212E59fc44d6D6F3507F25Bc97fd4";
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-    http_response_code(405);
-    echo json_encode(['error' => 'Method Not Allowed']);
-    exit;
+    jsonError("Method Not Allowed", 405);
 }
 
 // リクエストボディ取得
 $input = json_decode(file_get_contents('php://input'), true);
 
 if (!$input) {
-    http_response_code(400);
-    echo json_encode(['error' => 'Invalid JSON']);
-    exit;
+    jsonError("Invalid JSON body", 400);
 }
 
 // パラメータ取得
@@ -44,14 +73,12 @@ $totalReward = $input['totalReward'] ?? null;
 
 // バリデーション
 if ($fid === null || $questPid === null || $questId === null || $questReward === null || $reward === null || $totalReward === null) {
-    http_response_code(400);
-    echo json_encode(['error' => 'Missing parameters']);
-    exit;
+    jsonError("Missing required parameters (fid, questPid, questId, questReward, reward, totalReward)", 400);
 }
 
 try {
-    // Note: 本番環境ではここでDBを再度参照し、
-    // $fidのユーザーが本当に$questPidを完了し、$rewardが正しいか検証すべきです。
+    use kornrunner\Keccak;
+    use Elliptic\EC;
 
     // --- ABI Encode Packed の再現 ---
     // Solidity: keccak256(abi.encodePacked(fid, questPid, questId, questReward, reward, totalReward, address(this)))
@@ -59,7 +86,6 @@ try {
     
     // GMP関数を使用して数値を16進数文字列に変換し、32バイト(64文字)にパディング
     function toUint256Hex($val) {
-        // 文字列として扱うことで大きな数値をサポート
         $hex = gmp_strval(gmp_init($val), 16);
         if (strlen($hex) % 2 != 0) { $hex = '0' . $hex; }
         return str_pad($hex, 64, '0', STR_PAD_LEFT);
@@ -74,14 +100,6 @@ try {
     $packedData .= toUint256Hex($totalReward);
     // アドレスは '0x' を除き小文字化
     $packedData .= str_replace('0x', '', strtolower($contractAddress));
-
-    // --- 署名生成 ---
-    // 動作には `composer require kornrunner/keccak simplito/elliptic-php` が必要です。
-    // 環境に合わせてオートローダーを読み込んでください。
-    require_once __DIR__ . '/vendor/autoload.php';
-    
-    use kornrunner\Keccak;
-    use Elliptic\EC;
 
     // 1. メッセージハッシュ
     $hash = Keccak::hash(hex2bin($packedData), 256);
@@ -107,8 +125,7 @@ try {
         'signature' => $signature
     ]);
 
-} catch (Exception $e) {
-    http_response_code(500);
-    echo json_encode(['error' => $e->getMessage()]);
+} catch (Throwable $e) {
+    jsonError($e->getMessage(), 500);
 }
 ?>
