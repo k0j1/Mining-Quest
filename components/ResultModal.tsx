@@ -140,6 +140,41 @@ const ResultModal: React.FC<ResultModalProps> = ({ results, totalTokens, onClose
                 const { signature, error: apiErr } = await apiResponse.json();
                 if (apiErr) throw new Error(`API Error: ${apiErr}`);
                 
+                // Switch Chain to Base
+                setStatusMsg('Switching Chain...');
+                try {
+                  await sdk.wallet.ethProvider.request({
+                    method: 'wallet_switchEthereumChain',
+                    params: [{ chainId: '0x2105' }], // 8453
+                  });
+                } catch (switchError: any) {
+                  // This error code indicates that the chain has not been added to MetaMask.
+                  if (switchError.code === 4902) {
+                    try {
+                      await sdk.wallet.ethProvider.request({
+                        method: 'wallet_addEthereumChain',
+                        params: [
+                          {
+                            chainId: '0x2105',
+                            chainName: 'Base Mainnet',
+                            rpcUrls: ['https://mainnet.base.org'],
+                            nativeCurrency: {
+                              name: 'Ether',
+                              symbol: 'ETH',
+                              decimals: 18,
+                            },
+                            blockExplorerUrls: ['https://basescan.org'],
+                          },
+                        ],
+                      });
+                    } catch (addError) {
+                      throw new Error("Failed to add Base chain to wallet.");
+                    }
+                  } else {
+                    console.warn("Failed to switch chain:", switchError);
+                  }
+                }
+
                 // Submit Transaction
                 setStatusMsg('Confirm in Wallet...');
                 const walletClient = createWalletClient({
