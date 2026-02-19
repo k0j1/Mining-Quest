@@ -90,11 +90,7 @@ const ResultModal: React.FC<ResultModalProps> = ({ results, totalTokens, onClose
       setStatusMsg('Saving...');
 
       try {
-        // 1. DB Save First (Always required)
-        // Pass closeModal=false because we might proceed to on-chain claim
-        await onConfirm(results, false);
-
-        // 2. Check if we should proceed to On-Chain Claim
+        // 1. Check if we should proceed to On-Chain Claim
         let hash: string | null = null;
         if (farcasterUser?.fid && totalTokens > 0 && sdk.wallet.ethProvider) {
             
@@ -207,16 +203,19 @@ const ResultModal: React.FC<ResultModalProps> = ({ results, totalTokens, onClose
             }
         }
         
+        // 2. DB Save (Only after successful claim or if no claim needed)
+        // Pass closeModal=false because we will switch to success view
+        setStatusMsg('Saving...');
+        await onConfirm(results, false);
+        
         // Switch to Success View
         setClaimSuccess(true);
         playConfirm();
 
       } catch (e: any) {
         console.error("Claim Error:", e);
-        // Even if on-chain fails, DB is updated, so we show error but allow close
+        // If on-chain fails, DB is NOT updated, so user can retry.
         setErrorMsg(e.message || "エラーが発生しました");
-        // If DB save succeeded but chain failed, user still "claimed" locally.
-        // But for now let's just show error on the result screen so they can try again or close.
       } finally {
         setIsPreparingClaim(false);
         setStatusMsg('');
