@@ -92,6 +92,7 @@ const Header: React.FC<HeaderProps> = ({
   }, [currentTokenValue, farcasterUser]);
 
   useEffect(() => {
+    if (tapCount === 0) return;
     const timer = setTimeout(() => {
       setTapCount(0);
     }, 1000);

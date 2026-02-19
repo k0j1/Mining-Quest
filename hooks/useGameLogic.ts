@@ -133,8 +133,10 @@ export const useGameLogic = () => {
             id: e.player_eid.toString(),
             name: base.name,
             type: base.type,
-            bonus: base.bonus,
-            rarity: base.rarity
+            // Calculate bonus based on level: +1% per level (plus * 0.01)
+            bonus: Math.floor(base.bonus * (1 + (e.level || 0) * 0.01)),
+            rarity: base.rarity,
+            level: e.level || 0
           });
           return acc;
         }, []);
@@ -320,7 +322,7 @@ export const useGameLogic = () => {
   });
 
   // Item Logic
-  const { usePotion, useElixir } = useItems({
+  const { usePotion, useElixir, mergeEquipment } = useItems({
     gameState, setGameState, showNotification, farcasterUser, refetchBalance
   });
 
@@ -356,6 +358,7 @@ export const useGameLogic = () => {
       swapPartyPositions, 
       usePotion, 
       useElixir,
+      mergeEquipment,
       debugCompleteQuest,
       debugAddTokens,
       getQuestPrediction

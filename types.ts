@@ -39,6 +39,7 @@ export interface Equipment {
   type: 'Pickaxe' | 'Helmet' | 'Boots';
   bonus: number;
   rarity: QuestRank; // C, UC, R, E, L
+  level: number; // Enhancement level (+0, +1, ...)
 }
 
 export interface Quest {

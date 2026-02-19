@@ -236,6 +236,7 @@ const App: React.FC = () => {
             onUnlockParty={actions.unlockParty}
             onAssignHero={actions.assignHeroToParty}
             onSwapSlots={actions.swapPartyPositions}
+            onMergeEquipment={actions.mergeEquipment}
             {...commonProps}
           />
         );

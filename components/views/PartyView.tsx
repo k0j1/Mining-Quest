@@ -12,6 +12,7 @@ import { IS_TEST_MODE } from '../../constants';
 import { calculatePartyStats } from '../../utils/mechanics';
 import { gsap } from 'gsap';
 import { getHeroImageUrl } from '../../utils/heroUtils';
+import EquipmentList from '../EquipmentList';
 
 interface PartyViewProps {
   gameState: GameState;
@@ -26,6 +27,7 @@ interface PartyViewProps {
   farcasterUser?: any;
   onChainBalance?: number | null;
   onAccountClick?: () => void;
+  onMergeEquipment?: (baseId: string, materialId: string) => void;
 }
 
 type SortMode = 'RARITY' | 'HP_ASC' | 'HP_DESC';
@@ -42,7 +44,8 @@ const PartyView: React.FC<PartyViewProps> = ({
   onDebugAddTokens,
   farcasterUser,
   onChainBalance,
-  onAccountClick
+  onAccountClick,
+  onMergeEquipment
 }) => {
   const [selectedSlotIndex, setSelectedSlotIndex] = useState<number | null>(null);
   const [selectedHeroId, setSelectedHeroId] = useState<string | null>(null);
@@ -460,9 +463,18 @@ const PartyView: React.FC<PartyViewProps> = ({
                   )}
               </div>
             </div>
+
+            {/* Equipment List (Armory) */}
+            {onMergeEquipment && (
+              <EquipmentList 
+                equipment={gameState.equipment}
+                heroes={gameState.heroes}
+                onMerge={onMergeEquipment}
+              />
+            )}
         </div>
 
-        {/* --- FLOATING MINI PARTY PANEL (Shows only when Main Party is scrolled out) --- */}
+        {/* --- FLOATING MINI PARTY PANEL --- */}
         {!isMainPartyVisible && (
             <div 
                 ref={floatRef}
@@ -518,6 +530,7 @@ const PartyView: React.FC<PartyViewProps> = ({
           allHeroes={gameState.heroes}
           onSelect={handleSelectEquipment}
           onClose={() => { playClick(); setEquippingState(null); }}
+          onMerge={onMergeEquipment}
         />
       )}
 

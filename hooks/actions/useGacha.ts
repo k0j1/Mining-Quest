@@ -128,7 +128,8 @@ export const useGacha = ({ gameState, setGameState, showNotification, farcasterU
             name: result.name,
             type: result.type,
             bonus: result.bonus,
-            rarity: result.rarity
+            rarity: result.rarity,
+            level: 0
         }));
         next.equipment = [...prev.equipment, ...newEquipment];
       }
