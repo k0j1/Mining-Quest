@@ -293,7 +293,11 @@ const HeroCard: React.FC<HeroCardProps> = ({
                  />
               </div>
               
-              {equipId && (
+              {equippedItem && (equippedItem.level || 0) > 0 ? (
+                 <div className="absolute -top-1.5 -right-1.5 bg-amber-500 text-black text-[8px] font-black w-4 h-4 flex items-center justify-center rounded-full border border-slate-900 shadow-sm z-10">
+                    +{equippedItem.level}
+                 </div>
+              ) : equipId && (
                  <div className="absolute top-0.5 right-0.5 w-1.5 h-1.5 bg-emerald-500 rounded-full shadow-[0_0_4px_#10b981]"></div>
               )}
             </button>

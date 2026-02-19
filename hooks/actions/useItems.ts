@@ -104,11 +104,11 @@ export const useItems = ({ gameState, setGameState, showNotification, farcasterU
 
     // Optimistic Update
     const newLevel = baseItem.level + 1;
-    // Recalculate bonus: Base * (1 + newLevel * 0.01)
-    // We derive Base from Current: Base = Current / (1 + currentLevel * 0.01)
+    // Recalculate bonus: Base * (1 + newLevel * 0.1)
+    // We derive Base from Current: Base = Current / (1 + currentLevel * 0.1)
     
-    const currentMultiplier = 1 + baseItem.level * 0.01;
-    const newMultiplier = 1 + newLevel * 0.01;
+    const currentMultiplier = 1 + baseItem.level * 0.1;
+    const newMultiplier = 1 + newLevel * 0.1;
     // Use Math.round to minimize precision errors when reversing
     const baseBonus = baseItem.bonus / currentMultiplier; 
     const newBonus = Math.floor(baseBonus * newMultiplier);

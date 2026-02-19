@@ -244,7 +244,7 @@ const EquipmentList: React.FC<EquipmentListProps> = ({ equipment, heroes, onMerg
                    : 'bg-slate-800 text-slate-600 cursor-not-allowed'
                }`}
              >
-               {baseItem && materialItem ? '合成実行 (MERGE)' : '装備を選択してください'}
+               {baseItem && materialItem ? '合成実行 (MERGE +10%)' : '装備を選択してください'}
              </button>
            </div>
         </div>
@@ -293,6 +293,11 @@ const EquipmentList: React.FC<EquipmentListProps> = ({ equipment, heroes, onMerg
                             {item.type === 'Pickaxe' ? `Rew +${item.bonus}%` : 
                              item.type === 'Helmet' ? `Def +${item.bonus}%` : 
                              `Spd +${item.bonus}%`}
+                             {(item.level || 0) > 0 && (
+                                <span className="text-amber-500 ml-1 font-bold">
+                                   (Base: {Math.floor(item.bonus / (1 + (item.level || 0) * 0.1))})
+                                </span>
+                             )}
                         </div>
                     </div>
 
