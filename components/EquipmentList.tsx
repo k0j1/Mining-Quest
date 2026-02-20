@@ -245,7 +245,7 @@ const EquipmentList: React.FC<EquipmentListProps> = ({ equipment, heroes, onMerg
                    : 'bg-slate-800 text-slate-600 cursor-not-allowed'
                }`}
              >
-               {baseItem && materialItem ? '合成実行 (MERGE +10%)' : '装備を選択してください'}
+               {baseItem && materialItem ? '合成実行 (MERGE +1)' : '装備を選択してください'}
              </button>
            </div>
         </div>
@@ -266,8 +266,8 @@ const EquipmentList: React.FC<EquipmentListProps> = ({ equipment, heroes, onMerg
                     isBase={isBase}
                     isMaterial={isMaterial}
                     isMergeMode={isMergeMode}
-                    onClick={() => handleItemClick(item)}
-                    disabled={!isMergeMode || (!!equippedBy && !mergeBaseId)}
+                    onClick={isMergeMode ? () => handleItemClick(item) : undefined}
+                    disabled={isMergeMode && !!equippedBy && !mergeBaseId}
                     layout="grid"
                 />
             );

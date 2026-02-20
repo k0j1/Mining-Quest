@@ -251,7 +251,7 @@ const EquipmentSelector: React.FC<EquipmentSelectorProps> = ({
                 onClick={executeMerge}
                 className="flex-[2] py-3 bg-gradient-to-r from-amber-600 to-orange-600 text-white rounded-xl font-bold text-sm shadow-lg hover:brightness-110 active:scale-95 transition-all"
               >
-                強化実行 (+10% Bonus)
+                強化実行 (MERGE +1)
               </button>
             </div>
           </div>
