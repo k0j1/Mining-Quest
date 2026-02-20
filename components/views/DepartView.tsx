@@ -284,14 +284,14 @@ const DepartView: React.FC<DepartViewProps> = ({
                                     </div>
                                     {prediction.bonusPercent > 0 && (
                                         <div className="text-[9px] font-bold text-emerald-400 bg-emerald-900/30 px-1.5 py-0.5 rounded mt-0.5 inline-block">
-                                            Bonus +{prediction.bonusPercent}%
+                                            Bonus +{prediction.bonusPercent.toFixed(1)}%
                                         </div>
                                     )}
                                 </div>
                             </div>
                             {prediction.bonusPercent > 0 && (
                                 <div className="text-right text-[8px] text-slate-500 font-bold mt-0.5">
-                                    (Hero: +{prediction.breakdown?.reward.hero}% / Equip: +{prediction.breakdown?.reward.equip}%)
+                                    (Hero: +{prediction.breakdown?.reward.hero.toFixed(1)}% / Equip: +{prediction.breakdown?.reward.equip.toFixed(1)}%)
                                 </div>
                             )}
                         </div>
@@ -324,7 +324,7 @@ const DepartView: React.FC<DepartViewProps> = ({
                                                 {minDmg} ~ {maxDmg}
                                             </span>
                                             <span className="text-[8px] text-slate-500">
-                                                (軽減: +{hero.totalReduction}%)
+                                                (軽減: +{hero.totalReduction.toFixed(1)}%)
                                             </span>
                                         </div>
                                     </div>
@@ -347,14 +347,14 @@ const DepartView: React.FC<DepartViewProps> = ({
                                     </div>
                                     {prediction.speedBonusPercent > 0 && (
                                         <div className="text-[9px] font-bold text-emerald-400 bg-emerald-900/30 px-1.5 py-0.5 rounded mt-0.5 inline-block">
-                                            Speed +{prediction.speedBonusPercent}%
+                                            Speed +{prediction.speedBonusPercent.toFixed(1)}%
                                         </div>
                                     )}
                                 </div>
                             </div>
                             {prediction.speedBonusPercent > 0 && (
                                 <div className="text-right text-[8px] text-slate-500 font-bold mt-0.5">
-                                    (Hero: +{prediction.breakdown?.speed.hero}% / Equip: +{prediction.breakdown?.speed.equip}%)
+                                    (Hero: +{prediction.breakdown?.speed.hero.toFixed(1)}% / Equip: +{prediction.breakdown?.speed.equip.toFixed(1)}%)
                                 </div>
                             )}
                         </div>

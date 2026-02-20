@@ -3,6 +3,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '../lib/supabase';
 import { playClick } from '../utils/sound';
 import { getHeroImageUrl } from '../utils/heroUtils';
+import EquipmentIcon from './EquipmentIcon';
+import EquipmentListItem from './EquipmentListItem';
 
 const AdminUserInspector: React.FC = () => {
   const [userSearch, setUserSearch] = useState('');
@@ -520,23 +522,29 @@ const AdminUserInspector: React.FC = () => {
                     </h3>
                     <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-3">
                        {userDetails.equipment.map((e: any) => {
-                           const typeIcon = e.quest_equipment?.type === 'Pickaxe' ? '⛏️' : e.quest_equipment?.type === 'Helmet' ? '🪖' : '👢';
-                           const rarity = e.quest_equipment?.rarity || 'C';
-                           const borderColor = rarity === 'L' ? 'border-amber-500/30' : 'border-slate-800';
+                           const baseItem = e.quest_equipment || {};
+                           const rarity = baseItem.rarity || 'C';
+                           const level = e.level || 0;
+                           const baseBonus = baseItem.bonus || 0;
+                           const totalBonus = baseBonus + (level * 0.1);
+
+                           // Construct a pseudo-Equipment object for the component
+                           const itemObj = {
+                               id: e.player_eid.toString(),
+                               name: baseItem.name || 'Unknown',
+                               type: baseItem.type,
+                               rarity: rarity,
+                               bonus: totalBonus,
+                               level: level
+                           };
 
                            return (
-                              <div key={e.player_eid} className={`bg-slate-900 border ${borderColor} p-2 rounded-lg flex items-center gap-2`}>
-                                 <div className="w-8 h-8 flex items-center justify-center bg-slate-800 rounded text-lg">
-                                    {typeIcon}
-                                 </div>
-                                 <div className="min-w-0 flex-1">
-                                    <div className="text-[9px] font-bold text-slate-300 truncate">{e.quest_equipment?.name || 'Unknown'}</div>
-                                    <div className="flex justify-between items-center mt-0.5">
-                                        <span className="text-[8px] font-black text-slate-500">{rarity}</span>
-                                        <span className="text-[8px] text-indigo-400">+{e.quest_equipment?.bonus}%</span>
-                                    </div>
-                                 </div>
-                              </div>
+                               <EquipmentListItem
+                                   key={e.player_eid}
+                                   item={itemObj as any}
+                                   layout="grid"
+                                   className="bg-slate-900"
+                               />
                            );
                        })}
                     </div>

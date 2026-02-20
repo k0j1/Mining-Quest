@@ -108,3 +108,19 @@ export const calculateHeroDamageReduction = (
 
   return helmetBonus + teamDamageReduction + selfSkillMitigation;
 };
+
+/**
+ * Calculates the actual bonus of an equipment based on its base bonus and level.
+ * Formula: Base + (Level * 0.1)
+ */
+export const calculateEquipmentBonus = (baseBonus: number, level: number): number => {
+  return baseBonus + (level * 0.1);
+};
+
+/**
+ * Calculates the base bonus of an equipment from its current total bonus and level.
+ * Useful for displaying the base stat.
+ */
+export const calculateEquipmentBaseBonus = (currentBonus: number, level: number): number => {
+  return currentBonus - (level * 0.1);
+};

@@ -2,6 +2,7 @@
 import React, { useState, useMemo } from 'react';
 import { Equipment, Hero } from '../types';
 import EquipmentIcon from './EquipmentIcon';
+import EquipmentListItem from './EquipmentListItem';
 import { playClick, playConfirm, playError } from '../utils/sound';
 
 interface EquipmentSelectorProps {
@@ -198,46 +199,18 @@ const EquipmentSelector: React.FC<EquipmentSelectorProps> = ({
             const isDisabled = mode === 'equip' ? isEquippedElsewhere : (mode === 'merge' && !mergeBaseId && false); // Base selection: allow all?
 
             return (
-              <button
+              <EquipmentListItem
                 key={item.id}
+                item={item}
+                equippedBy={equippedBy}
+                isEquippedByCurrentSlot={isEquippedByThisHeroSlot && mode === 'equip'}
+                isBase={isBase}
+                isMaterial={isMaterial}
+                isMergeMode={mode === 'merge'}
                 onClick={() => handleItemClick(item)}
                 disabled={isDisabled}
-                className={`w-full p-3 rounded-xl border transition-all flex items-center space-x-4 text-left group shrink-0 relative overflow-hidden
-                  ${isBase ? 'border-amber-500 bg-amber-500/20 ring-2 ring-amber-500/50' : ''}
-                  ${isMaterial ? 'border-red-500 bg-red-500/20' : ''}
-                  ${!isBase && !isMaterial && isEquippedByThisHeroSlot && mode === 'equip' ? 'border-indigo-500 bg-indigo-500/10' : 'border-slate-800 bg-slate-900/40 hover:border-slate-600'}
-                  ${isDisabled ? 'opacity-50 grayscale' : ''}
-                `}
-              >
-                <div className="w-12 h-12 bg-slate-950 rounded-lg flex items-center justify-center border border-slate-800 shrink-0 relative">
-                    <EquipmentIcon type={item.type} rarity={item.rarity} size="2em" />
-                    {(item.level || 0) > 0 && (
-                      <div className="absolute -top-1 -right-1 bg-amber-500 text-black text-[10px] font-black px-1.5 rounded-full border border-white shadow-sm">
-                        +{item.level}
-                      </div>
-                    )}
-                </div>
-                
-                <div className="flex-1 min-w-0">
-                  <div className="flex justify-between items-baseline mb-1">
-                    <p className={`font-bold text-sm truncate ${rarityColors[item.rarity] || rarityColors.C}`}>{item.name}</p>
-                    <span className="text-[10px] text-slate-500 uppercase font-black ml-2">{item.rarity}</span>
-                  </div>
-                  <p className="text-[10px] text-slate-400">
-                    {item.type === 'Pickaxe' ? `報酬 +${item.bonus.toFixed(1)}%` : 
-                     item.type === 'Helmet' ? `防御 +${item.bonus.toFixed(1)}%` : 
-                     `速度 +${item.bonus.toFixed(1)}%`}
-                  </p>
-                </div>
-                {equippedBy && (
-                  <div className="absolute top-2 right-2 text-[8px] bg-slate-800 px-2 py-1 rounded text-slate-400 font-bold border border-slate-700">
-                    {equippedBy.name}
-                  </div>
-                )}
-                {isEquippedByThisHeroSlot && mode === 'equip' && (
-                  <div className="text-indigo-400 font-bold text-xs bg-indigo-900/50 px-2 py-1 rounded border border-indigo-500/30">選択中</div>
-                )}
-              </button>
+                layout="list"
+              />
             );
           })}
         </div>

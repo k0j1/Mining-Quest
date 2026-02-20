@@ -143,7 +143,7 @@ const HeroDetailModal: React.FC<HeroDetailModalProps> = ({ hero, equipment, onCl
                             {pickaxe ? (
                                 <>
                                     <span className="text-[8px] text-white font-bold truncate w-full">{pickaxe.name}</span>
-                                    <span className="text-[7px] text-amber-400 font-bold">+{pickaxe.bonus}%</span>
+                                    <span className="text-[7px] text-amber-400 font-bold">+{pickaxe.bonus.toFixed(1)}%</span>
                                 </>
                             ) : <span className="text-[8px] text-slate-600">None</span>}
                         </div>
@@ -156,7 +156,7 @@ const HeroDetailModal: React.FC<HeroDetailModalProps> = ({ hero, equipment, onCl
                             {helmet ? (
                                 <>
                                     <span className="text-[8px] text-white font-bold truncate w-full">{helmet.name}</span>
-                                    <span className="text-[7px] text-emerald-400 font-bold">+{helmet.bonus}%</span>
+                                    <span className="text-[7px] text-emerald-400 font-bold">+{helmet.bonus.toFixed(1)}%</span>
                                 </>
                             ) : <span className="text-[8px] text-slate-600">None</span>}
                         </div>
@@ -169,7 +169,7 @@ const HeroDetailModal: React.FC<HeroDetailModalProps> = ({ hero, equipment, onCl
                             {boots ? (
                                 <>
                                     <span className="text-[8px] text-white font-bold truncate w-full">{boots.name}</span>
-                                    <span className="text-[7px] text-blue-400 font-bold">+{boots.bonus}%</span>
+                                    <span className="text-[7px] text-blue-400 font-bold">+{boots.bonus.toFixed(1)}%</span>
                                 </>
                             ) : <span className="text-[8px] text-slate-600">None</span>}
                         </div>

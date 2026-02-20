@@ -2,6 +2,7 @@
 import React, { useState, useMemo } from 'react';
 import { Equipment, Hero, QuestRank } from '../types';
 import EquipmentIcon from './EquipmentIcon';
+import EquipmentListItem from './EquipmentListItem';
 import { playClick, playConfirm, playError } from '../utils/sound';
 
 interface EquipmentListProps {
@@ -257,58 +258,18 @@ const EquipmentList: React.FC<EquipmentListProps> = ({ equipment, heroes, onMerg
             const isBase = mergeBaseId === item.id;
             const isMaterial = mergeMaterialId === item.id;
             
-            // In Merge Mode:
-            // - If Base is selected, disable non-matching items (filteredList handles this mostly, but we need to show them as disabled or hide them?)
-            // - Currently filteredList hides incompatible items when base is selected.
-            
             return (
-                <button
+                <EquipmentListItem
                     key={item.id}
+                    item={item}
+                    equippedBy={equippedBy}
+                    isBase={isBase}
+                    isMaterial={isMaterial}
+                    isMergeMode={isMergeMode}
                     onClick={() => handleItemClick(item)}
-                    disabled={!isMergeMode || (!!equippedBy && !mergeBaseId)} // View only if not merge mode. Can't select equipped as base.
-                    className={`relative p-3 rounded-xl border transition-all text-left flex items-center gap-3
-                        ${isBase ? 'bg-amber-500/20 border-amber-500 ring-1 ring-amber-500' : ''}
-                        ${isMaterial ? 'bg-slate-700/50 border-slate-500 ring-1 ring-slate-500' : ''}
-                        ${!isBase && !isMaterial ? 'bg-slate-800/40 border-slate-800' : ''}
-                        ${isMergeMode && !isBase && !isMaterial ? 'hover:border-slate-600 cursor-pointer' : ''}
-                        ${!isMergeMode ? 'cursor-default' : ''}
-                        ${isMergeMode && !!equippedBy && !mergeBaseId ? 'opacity-50 grayscale cursor-not-allowed' : ''}
-                    `}
-                >
-                    <div className="w-10 h-10 bg-slate-950 rounded-lg flex items-center justify-center border border-slate-800 shrink-0 relative">
-                        <EquipmentIcon type={item.type} rarity={item.rarity} size="1.8em" />
-                        {(item.level || 0) > 0 && (
-                            <div className="absolute -top-1.5 -right-1.5 bg-amber-500 text-black text-[9px] font-black w-4 h-4 flex items-center justify-center rounded-full border border-slate-900 shadow-sm">
-                                +{item.level}
-                            </div>
-                        )}
-                    </div>
-                    
-                    <div className="min-w-0 flex-1">
-                        <div className="flex justify-between items-center mb-0.5">
-                            <span className={`text-[10px] font-bold truncate ${rarityColors[item.rarity]}`}>{item.name}</span>
-                            <span className="text-[8px] text-slate-500 font-black">{item.rarity}</span>
-                        </div>
-                        <div className="text-[9px] text-slate-400">
-                            {item.type === 'Pickaxe' ? `Rew +${item.bonus.toFixed(1)}%` : 
-                             item.type === 'Helmet' ? `Def +${item.bonus.toFixed(1)}%` : 
-                             `Spd +${item.bonus.toFixed(1)}%`}
-                             {(item.level || 0) > 0 && (
-                                <span className="text-amber-500 ml-1 font-bold">
-                                   (Base: {(item.bonus - ((item.level || 0) * 0.1)).toFixed(1)})
-                                </span>
-                             )}
-                        </div>
-                    </div>
-
-                    {equippedBy && (
-                        <div className="absolute top-1 right-1">
-                            <span className="text-[8px] bg-slate-700 text-slate-300 px-1.5 py-0.5 rounded border border-slate-600">
-                                {equippedBy.name.slice(0, 3)}..
-                            </span>
-                        </div>
-                    )}
-                </button>
+                    disabled={!isMergeMode || (!!equippedBy && !mergeBaseId)}
+                    layout="grid"
+                />
             );
         })}
       </div>
