@@ -224,9 +224,9 @@ const EquipmentSelector: React.FC<EquipmentSelectorProps> = ({
                     <span className="text-[10px] text-slate-500 uppercase font-black ml-2">{item.rarity}</span>
                   </div>
                   <p className="text-[10px] text-slate-400">
-                    {item.type === 'Pickaxe' ? `報酬 +${item.bonus}%` : 
-                     item.type === 'Helmet' ? `防御 +${item.bonus}%` : 
-                     `速度 +${item.bonus}%`}
+                    {item.type === 'Pickaxe' ? `報酬 +${item.bonus.toFixed(1)}%` : 
+                     item.type === 'Helmet' ? `防御 +${item.bonus.toFixed(1)}%` : 
+                     `速度 +${item.bonus.toFixed(1)}%`}
                   </p>
                 </div>
                 {equippedBy && (

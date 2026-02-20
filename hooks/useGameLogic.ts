@@ -133,8 +133,8 @@ export const useGameLogic = () => {
             id: e.player_eid.toString(),
             name: base.name,
             type: base.type,
-            // Calculate bonus based on level: +10% per level (plus * 0.1)
-            bonus: Math.floor(base.bonus * (1 + (e.level || 0) * 0.1)),
+            // Calculate bonus based on level: Base + (level * 0.1)
+            bonus: base.bonus + ((e.level || 0) * 0.1),
             rarity: base.rarity,
             level: e.level || 0
           });

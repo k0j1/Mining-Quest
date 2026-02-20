@@ -22,7 +22,7 @@ interface ResultModalProps {
   results: QuestResult[];
   totalTokens: number;
   onClose: () => void;
-  onConfirm: (results: QuestResult[], closeModal?: boolean) => Promise<void>; // New Confirm Action
+  onConfirm: (results: QuestResult[], closeModal?: boolean, skipRewardUpdate?: boolean) => Promise<void>; // New Confirm Action
   farcasterUser?: any; 
 }
 
@@ -92,6 +92,9 @@ const ResultModal: React.FC<ResultModalProps> = ({ results, totalTokens, onClose
       try {
         // 1. Check if we should proceed to On-Chain Claim
         let hash: string | null = null;
+        let newTotalReward = 0;
+        let shouldUpdateTotalReward = false;
+
         if (farcasterUser?.fid && totalTokens > 0 && sdk.wallet.ethProvider) {
             
             // Find valid result to claim (Currently claims one quest at a time or aggregates)
@@ -100,7 +103,7 @@ const ResultModal: React.FC<ResultModalProps> = ({ results, totalTokens, onClose
             if (targetResult) {
                 setStatusMsg('Verifying...');
                 
-                // Fetch Updated Stats (Important: onConfirm just updated the DB, we need the new total_reward)
+                // Fetch Updated Stats
                 const { data: stats, error } = await supabase
                     .from('quest_player_stats')
                     .select('total_reward')
@@ -110,6 +113,12 @@ const ResultModal: React.FC<ResultModalProps> = ({ results, totalTokens, onClose
                 if (error || !stats) {
                     throw new Error("Failed to fetch player stats for claim verification.");
                 }
+                
+                // Calculate New Total Reward (Current DB + This Quest Reward)
+                // Note: We use targetResult.totalReward (the reward for this specific claim)
+                const currentTotalReward = stats.total_reward || 0;
+                newTotalReward = currentTotalReward + targetResult.totalReward;
+                shouldUpdateTotalReward = true;
 
                 // Prepare Params
                 const params = {
@@ -118,7 +127,7 @@ const ResultModal: React.FC<ResultModalProps> = ({ results, totalTokens, onClose
                     questId: targetResult.questMasterId || 0,
                     questReward: targetResult.baseReward, 
                     reward: targetResult.totalReward,
-                    totalReward: stats.total_reward || 0
+                    totalReward: newTotalReward // Use the NEW calculated total
                 };
 
                 // Request Signature
@@ -204,9 +213,27 @@ const ResultModal: React.FC<ResultModalProps> = ({ results, totalTokens, onClose
         }
         
         // 2. DB Save (Only after successful claim or if no claim needed)
-        // Pass closeModal=false because we will switch to success view
         setStatusMsg('Saving...');
-        await onConfirm(results, false);
+        
+        // If we successfully claimed on-chain, update DB total_reward with the value we used
+        if (shouldUpdateTotalReward && farcasterUser?.fid) {
+             const { error: updateError } = await supabase
+                .from('quest_player_stats')
+                .update({ total_reward: newTotalReward })
+                .eq('fid', farcasterUser.fid);
+             
+             if (updateError) {
+                 console.error("Failed to update total_reward in DB:", updateError);
+                 // We continue, but log error. The onConfirm will handle other updates.
+             }
+        }
+
+        // Pass closeModal=false because we will switch to success view
+        // Pass skipRewardUpdate=true because we handled it above (or don't want to increment if local)
+        // Note: If local mode (no farcasterUser), skipRewardUpdate is ignored by confirmQuestReturn logic anyway?
+        // Actually confirmQuestReturn checks farcasterUser. If present, it increments.
+        // So we should pass true if we updated it manually.
+        await onConfirm(results, false, shouldUpdateTotalReward);
         
         // Switch to Success View
         setClaimSuccess(true);

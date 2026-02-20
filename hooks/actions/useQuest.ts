@@ -384,7 +384,7 @@ export const useQuest = ({ gameState, setGameState, showNotification, setReturnR
   /**
    * Commits the pending quest results to DB and updates local state.
    */
-  const confirmQuestReturn = async (results: QuestResult[], closeModal: boolean = true) => {
+  const confirmQuestReturn = async (results: QuestResult[], closeModal: boolean = true, skipRewardUpdate: boolean = false) => {
     let dbSuccess = true;
     const processedQuestPids: string[] = [];
     const allDeadHeroIds: string[] = [];
@@ -470,7 +470,7 @@ export const useQuest = ({ gameState, setGameState, showNotification, setReturnR
                 amount: processedCount 
             });
 
-            if (accumulatedTotalReward > 0) {
+            if (accumulatedTotalReward > 0 && !skipRewardUpdate) {
                 await supabase.rpc('increment_player_stat', { 
                     player_fid: farcasterUser.fid, 
                     column_name: 'total_reward', 

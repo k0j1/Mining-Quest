@@ -290,12 +290,12 @@ const EquipmentList: React.FC<EquipmentListProps> = ({ equipment, heroes, onMerg
                             <span className="text-[8px] text-slate-500 font-black">{item.rarity}</span>
                         </div>
                         <div className="text-[9px] text-slate-400">
-                            {item.type === 'Pickaxe' ? `Rew +${item.bonus}%` : 
-                             item.type === 'Helmet' ? `Def +${item.bonus}%` : 
-                             `Spd +${item.bonus}%`}
+                            {item.type === 'Pickaxe' ? `Rew +${item.bonus.toFixed(1)}%` : 
+                             item.type === 'Helmet' ? `Def +${item.bonus.toFixed(1)}%` : 
+                             `Spd +${item.bonus.toFixed(1)}%`}
                              {(item.level || 0) > 0 && (
                                 <span className="text-amber-500 ml-1 font-bold">
-                                   (Base: {Math.floor(item.bonus / (1 + (item.level || 0) * 0.1))})
+                                   (Base: {(item.bonus - ((item.level || 0) * 0.1)).toFixed(1)})
                                 </span>
                              )}
                         </div>
