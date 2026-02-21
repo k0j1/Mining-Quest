@@ -40,6 +40,7 @@ const ResultModal: React.FC<ResultModalProps> = ({ results, totalTokens, onClose
   // Success State
   const [claimSuccess, setClaimSuccess] = useState(false);
   const [txHash, setTxHash] = useState<string | null>(null);
+  const [copyFeedback, setCopyFeedback] = useState(false);
 
   // Status Management for each quest
   const [questStatuses, setQuestStatuses] = useState<Record<string, ClaimStatus>>({});
@@ -390,9 +391,21 @@ const ResultModal: React.FC<ResultModalProps> = ({ results, totalTokens, onClose
 
           {/* Error Message Area */}
           {errorMsg && (
-            <div className="mb-4 bg-red-900/20 border border-red-500/50 p-3 rounded-lg text-left overflow-auto max-h-32">
-                <p className="text-red-400 text-xs font-bold mb-1">CLAIM ERROR</p>
-                <p className="text-red-300 text-[10px] font-mono whitespace-pre-wrap">{errorMsg}</p>
+            <div className="mb-4 bg-red-900/20 border border-red-500/50 p-3 rounded-lg text-left overflow-auto max-h-40 select-text relative">
+                <div className="flex justify-between items-center mb-2 sticky top-0 -mt-3 -mx-3 p-2 bg-red-950/80 backdrop-blur-sm border-b border-red-500/30">
+                    <p className="text-red-400 text-xs font-bold">CLAIM ERROR</p>
+                    <button 
+                        onClick={() => { 
+                            navigator.clipboard.writeText(errorMsg); 
+                            setCopyFeedback(true);
+                            setTimeout(() => setCopyFeedback(false), 2000);
+                        }}
+                        className="text-[9px] bg-red-900/50 hover:bg-red-800 px-2 py-1 rounded border border-red-700 text-red-200 transition-colors"
+                    >
+                        {copyFeedback ? 'COPIED!' : '📋 COPY'}
+                    </button>
+                </div>
+                <p className="text-red-300 text-[10px] font-mono whitespace-pre-wrap break-all cursor-text">{errorMsg}</p>
             </div>
           )}
 
