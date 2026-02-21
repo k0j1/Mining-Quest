@@ -26,6 +26,8 @@ interface ResultModalProps {
   farcasterUser?: any; 
 }
 
+type ClaimStatus = 'pending' | 'processing' | 'claimed' | 'error';
+
 const ResultModal: React.FC<ResultModalProps> = ({ results, totalTokens, onClose, onConfirm, farcasterUser }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const itemsRef = useRef<HTMLDivElement[]>([]);
@@ -39,9 +41,18 @@ const ResultModal: React.FC<ResultModalProps> = ({ results, totalTokens, onClose
   const [claimSuccess, setClaimSuccess] = useState(false);
   const [txHash, setTxHash] = useState<string | null>(null);
 
+  // Status Management for each quest
+  const [questStatuses, setQuestStatuses] = useState<Record<string, ClaimStatus>>({});
+
   useEffect(() => {
     playFanfare();
-  }, []);
+    // Initialize statuses
+    const initialStatuses: Record<string, ClaimStatus> = {};
+    results.forEach(r => {
+        if (r.questId) initialStatuses[r.questId] = 'pending';
+    });
+    setQuestStatuses(initialStatuses);
+  }, []); // Run once on mount
 
   useLayoutEffect(() => {
     if (!containerRef.current || claimSuccess) return;
@@ -89,18 +100,27 @@ const ResultModal: React.FC<ResultModalProps> = ({ results, totalTokens, onClose
       setErrorMsg(null);
       setStatusMsg('Saving...');
 
+      // Find the first pending quest
+      const targetResult = results.find(r => r.questId && questStatuses[r.questId] === 'pending');
+
+      if (!targetResult || !targetResult.questId) {
+          // All done or no valid target
+          onClose();
+          return;
+      }
+
+      const qId = targetResult.questId;
+      setQuestStatuses(prev => ({ ...prev, [qId]: 'processing' }));
+
       try {
         // 1. Check if we should proceed to On-Chain Claim
         let hash: string | null = null;
         let newTotalReward = 0;
         let shouldUpdateTotalReward = false;
 
-        if (farcasterUser?.fid && totalTokens > 0 && sdk.wallet.ethProvider) {
+        if (farcasterUser?.fid && targetResult.totalReward > 0 && sdk.wallet.ethProvider) {
             
-            // Find valid result to claim (Currently claims one quest at a time or aggregates)
-            const targetResult = results.find(r => r.totalReward > 0 && r.questId && r.questMasterId);
-            
-            if (targetResult) {
+            if (targetResult.questId && targetResult.questMasterId) {
                 setStatusMsg('Verifying...');
                 
                 // Fetch Updated Stats
@@ -115,7 +135,6 @@ const ResultModal: React.FC<ResultModalProps> = ({ results, totalTokens, onClose
                 }
                 
                 // Calculate New Total Reward (Current DB + This Quest Reward)
-                // Note: We use targetResult.totalReward (the reward for this specific claim)
                 const currentTotalReward = stats.total_reward || 0;
                 newTotalReward = currentTotalReward + targetResult.totalReward;
                 shouldUpdateTotalReward = true;
@@ -207,7 +226,7 @@ const ResultModal: React.FC<ResultModalProps> = ({ results, totalTokens, onClose
                 });
                 
                 console.log("Claim Tx:", hash);
-                setTxHash(hash);
+                setTxHash(hash); // Keep the last hash
                 setStatusMsg('Success!');
             }
         }
@@ -228,26 +247,40 @@ const ResultModal: React.FC<ResultModalProps> = ({ results, totalTokens, onClose
              }
         }
 
-        // Pass closeModal=false because we will switch to success view
-        // Pass skipRewardUpdate=true because we handled it above (or don't want to increment if local)
-        // Note: If local mode (no farcasterUser), skipRewardUpdate is ignored by confirmQuestReturn logic anyway?
-        // Actually confirmQuestReturn checks farcasterUser. If present, it increments.
-        // So we should pass true if we updated it manually.
-        await onConfirm(results, false, shouldUpdateTotalReward);
+        // Pass closeModal=false because we might have more quests
+        // Pass skipRewardUpdate=true because we handled it above
+        await onConfirm([targetResult], false, shouldUpdateTotalReward);
         
-        // Switch to Success View
-        setClaimSuccess(true);
-        playConfirm();
+        // Update Status to Claimed
+        setQuestStatuses(prev => ({ ...prev, [qId]: 'claimed' }));
+        
+        // Check if all done
+        const updatedStatuses = { ...questStatuses, [qId]: 'claimed' };
+        const remaining = results.filter(r => r.questId && updatedStatuses[r.questId] === 'pending');
+        
+        if (remaining.length === 0) {
+            // All claimed
+            setClaimSuccess(true);
+            playConfirm();
+        } else {
+            // More to go
+            playConfirm(); // Sound for single success
+        }
 
       } catch (e: any) {
         console.error("Claim Error:", e);
         // If on-chain fails, DB is NOT updated, so user can retry.
         setErrorMsg(e.message || "エラーが発生しました");
+        setQuestStatuses(prev => ({ ...prev, [qId]: 'error' }));
       } finally {
         setIsPreparingClaim(false);
         setStatusMsg('');
       }
   };
+
+  // Calculate remaining quests
+  const pendingCount = results.filter(r => r.questId && questStatuses[r.questId] === 'pending').length;
+  const isAllClaimed = pendingCount === 0;
 
   if (claimSuccess) {
       return (
@@ -310,50 +343,68 @@ const ResultModal: React.FC<ResultModalProps> = ({ results, totalTokens, onClose
 
         {/* Scrollable List */}
         <div className="flex-1 overflow-y-auto space-y-4 px-2 py-2 custom-scrollbar">
-          {results.map((res, idx) => (
-            <div 
-              key={idx}
-              ref={el => { if(el) itemsRef.current[idx] = el }}
-              className="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-sm"
-            >
-              <div className="flex justify-between items-start border-b border-slate-800 pb-3 mb-3">
-                <div>
-                  <span className="text-[10px] font-bold bg-indigo-600 px-1.5 py-0.5 rounded text-white mr-2">{res.rank}</span>
-                  <span className="font-bold text-slate-200 text-sm">{res.questName}</span>
-                </div>
-                <div className="text-right">
-                  <span className="block text-amber-500 font-bold">+{res.totalReward} $CHH</span>
-                </div>
-              </div>
-              
-              {/* Rewards Breakdown */}
-              <div className="grid grid-cols-2 gap-y-1 gap-x-4 text-[10px] text-slate-500 mb-4 bg-slate-950/30 p-2.5 rounded-lg border border-slate-800/30">
-                <div className="text-slate-400">基本報酬:</div>
-                <div className="text-right font-mono font-bold text-slate-300">{res.baseReward}</div>
-                
-                <div className="text-emerald-400 font-bold mt-1">ボーナス合計:</div>
-                <div className="text-right font-mono text-emerald-400 font-bold mt-1">+{res.bonusReward}</div>
-                
-                <div className="text-[9px] pl-2 border-l border-slate-700 ml-1 text-slate-500">└ ヒーロー特性</div>
-                <div className="text-[9px] text-right font-mono text-slate-500">+{res.heroBonus}</div>
-                
-                <div className="text-[9px] pl-2 border-l border-slate-700 ml-1 text-slate-500">└ 装備品効果</div>
-                <div className="text-[9px] text-right font-mono text-slate-500">+{res.equipmentBonus}</div>
-              </div>
+          {results.map((res, idx) => {
+            const status = res.questId ? questStatuses[res.questId] : 'pending';
+            const isProcessing = status === 'processing';
+            const isClaimed = status === 'claimed';
+            const isError = status === 'error';
 
-              {/* Action Logs */}
-              <div className="space-y-1 bg-slate-950/50 p-3 rounded-lg border border-slate-800/50">
-                {res.logs.map((log, i) => (
-                  <p key={i} className="text-[10px] leading-relaxed">
-                    {log.includes('悲報') ? '💀 ' : log.includes('💥') ? '💥 ' : '• '}
-                    <span className={log.includes('悲報') ? 'text-red-400 font-bold' : log.includes('残') ? 'text-orange-300' : 'text-slate-400'}>
-                      {log}
-                    </span>
-                  </p>
-                ))}
+            return (
+              <div 
+                key={idx}
+                ref={el => { if(el) itemsRef.current[idx] = el }}
+                className={`border rounded-xl p-5 shadow-sm transition-all ${
+                    isClaimed 
+                    ? 'bg-slate-900/50 border-emerald-900/50 opacity-70' 
+                    : isProcessing
+                        ? 'bg-slate-900 border-amber-500/50 ring-1 ring-amber-500/30'
+                        : isError
+                            ? 'bg-slate-900 border-red-500/50'
+                            : 'bg-slate-900 border-slate-800'
+                }`}
+              >
+                <div className="flex justify-between items-start border-b border-slate-800 pb-3 mb-3">
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] font-bold bg-indigo-600 px-1.5 py-0.5 rounded text-white">{res.rank}</span>
+                    <span className="font-bold text-slate-200 text-sm">{res.questName}</span>
+                  </div>
+                  <div className="text-right flex items-center gap-2">
+                    {isClaimed && <span className="text-emerald-500 font-bold text-xs">✅ CLAIMED</span>}
+                    {isProcessing && <span className="text-amber-500 font-bold text-xs animate-pulse">⏳ PROCESSING...</span>}
+                    {isError && <span className="text-red-500 font-bold text-xs">⚠️ ERROR</span>}
+                    <span className={`block font-bold ${isClaimed ? 'text-slate-500 line-through' : 'text-amber-500'}`}>+{res.totalReward} $CHH</span>
+                  </div>
+                </div>
+                
+                {/* Rewards Breakdown */}
+                <div className="grid grid-cols-2 gap-y-1 gap-x-4 text-[10px] text-slate-500 mb-4 bg-slate-950/30 p-2.5 rounded-lg border border-slate-800/30">
+                  <div className="text-slate-400">基本報酬:</div>
+                  <div className="text-right font-mono font-bold text-slate-300">{res.baseReward}</div>
+                  
+                  <div className="text-emerald-400 font-bold mt-1">ボーナス合計:</div>
+                  <div className="text-right font-mono text-emerald-400 font-bold mt-1">+{res.bonusReward}</div>
+                  
+                  <div className="text-[9px] pl-2 border-l border-slate-700 ml-1 text-slate-500">└ ヒーロー特性</div>
+                  <div className="text-[9px] text-right font-mono text-slate-500">+{res.heroBonus}</div>
+                  
+                  <div className="text-[9px] pl-2 border-l border-slate-700 ml-1 text-slate-500">└ 装備品効果</div>
+                  <div className="text-[9px] text-right font-mono text-slate-500">+{res.equipmentBonus}</div>
+                </div>
+
+                {/* Action Logs */}
+                <div className="space-y-1 bg-slate-950/50 p-3 rounded-lg border border-slate-800/50">
+                  {res.logs.map((log, i) => (
+                    <p key={i} className="text-[10px] leading-relaxed">
+                      {log.includes('悲報') ? '💀 ' : log.includes('💥') ? '💥 ' : '• '}
+                      <span className={log.includes('悲報') ? 'text-red-400 font-bold' : log.includes('残') ? 'text-orange-300' : 'text-slate-400'}>
+                        {log}
+                      </span>
+                    </p>
+                  ))}
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
 
         {/* Total & Button */}
@@ -366,7 +417,7 @@ const ResultModal: React.FC<ResultModalProps> = ({ results, totalTokens, onClose
           {/* Error Message Area */}
           {errorMsg && (
             <div className="mb-4 bg-red-900/20 border border-red-500/50 p-3 rounded-lg text-left overflow-auto max-h-32">
-                <p className="text-red-400 text-xs font-bold mb-1">CLAIM ERROR (Progress Saved)</p>
+                <p className="text-red-400 text-xs font-bold mb-1">CLAIM ERROR</p>
                 <p className="text-red-300 text-[10px] font-mono whitespace-pre-wrap">{errorMsg}</p>
             </div>
           )}
@@ -384,8 +435,12 @@ const ResultModal: React.FC<ResultModalProps> = ({ results, totalTokens, onClose
              {/* Claim Button */}
              <button 
                 onClick={handleConfirmClaim}
-                disabled={isPreparingClaim}
-                className="flex-[2] py-4 bg-emerald-700 hover:bg-emerald-600 text-white rounded-xl font-bold transition-all active:scale-95 shadow-lg border-b-4 border-emerald-900 flex items-center justify-center gap-2"
+                disabled={isPreparingClaim || isAllClaimed}
+                className={`flex-[2] py-4 rounded-xl font-bold transition-all active:scale-95 shadow-lg border-b-4 flex items-center justify-center gap-2 ${
+                    isAllClaimed 
+                    ? 'bg-slate-700 text-slate-400 border-slate-800 cursor-not-allowed'
+                    : 'bg-emerald-700 hover:bg-emerald-600 text-white border-emerald-900'
+                }`}
              >
                 {isPreparingClaim ? (
                   <span className="flex items-center gap-2">
@@ -393,7 +448,9 @@ const ResultModal: React.FC<ResultModalProps> = ({ results, totalTokens, onClose
                     <span>{statusMsg}</span>
                   </span>
                 ) : (
-                  <span>報酬を受け取る</span>
+                  <span>
+                      {isAllClaimed ? '完了 (ALL CLAIMED)' : `報酬を受け取る (残り ${pendingCount} 件)`}
+                  </span>
                 )}
              </button>
           </div>
