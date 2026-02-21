@@ -260,9 +260,11 @@ const HeroCard: React.FC<HeroCardProps> = ({
         {/* Bottom: Equipment Slots */}
         <div 
           className="h-12 bg-slate-950 border-t border-slate-800 p-1.5 flex gap-1.5 justify-between items-center relative z-20"
-          // Stop propagation here to prevent parent Card's longPress/click handlers
+          // Stop propagation of all interaction events to prevent parent Card's longPress/click handlers
           onMouseDown={(e) => e.stopPropagation()}
+          onMouseUp={(e) => e.stopPropagation()}
           onTouchStart={(e) => e.stopPropagation()}
+          onTouchEnd={(e) => e.stopPropagation()}
           onClick={(e) => e.stopPropagation()}
         >
           {[0, 1, 2].map(i => {
