@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useMemo } from 'react';
 import { QuestRank } from '../types';
 
 interface EquipmentIconProps {
@@ -15,6 +15,17 @@ const EquipmentIcon: React.FC<EquipmentIconProps> = React.memo(({
   size = '1em',
   className = '' 
 }) => {
+  // Normalize rarity to short codes (C, UC, R, E, L)
+  const normalizedRarity = useMemo(() => {
+    const r = rarity.toUpperCase();
+    if (r === 'RARE') return 'R';
+    if (r === 'UNCOMMON') return 'UC';
+    if (r === 'COMMON') return 'C';
+    if (r === 'EPIC') return 'E';
+    if (r === 'LEGENDARY') return 'L';
+    return rarity; // Assume it's already a short code or other
+  }, [rarity]);
+
   const typeMap = {
     Pickaxe: 'P',
     Helmet: 'H',
@@ -22,15 +33,15 @@ const EquipmentIcon: React.FC<EquipmentIconProps> = React.memo(({
   };
 
   const typeChar = typeMap[type] || 'P';
-  const imageUrl = `https://miningquest.k0j1.v2002.coreserver.jp/images/Equipment/${rarity}${typeChar}.png`;
+  const imageUrl = `https://miningquest.k0j1.v2002.coreserver.jp/images/Equipment/${normalizedRarity}${typeChar}.png`;
 
   // Animation classes based on rarity
   let animClass = '';
-  if (rarity === 'L') {
+  if (normalizedRarity === 'L') {
     animClass = 'eq-anim-l';
-  } else if (rarity === 'E') {
+  } else if (normalizedRarity === 'E') {
     animClass = 'eq-anim-e';
-  } else if (rarity === 'R') {
+  } else if (normalizedRarity === 'R') {
     animClass = 'eq-anim-r';
   }
 
@@ -55,7 +66,7 @@ const EquipmentIcon: React.FC<EquipmentIconProps> = React.memo(({
       `}</style>
       <img 
         src={imageUrl} 
-        alt={`${rarity} ${type}`} 
+        alt={`${normalizedRarity} ${type}`} 
         style={{ width: size, height: size, objectFit: 'contain' }}
         className={`${className} ${animClass}`}
         referrerPolicy="no-referrer"
