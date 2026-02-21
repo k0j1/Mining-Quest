@@ -49,50 +49,15 @@ const ResultModal: React.FC<ResultModalProps> = ({ results, totalTokens, onClose
     // Initialize statuses
     const initialStatuses: Record<string, ClaimStatus> = {};
     results.forEach(r => {
-        if (r.questId) initialStatuses[r.questId] = 'pending';
+        // Use questId as key. If missing, generate a temp key or skip (should not happen)
+        const key = r.questId || `temp-${Math.random()}`;
+        initialStatuses[key] = 'pending';
     });
     setQuestStatuses(initialStatuses);
-  }, []); // Run once on mount
+  }, [results]); 
 
-  useLayoutEffect(() => {
-    if (!containerRef.current || claimSuccess) return;
-
-    const ctx = gsap.context(() => {
-      const tl = gsap.timeline();
-
-      // 1. Modal Container Pop
-      tl.from(containerRef.current, {
-        scale: 0.8,
-        opacity: 0,
-        duration: 0.4,
-        ease: "back.out(1.5)"
-      });
-
-      // 2. Stagger items
-      if (itemsRef.current.length > 0) {
-        tl.from(itemsRef.current, {
-          y: 20,
-          opacity: 0,
-          duration: 0.4,
-          stagger: 0.15,
-          ease: "power2.out"
-        }, "-=0.2");
-      }
-
-      // 3. Total Score Boom
-      if (totalRef.current) {
-        tl.from(totalRef.current, {
-          scale: 0.5,
-          opacity: 0,
-          duration: 0.5,
-          ease: "elastic.out(1, 0.5)"
-        }, "-=0.2");
-      }
-
-    }, containerRef);
-
-    return () => ctx.revert();
-  }, [claimSuccess]);
+  // GSAP Animation removed to prevent visibility issues
+  // useLayoutEffect(() => { ... }, [claimSuccess]);
 
   const handleConfirmClaim = async () => {
       playClick();
@@ -101,7 +66,10 @@ const ResultModal: React.FC<ResultModalProps> = ({ results, totalTokens, onClose
       setStatusMsg('Saving...');
 
       // Find the first pending quest
-      const targetResult = results.find(r => r.questId && questStatuses[r.questId] === 'pending');
+      const targetResult = results.find(r => {
+          const key = r.questId;
+          return key && questStatuses[key] === 'pending';
+      });
 
       if (!targetResult || !targetResult.questId) {
           // All done or no valid target
@@ -256,7 +224,10 @@ const ResultModal: React.FC<ResultModalProps> = ({ results, totalTokens, onClose
         
         // Check if all done
         const updatedStatuses = { ...questStatuses, [qId]: 'claimed' };
-        const remaining = results.filter(r => r.questId && updatedStatuses[r.questId] === 'pending');
+        const remaining = results.filter(r => {
+            const key = r.questId;
+            return key && updatedStatuses[key] === 'pending';
+        });
         
         if (remaining.length === 0) {
             // All claimed
@@ -279,7 +250,10 @@ const ResultModal: React.FC<ResultModalProps> = ({ results, totalTokens, onClose
   };
 
   // Calculate remaining quests
-  const pendingCount = results.filter(r => r.questId && questStatuses[r.questId] === 'pending').length;
+  const pendingCount = results.filter(r => {
+      const key = r.questId;
+      return key && questStatuses[key] === 'pending';
+  }).length;
   const isAllClaimed = pendingCount === 0;
 
   if (claimSuccess) {
@@ -344,7 +318,8 @@ const ResultModal: React.FC<ResultModalProps> = ({ results, totalTokens, onClose
         {/* Scrollable List */}
         <div className="flex-1 overflow-y-auto space-y-4 px-2 py-2 custom-scrollbar">
           {results.map((res, idx) => {
-            const status = res.questId ? questStatuses[res.questId] : 'pending';
+            const key = res.questId;
+            const status = key ? questStatuses[key] : 'pending';
             const isProcessing = status === 'processing';
             const isClaimed = status === 'claimed';
             const isError = status === 'error';
@@ -352,15 +327,14 @@ const ResultModal: React.FC<ResultModalProps> = ({ results, totalTokens, onClose
             return (
               <div 
                 key={idx}
-                ref={el => { if(el) itemsRef.current[idx] = el }}
                 className={`border rounded-xl p-5 shadow-sm transition-all ${
                     isClaimed 
-                    ? 'bg-slate-900/50 border-emerald-900/50 opacity-70' 
+                    ? 'bg-slate-900/50 border-emerald-900/50 opacity-50' 
                     : isProcessing
                         ? 'bg-slate-900 border-amber-500/50 ring-1 ring-amber-500/30'
                         : isError
                             ? 'bg-slate-900 border-red-500/50'
-                            : 'bg-slate-900 border-slate-800'
+                            : 'bg-slate-900 border-slate-800 opacity-100'
                 }`}
               >
                 <div className="flex justify-between items-start border-b border-slate-800 pb-3 mb-3">
