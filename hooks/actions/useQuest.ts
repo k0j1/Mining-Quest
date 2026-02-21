@@ -277,7 +277,12 @@ export const useQuest = ({ gameState, setGameState, showNotification, setReturnR
 
     for (const quest of completed) {
       const config = gameState.questConfigs.find(q => q.rank === quest.rank);
-      if (!config) continue;
+      if (!config) {
+          console.warn(`[useQuest] Config not found for rank ${quest.rank}. Waiting for data...`);
+          playError();
+          showNotification("クエストデータの読み込み中です。しばらく待ってから再試行してください。", 'error');
+          return false;
+      }
 
       const logs: string[] = [];
       const questHeroes = quest.heroIds

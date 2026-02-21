@@ -410,7 +410,7 @@ const App: React.FC = () => {
           onClose={() => { 
             playClick(); 
             ui.setReturnResult(null); 
-            // Do NOT force navigate home on cancel, let user decide
+            setCurrentView(View.HOME);
           }}
           onConfirm={actions.confirmQuestReturn} // Pass commit action
         />
