@@ -65,10 +65,10 @@ const ResultModal: React.FC<ResultModalProps> = ({ results, totalTokens, onClose
       setErrorMsg(null);
       setStatusMsg('Saving...');
 
-      // Find the first pending quest
+      // Find the first pending OR error quest (retry errors first/in order)
       const targetResult = results.find(r => {
           const key = r.questId;
-          return key && questStatuses[key] === 'pending';
+          return key && (questStatuses[key] === 'pending' || questStatuses[key] === 'error');
       });
 
       if (!targetResult || !targetResult.questId) {
@@ -226,7 +226,7 @@ const ResultModal: React.FC<ResultModalProps> = ({ results, totalTokens, onClose
         const updatedStatuses = { ...questStatuses, [qId]: 'claimed' };
         const remaining = results.filter(r => {
             const key = r.questId;
-            return key && updatedStatuses[key] === 'pending';
+            return key && (updatedStatuses[key] === 'pending' || updatedStatuses[key] === 'error');
         });
         
         if (remaining.length === 0) {
@@ -249,10 +249,10 @@ const ResultModal: React.FC<ResultModalProps> = ({ results, totalTokens, onClose
       }
   };
 
-  // Calculate remaining quests
+  // Calculate remaining quests (pending or error)
   const pendingCount = results.filter(r => {
       const key = r.questId;
-      return key && questStatuses[key] === 'pending';
+      return key && (questStatuses[key] === 'pending' || questStatuses[key] === 'error');
   }).length;
   const isAllClaimed = pendingCount === 0;
 

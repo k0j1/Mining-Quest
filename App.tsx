@@ -410,7 +410,8 @@ const App: React.FC = () => {
           onClose={() => { 
             playClick(); 
             ui.setReturnResult(null); 
-            setCurrentView(View.HOME);
+            // Ensure we stay on the RETURN view to see the list again
+            setCurrentView(View.RETURN);
           }}
           onConfirm={actions.confirmQuestReturn} // Pass commit action
         />
