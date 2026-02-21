@@ -151,11 +151,12 @@ const GachaShowcase: React.FC<{ tab: 'Hero' | 'Equipment' }> = ({ tab }) => {
       return (
           <div ref={containerRef} className="relative w-full h-52 flex items-center justify-center mt-2 mb-6 perspective-[1000px]">
               {/* Rotating Light Background */}
-              <div className="absolute inset-0 flex items-center justify-center opacity-40 pointer-events-none overflow-hidden">
-                  <div ref={bgRef} className="w-[500px] h-[500px]" style={{
-                      background: `conic-gradient(from 0deg, transparent 0deg, #6366f1 20deg, transparent 40deg, #f59e0b 60deg, transparent 80deg, #6366f1 100deg, transparent 120deg, #f59e0b 140deg, transparent 160deg)`
+              <div className="absolute inset-0 flex items-center justify-center opacity-40 pointer-events-none">
+                  <div ref={bgRef} className="w-[800px] h-[800px] absolute" style={{
+                      background: `conic-gradient(from 0deg, transparent 0deg, #6366f1 20deg, transparent 40deg, #f59e0b 60deg, transparent 80deg, #6366f1 100deg, transparent 120deg, #f59e0b 140deg, transparent 160deg)`,
+                      maskImage: 'radial-gradient(circle, black 10%, transparent 50%)',
+                      WebkitMaskImage: 'radial-gradient(circle, black 10%, transparent 50%)'
                   }}></div>
-                  <div className="absolute inset-0 bg-slate-800 rounded-full blur-3xl scale-75"></div>
               </div>
 
               {/* Left (E) */}
@@ -183,11 +184,12 @@ const GachaShowcase: React.FC<{ tab: 'Hero' | 'Equipment' }> = ({ tab }) => {
   return (
       <div ref={containerRef} className="relative w-full h-52 flex items-center justify-center mt-2 mb-6">
           {/* Rotating Light Background */}
-          <div className="absolute inset-0 flex items-center justify-center opacity-30 pointer-events-none overflow-hidden">
-              <div ref={bgRef} className="w-[500px] h-[500px]" style={{
-                  background: `conic-gradient(from 0deg, transparent 0deg, #3b82f6 20deg, transparent 40deg, #3b82f6 60deg, transparent 80deg)`
+          <div className="absolute inset-0 flex items-center justify-center opacity-30 pointer-events-none">
+              <div ref={bgRef} className="w-[800px] h-[800px] absolute" style={{
+                  background: `conic-gradient(from 0deg, transparent 0deg, #3b82f6 20deg, transparent 40deg, #3b82f6 60deg, transparent 80deg)`,
+                  maskImage: 'radial-gradient(circle, black 10%, transparent 50%)',
+                  WebkitMaskImage: 'radial-gradient(circle, black 10%, transparent 50%)'
               }}></div>
-              <div className="absolute inset-0 bg-slate-800 rounded-full blur-3xl scale-75"></div>
           </div>
 
           <div className="flex gap-6 items-center z-10">
