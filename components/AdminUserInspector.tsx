@@ -274,8 +274,8 @@ const AdminUserInspector: React.FC = () => {
                             <div className="font-bold text-slate-200 text-sm group-hover:text-white">@{user.username || 'Unknown'}</div>
                             <div className="text-[10px] text-slate-500 text-right">
                                 <div className="flex gap-2 justify-end">
-                                   <span className="text-amber-500 font-bold">DB: {user.tokens?.toLocaleString() || 0}</span>
-                                   <span className="text-emerald-500 font-bold">On-Chain: {Number(user.claimedOnChain || 0).toLocaleString()}</span>
+                                   <span className="text-amber-500 font-bold">Earned: {user.total_reward?.toLocaleString() || 0}</span>
+                                   <span className="text-emerald-500 font-bold">Claimed: {Number(user.claimedOnChain || 0).toLocaleString()}</span>
                                 </div>
                                 <div>Last: {new Date(user.last_active).toLocaleDateString()}</div>
                             </div>
@@ -306,11 +306,11 @@ const AdminUserInspector: React.FC = () => {
                  <div className="w-20 h-20 rounded-full bg-slate-800 border-4 border-slate-700 overflow-hidden shrink-0 shadow-inner flex items-center justify-center">
                     {selectedUser.pfp_url ? <img src={selectedUser.pfp_url} className="w-full h-full object-cover" /> : <span className="text-4xl">👤</span>}
                  </div>
-                 <div className="flex-1 text-center md:text-left">
+                  <div className="flex-1 text-center md:text-left">
                     <h2 className="text-2xl font-black text-white mb-2 tracking-tight">@{selectedUser.username} <span className="text-xs text-slate-500 font-normal ml-2">FID: {selectedUser.fid}</span></h2>
                     <div className="flex flex-wrap justify-center md:justify-start gap-3">
-                       <span className="px-3 py-1 rounded-full bg-amber-900/20 border border-amber-500/30 text-amber-500 font-mono font-bold text-sm" title="Database Balance">
-                          {selectedUser.tokens?.toLocaleString() || 0} $CHH
+                       <span className="px-3 py-1 rounded-full bg-amber-900/20 border border-amber-500/30 text-amber-500 font-mono font-bold text-sm" title="Total Reward Earned (DB)">
+                          Earned: {selectedUser.total_reward?.toLocaleString() || 0} $CHH
                        </span>
                        {claimedOnChain !== null && (
                           <span className="px-3 py-1 rounded-full bg-emerald-900/20 border border-emerald-500/30 text-emerald-400 font-mono font-bold text-sm" title="Claimed on Chain">
