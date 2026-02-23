@@ -1,5 +1,7 @@
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
+import { createPublicClient, http, parseAbi } from 'viem';
+import { base } from 'viem/chains';
 import { supabase } from '../lib/supabase';
 import { playClick } from '../utils/sound';
 import { getHeroImageUrl } from '../utils/heroUtils';
@@ -11,6 +13,18 @@ const AdminUserInspector: React.FC = () => {
   const [showUserDropdown, setShowUserDropdown] = useState(false);
   const [userList, setUserList] = useState<any[]>([]);
   const [selectedUser, setSelectedUser] = useState<any | null>(null);
+  const [claimedOnChain, setClaimedOnChain] = useState<string | null>(null);
+
+  // Constants for Contract
+  const REWARD_CONTRACT_ADDRESS = "0x193708bB0AC212E59fc44d6D6F3507F25Bc97fd4" as `0x${string}`;
+  const REWARD_ABI = parseAbi([
+    'function totalClaimedPerUser(uint256 fid) view returns (uint256)'
+  ]);
+
+  const publicClient = useMemo(() => createPublicClient({
+    chain: base,
+    transport: http('https://mainnet.base.org')
+  }), []);
   
   const [userDetails, setUserDetails] = useState<{
     parties: any[];
@@ -55,7 +69,32 @@ const AdminUserInspector: React.FC = () => {
       
       const { data, error } = await query;
       if (error) throw error;
-      setUserList(data || []);
+      
+      if (data && data.length > 0) {
+          // Fetch claimed amounts for all users in list via multicall
+          try {
+              const results = await publicClient.multicall({
+                  contracts: data.map(user => ({
+                      address: REWARD_CONTRACT_ADDRESS,
+                      abi: REWARD_ABI,
+                      functionName: 'totalClaimedPerUser',
+                      args: [BigInt(user.fid)]
+                  })),
+                  allowFailure: true
+              });
+              
+              const updatedData = data.map((user, i) => ({
+                  ...user,
+                  claimedOnChain: results[i].status === 'success' ? (results[i].result as bigint).toString() : '0'
+              }));
+              setUserList(updatedData);
+          } catch (err) {
+              console.error("[Admin] Multicall error:", err);
+              setUserList(data);
+          }
+      } else {
+          setUserList([]);
+      }
     } catch (e) {
       console.error(e);
     }
@@ -80,6 +119,20 @@ const AdminUserInspector: React.FC = () => {
 
     try {
       const fid = user.fid;
+      setClaimedOnChain(null);
+
+      // Fetch Claimed Amount from Smart Contract
+      publicClient.readContract({
+        address: REWARD_CONTRACT_ADDRESS,
+        abi: REWARD_ABI,
+        functionName: 'totalClaimedPerUser',
+        args: [BigInt(fid)]
+      }).then((val: any) => {
+        setClaimedOnChain(val.toString());
+      }).catch(err => {
+        console.error("[Admin] Error fetching claimed amount:", err);
+        setClaimedOnChain("Error");
+      });
       
       // Execute queries in parallel but handle errors individually
       const [parties, heroes, equipment, activeQuests, lostHeroes, completedQuests] = await Promise.all([
@@ -219,9 +272,12 @@ const AdminUserInspector: React.FC = () => {
                             className="p-3 border-b border-slate-800 last:border-none cursor-pointer hover:bg-indigo-900/20 transition-colors flex items-center justify-between group"
                         >
                             <div className="font-bold text-slate-200 text-sm group-hover:text-white">@{user.username || 'Unknown'}</div>
-                            <div className="text-[10px] text-slate-500">
-                                <span className="mr-2">Quest: {user.quest_count}</span>
-                                Last: {new Date(user.last_active).toLocaleDateString()}
+                            <div className="text-[10px] text-slate-500 text-right">
+                                <div className="flex gap-2 justify-end">
+                                   <span className="text-amber-500 font-bold">DB: {user.tokens?.toLocaleString() || 0}</span>
+                                   <span className="text-emerald-500 font-bold">On-Chain: {Number(user.claimedOnChain || 0).toLocaleString()}</span>
+                                </div>
+                                <div>Last: {new Date(user.last_active).toLocaleDateString()}</div>
                             </div>
                         </div>
                     ))}
@@ -253,9 +309,14 @@ const AdminUserInspector: React.FC = () => {
                  <div className="flex-1 text-center md:text-left">
                     <h2 className="text-2xl font-black text-white mb-2 tracking-tight">@{selectedUser.username} <span className="text-xs text-slate-500 font-normal ml-2">FID: {selectedUser.fid}</span></h2>
                     <div className="flex flex-wrap justify-center md:justify-start gap-3">
-                       <span className="px-3 py-1 rounded-full bg-amber-900/20 border border-amber-500/30 text-amber-500 font-mono font-bold text-sm">
+                       <span className="px-3 py-1 rounded-full bg-amber-900/20 border border-amber-500/30 text-amber-500 font-mono font-bold text-sm" title="Database Balance">
                           {selectedUser.tokens?.toLocaleString() || 0} $CHH
                        </span>
+                       {claimedOnChain !== null && (
+                          <span className="px-3 py-1 rounded-full bg-emerald-900/20 border border-emerald-500/30 text-emerald-400 font-mono font-bold text-sm" title="Claimed on Chain">
+                             Claimed: {claimedOnChain === 'Error' ? 'Error' : Number(claimedOnChain).toLocaleString()} $CHH
+                          </span>
+                       )}
                        <span className="px-3 py-1 rounded-full bg-slate-800 border border-slate-700 text-slate-400 text-xs font-bold">
                           Quests: {selectedUser.quest_count || 0}
                        </span>
