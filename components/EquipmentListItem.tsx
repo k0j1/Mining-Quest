@@ -62,16 +62,24 @@ const EquipmentListItem: React.FC<EquipmentListItemProps> = ({
         <span className={`${layout === 'grid' ? 'text-[10px]' : 'text-sm'} font-bold truncate ${rarityColors[item.rarity]}`}>{item.name}</span>
         <span className={`${layout === 'grid' ? 'text-[8px]' : 'text-[10px] ml-2'} text-slate-500 font-black uppercase`}>{item.rarity}</span>
       </div>
-      <div className={`${layout === 'grid' ? 'text-[9px]' : 'text-[10px]'} text-slate-400`}>
-        {item.type === 'Pickaxe' ? `Rew +${effectiveBonus.toFixed(1)}%` : 
-         item.type === 'Helmet' ? `Def +${effectiveBonus.toFixed(1)}%` : 
-         `Spd +${effectiveBonus.toFixed(1)}%`}
+      <div className={`${layout === 'grid' ? 'text-[9px]' : 'text-[10px]'} text-slate-400 flex items-center gap-1`}>
+        <span className="truncate">
+          {item.type === 'Pickaxe' ? `Rew +${effectiveBonus.toFixed(1)}%` : 
+           item.type === 'Helmet' ? `Def +${effectiveBonus.toFixed(1)}%` : 
+           `Spd +${effectiveBonus.toFixed(1)}%`}
+        </span>
          
-         {level > 0 && layout === 'grid' && (
-            <span className="text-amber-500 ml-1 font-bold">
-               (Base: {baseBonus.toFixed(1)})
-            </span>
-         )}
+        {level > 0 && layout === 'grid' && (
+          <span className="text-amber-500 font-bold shrink-0">
+             ({baseBonus.toFixed(1)})
+          </span>
+        )}
+
+        {equippedBy && (
+          <span className="text-[8px] bg-indigo-600 text-white px-1 rounded-sm border border-indigo-500 font-bold shadow-sm shrink-0">
+              E
+          </span>
+        )}
       </div>
     </div>
   );
@@ -93,13 +101,6 @@ const EquipmentListItem: React.FC<EquipmentListItemProps> = ({
           <div className={containerClasses}>
               <IconSection />
               <InfoSection />
-              {equippedBy && (
-                <div className="absolute top-1 right-1">
-                    <span className="text-[8px] bg-indigo-600 text-white px-1.5 py-0.5 rounded border border-indigo-500 font-bold shadow-sm">
-                        E
-                    </span>
-                </div>
-              )}
           </div>
       )
   }
@@ -112,12 +113,6 @@ const EquipmentListItem: React.FC<EquipmentListItemProps> = ({
     >
       <IconSection />
       <InfoSection />
-
-      {equippedBy && (
-        <div className={`absolute ${layout === 'grid' ? 'top-1 right-1' : 'top-2 right-2'} text-[8px] bg-indigo-600 text-white px-1.5 py-0.5 rounded border border-indigo-500 font-bold shadow-sm`}>
-            E
-        </div>
-      )}
       
       {isEquippedByCurrentSlot && (
         <div className="text-indigo-400 font-bold text-xs bg-indigo-900/50 px-2 py-1 rounded border border-indigo-500/30">
