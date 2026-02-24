@@ -172,36 +172,48 @@ const DepartView: React.FC<DepartViewProps> = ({
 
           {gameState.questConfigs.map((config) => {
             const rank = config.rank;
+            const bgImageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(config.name + ' mining cave fantasy pixel art')}?width=400&height=150&nologo=true`;
             return (
               <button
                 key={rank}
                 onClick={() => handleSelect(rank)}
                 className={`w-full text-left relative group overflow-hidden rounded-xl border p-4 transition-all active:scale-[0.98] hover:shadow-md ${rankColors[rank] || rankColors['C']}`}
               >
-                <div className="flex justify-between items-start mb-3">
-                   <div className="flex items-center space-x-2">
-                     <span className={`text-[10px] font-black px-2 py-0.5 rounded text-white ${rankBadges[rank] || rankBadges['C']}`}>{rank}</span>
-                     <h3 className="font-bold text-slate-100 text-sm">{config.name}</h3>
-                   </div>
-                   <div className="text-right">
-                     <span className="block text-[9px] text-slate-500 font-bold mb-0.5">TIME</span>
-                     <span className="font-bold text-slate-300 text-xs">{Math.floor(config.duration / 60)} min</span>
-                   </div>
-                </div>
+                {/* Dynamic Background Image */}
+                <div 
+                  className="absolute inset-0 bg-cover bg-center opacity-40 mix-blend-luminosity transition-opacity duration-500 group-hover:opacity-60"
+                  style={{ backgroundImage: `url('${bgImageUrl}')` }}
+                />
+                {/* Gradient Overlay for Readability */}
+                <div className="absolute inset-0 bg-gradient-to-r from-slate-900/90 via-slate-900/70 to-transparent pointer-events-none" />
+                
+                {/* Content needs to be relative to sit above the absolute backgrounds */}
+                <div className="relative z-10">
+                  <div className="flex justify-between items-start mb-3">
+                     <div className="flex items-center space-x-2">
+                       <span className={`text-[10px] font-black px-2 py-0.5 rounded text-white ${rankBadges[rank] || rankBadges['C']}`}>{rank}</span>
+                       <h3 className="font-bold text-slate-100 text-sm drop-shadow-md">{config.name}</h3>
+                     </div>
+                     <div className="text-right">
+                       <span className="block text-[9px] text-slate-400 font-bold mb-0.5 drop-shadow-md">TIME</span>
+                       <span className="font-bold text-white text-xs drop-shadow-md">{Math.floor(config.duration / 60)} min</span>
+                     </div>
+                  </div>
 
-                <div className="grid grid-cols-3 gap-2 text-[10px]">
-                   <div className="bg-slate-900/50 p-2 rounded-lg border border-slate-700/50 flex flex-col items-center justify-center text-center">
-                     <p className="text-slate-500 font-bold mb-0.5 text-[9px]">報酬</p>
-                     <p className="text-amber-500 font-bold">{config.minReward}-{config.maxReward}</p>
-                   </div>
-                   <div className="bg-slate-900/50 p-2 rounded-lg border border-slate-700/50 flex flex-col items-center justify-center text-center">
-                     <p className="text-slate-500 font-bold mb-0.5 text-[9px]">ダメージ</p>
-                     <p className="text-rose-400 font-bold">{config.minDmg}-{config.maxDmg}</p>
-                   </div>
-                   <div className="bg-slate-900/50 p-2 rounded-lg border border-slate-700/50 flex flex-col items-center justify-center text-center">
-                     <p className="text-slate-500 font-bold mb-0.5 text-[9px]">コスト</p>
-                     <p className="text-slate-200 font-bold">{config.burnCost} $CHH</p>
-                   </div>
+                  <div className="grid grid-cols-3 gap-2 text-[10px]">
+                     <div className="bg-slate-900/70 backdrop-blur-sm p-2 rounded-lg border border-slate-700/50 flex flex-col items-center justify-center text-center">
+                       <p className="text-slate-400 font-bold mb-0.5 text-[9px]">報酬</p>
+                       <p className="text-amber-400 font-bold">{config.minReward}-{config.maxReward}</p>
+                     </div>
+                     <div className="bg-slate-900/70 backdrop-blur-sm p-2 rounded-lg border border-slate-700/50 flex flex-col items-center justify-center text-center">
+                       <p className="text-slate-400 font-bold mb-0.5 text-[9px]">ダメージ</p>
+                       <p className="text-rose-400 font-bold">{config.minDmg}-{config.maxDmg}</p>
+                     </div>
+                     <div className="bg-slate-900/70 backdrop-blur-sm p-2 rounded-lg border border-slate-700/50 flex flex-col items-center justify-center text-center">
+                       <p className="text-slate-400 font-bold mb-0.5 text-[9px]">コスト</p>
+                       <p className="text-slate-200 font-bold">{config.burnCost} $CHH</p>
+                     </div>
+                  </div>
                 </div>
               </button>
             );

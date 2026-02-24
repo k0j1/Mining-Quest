@@ -105,14 +105,14 @@ const Header: React.FC<HeaderProps> = ({
       return;
     }
     if (!onDebugAddTokens) return;
-    setTapCount(prev => {
-      const newCount = prev + 1;
-      if (newCount >= 5) {
-        onDebugAddTokens();
-        return 0;
-      }
-      return newCount;
-    });
+    
+    const newCount = tapCount + 1;
+    if (newCount >= 5) {
+      onDebugAddTokens();
+      setTapCount(0);
+    } else {
+      setTapCount(newCount);
+    }
   };
 
   const handleReload = () => {
