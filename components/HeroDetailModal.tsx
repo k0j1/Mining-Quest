@@ -136,7 +136,18 @@ const HeroDetailModal: React.FC<HeroDetailModalProps> = ({ hero, equipment, onCl
                     </h3>
                     <div className="grid grid-cols-3 gap-1.5">
                         {/* Pickaxe */}
-                        <div className={`p-1.5 rounded-lg border flex flex-col items-center text-center ${pickaxe ? 'bg-slate-800 border-slate-600' : 'bg-slate-900/50 border-slate-800 border-dashed'}`}>
+                        <div className={`p-1.5 rounded-lg border flex flex-col items-center text-center relative ${pickaxe ? 'bg-slate-800 border-slate-600' : 'bg-slate-900/50 border-slate-800 border-dashed'}`}>
+                            {pickaxe && (
+                                <div className={`absolute top-0.5 left-0.5 text-[6px] font-black px-1 rounded-sm border border-slate-900/50 shadow-sm z-10 ${
+                                    pickaxe.rarity === 'L' ? 'bg-amber-500 text-black' :
+                                    pickaxe.rarity === 'E' ? 'bg-fuchsia-600 text-white' :
+                                    pickaxe.rarity === 'R' ? 'bg-indigo-600 text-white' :
+                                    pickaxe.rarity === 'UC' ? 'bg-emerald-600 text-white' :
+                                    'bg-slate-600 text-white'
+                                }`}>
+                                    {pickaxe.rarity}
+                                </div>
+                            )}
                             <div className="mb-1">
                                <EquipmentIcon type="Pickaxe" rarity={pickaxe?.rarity} size="1.2em" className={!pickaxe ? 'opacity-30 grayscale' : ''} />
                             </div>
@@ -149,7 +160,18 @@ const HeroDetailModal: React.FC<HeroDetailModalProps> = ({ hero, equipment, onCl
                         </div>
 
                         {/* Helmet */}
-                        <div className={`p-1.5 rounded-lg border flex flex-col items-center text-center ${helmet ? 'bg-slate-800 border-slate-600' : 'bg-slate-900/50 border-slate-800 border-dashed'}`}>
+                        <div className={`p-1.5 rounded-lg border flex flex-col items-center text-center relative ${helmet ? 'bg-slate-800 border-slate-600' : 'bg-slate-900/50 border-slate-800 border-dashed'}`}>
+                            {helmet && (
+                                <div className={`absolute top-0.5 left-0.5 text-[6px] font-black px-1 rounded-sm border border-slate-900/50 shadow-sm z-10 ${
+                                    helmet.rarity === 'L' ? 'bg-amber-500 text-black' :
+                                    helmet.rarity === 'E' ? 'bg-fuchsia-600 text-white' :
+                                    helmet.rarity === 'R' ? 'bg-indigo-600 text-white' :
+                                    helmet.rarity === 'UC' ? 'bg-emerald-600 text-white' :
+                                    'bg-slate-600 text-white'
+                                }`}>
+                                    {helmet.rarity}
+                                </div>
+                            )}
                             <div className="mb-1">
                                <EquipmentIcon type="Helmet" rarity={helmet?.rarity} size="1.2em" className={!helmet ? 'opacity-30 grayscale' : ''} />
                             </div>
@@ -162,7 +184,18 @@ const HeroDetailModal: React.FC<HeroDetailModalProps> = ({ hero, equipment, onCl
                         </div>
 
                         {/* Boots */}
-                        <div className={`p-1.5 rounded-lg border flex flex-col items-center text-center ${boots ? 'bg-slate-800 border-slate-600' : 'bg-slate-900/50 border-slate-800 border-dashed'}`}>
+                        <div className={`p-1.5 rounded-lg border flex flex-col items-center text-center relative ${boots ? 'bg-slate-800 border-slate-600' : 'bg-slate-900/50 border-slate-800 border-dashed'}`}>
+                            {boots && (
+                                <div className={`absolute top-0.5 left-0.5 text-[6px] font-black px-1 rounded-sm border border-slate-900/50 shadow-sm z-10 ${
+                                    boots.rarity === 'L' ? 'bg-amber-500 text-black' :
+                                    boots.rarity === 'E' ? 'bg-fuchsia-600 text-white' :
+                                    boots.rarity === 'R' ? 'bg-indigo-600 text-white' :
+                                    boots.rarity === 'UC' ? 'bg-emerald-600 text-white' :
+                                    'bg-slate-600 text-white'
+                                }`}>
+                                    {boots.rarity}
+                                </div>
+                            )}
                             <div className="mb-1">
                                <EquipmentIcon type="Boots" rarity={boots?.rarity} size="1.2em" className={!boots ? 'opacity-30 grayscale' : ''} />
                             </div>

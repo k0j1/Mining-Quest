@@ -95,8 +95,8 @@ const EquipmentListItem: React.FC<EquipmentListItemProps> = ({
               <InfoSection />
               {equippedBy && (
                 <div className="absolute top-1 right-1">
-                    <span className="text-[8px] bg-slate-700 text-slate-300 px-1.5 py-0.5 rounded border border-slate-600">
-                        {equippedBy.name.slice(0, 3)}..
+                    <span className="text-[8px] bg-indigo-600 text-white px-1.5 py-0.5 rounded border border-indigo-500 font-bold shadow-sm">
+                        E
                     </span>
                 </div>
               )}
@@ -114,8 +114,8 @@ const EquipmentListItem: React.FC<EquipmentListItemProps> = ({
       <InfoSection />
 
       {equippedBy && (
-        <div className={`absolute ${layout === 'grid' ? 'top-1 right-1' : 'top-2 right-2'} text-[8px] bg-slate-700 text-slate-300 px-1.5 py-0.5 rounded border border-slate-600`}>
-            {layout === 'grid' ? equippedBy.name.slice(0, 3) + '..' : equippedBy.name}
+        <div className={`absolute ${layout === 'grid' ? 'top-1 right-1' : 'top-2 right-2'} text-[8px] bg-indigo-600 text-white px-1.5 py-0.5 rounded border border-indigo-500 font-bold shadow-sm`}>
+            E
         </div>
       )}
       

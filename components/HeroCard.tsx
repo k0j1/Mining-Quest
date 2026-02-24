@@ -295,6 +295,18 @@ const HeroCard: React.FC<HeroCardProps> = ({
                  />
               </div>
               
+              {equipId && (
+                 <div className={`absolute top-0.5 left-0.5 text-[6px] font-black px-1 rounded-sm border border-slate-900/50 shadow-sm z-10 ${
+                   rarity === 'L' ? 'bg-amber-500 text-black' :
+                   rarity === 'E' ? 'bg-fuchsia-600 text-white' :
+                   rarity === 'R' ? 'bg-indigo-600 text-white' :
+                   rarity === 'UC' ? 'bg-emerald-600 text-white' :
+                   'bg-slate-600 text-white'
+                 }`}>
+                    {rarity}
+                 </div>
+              )}
+              
               {equippedItem && (equippedItem.level || 0) > 0 ? (
                  <div className="absolute -top-1.5 -right-1.5 bg-amber-500 text-black text-[8px] font-black w-4 h-4 flex items-center justify-center rounded-full border border-slate-900 shadow-sm z-10">
                     +{equippedItem.level}
