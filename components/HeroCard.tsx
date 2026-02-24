@@ -298,15 +298,17 @@ const HeroCard: React.FC<HeroCardProps> = ({
                 onEquipClick && onEquipClick(hero.id, i);
               }}
               disabled={isLocked}
-              className={`flex-1 h-full rounded-lg flex items-center justify-center transition-all relative group/slot overflow-hidden ${
+              className={`flex-1 h-full rounded-lg flex items-center justify-center transition-all relative group/slot ${
                 equipId 
                   ? `${slotBgColors[rarity]} border shadow-inner` 
                   : 'bg-slate-900/40 border border-slate-800 border-dashed hover:bg-slate-800 hover:border-slate-600'
               } ${isLocked ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
               {equipId && (
-                 <div className={`absolute inset-0 flex items-center justify-center pointer-events-none opacity-20 font-black text-2xl -rotate-12 select-none ${textColors[rarity]}`}>
-                    {rarity}
+                 <div className="absolute inset-0 overflow-hidden rounded-lg pointer-events-none">
+                   <div className={`absolute inset-0 flex items-center justify-center opacity-20 font-black text-2xl -rotate-12 select-none ${textColors[rarity]}`}>
+                      {rarity}
+                   </div>
                  </div>
               )}
               
