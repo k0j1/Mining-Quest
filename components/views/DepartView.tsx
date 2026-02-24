@@ -41,6 +41,90 @@ interface DepartViewProps {
   onAccountClick?: () => void;
 }
 
+const generateQuestSVG = (name: string, rank: string) => {
+  let primaryColor, secondaryColor, accentColor;
+  
+  switch(rank) {
+    case 'C':
+      primaryColor = '#334155'; // slate-700
+      secondaryColor = '#0f172a'; // slate-900
+      accentColor = '#64748b'; // slate-500
+      break;
+    case 'UC':
+      primaryColor = '#065f46'; // emerald-800
+      secondaryColor = '#022c22'; // emerald-950
+      accentColor = '#10b981'; // emerald-500
+      break;
+    case 'R':
+      primaryColor = '#3730a3'; // indigo-800
+      secondaryColor = '#1e1b4b'; // indigo-950
+      accentColor = '#6366f1'; // indigo-500
+      break;
+    case 'E':
+      primaryColor = '#9a3412'; // orange-800
+      secondaryColor = '#431407'; // orange-950
+      accentColor = '#f97316'; // orange-500
+      break;
+    case 'L':
+      primaryColor = '#6b21a8'; // purple-800
+      secondaryColor = '#3b0764'; // purple-950
+      accentColor = '#a855f7'; // purple-500
+      break;
+    default:
+      primaryColor = '#334155';
+      secondaryColor = '#0f172a';
+      accentColor = '#64748b';
+  }
+
+  const seed = name.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+  
+  // Generate stalactites and stalagmites
+  let pathDTop = "M0,0 ";
+  let pathDBottom = "M0,150 ";
+  
+  for (let i = 0; i <= 10; i++) {
+    const x = i * 40;
+    const yTop = 10 + ((seed * (i + 1) * 13) % 40);
+    const yBottom = 140 - ((seed * (i + 1) * 17) % 40);
+    
+    pathDTop += `L${x - 20},${yTop} L${x},0 `;
+    pathDBottom += `L${x - 20},${yBottom} L${x},150 `;
+  }
+  pathDTop += "L400,0 Z";
+  pathDBottom += "L400,150 Z";
+
+  // Crystals
+  const crystals = Array.from({ length: 12 }).map((_, i) => {
+    const x = ((seed * (i + 1) * 23) % 380) + 10;
+    const y = ((seed * (i + 1) * 29) % 100) + 25;
+    const scale = 0.5 + (((seed * (i + 1) * 31) % 50) / 100);
+    const opacity = 0.3 + (((seed * (i + 1) * 37) % 40) / 100);
+    const rotation = ((seed * (i + 1) * 41) % 360);
+    
+    return `<polygon points="0,-15 10,15 -10,15" fill="${accentColor}" opacity="${opacity}" transform="translate(${x}, ${y}) scale(${scale}) rotate(${rotation})" />`;
+  }).join('');
+
+  const svg = `
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 150" preserveAspectRatio="none">
+      <defs>
+        <linearGradient id="grad_${rank}" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stop-color="${secondaryColor}" />
+          <stop offset="50%" stop-color="${primaryColor}" />
+          <stop offset="100%" stop-color="${secondaryColor}" />
+        </linearGradient>
+      </defs>
+      <rect width="400" height="150" fill="url(#grad_${rank})" />
+      ${crystals}
+      <path d="${pathDTop}" fill="${secondaryColor}" opacity="0.9"/>
+      <path d="${pathDBottom}" fill="${secondaryColor}" opacity="0.9"/>
+    </svg>
+  `;
+
+  // Encode SVG to base64 safely
+  const encodedSvg = btoa(unescape(encodeURIComponent(svg)));
+  return `data:image/svg+xml;base64,${encodedSvg}`;
+};
+
 const DepartView: React.FC<DepartViewProps> = ({ 
   gameState, 
   onDepart, 
@@ -172,7 +256,7 @@ const DepartView: React.FC<DepartViewProps> = ({
 
           {gameState.questConfigs.map((config) => {
             const rank = config.rank;
-            const bgImageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(config.name + ' mining cave fantasy pixel art')}?width=400&height=150&nologo=true`;
+            const bgImageUrl = generateQuestSVG(config.name, rank);
             return (
               <button
                 key={rank}
