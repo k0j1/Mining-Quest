@@ -272,6 +272,23 @@ const HeroCard: React.FC<HeroCardProps> = ({
             const equippedItem = equipment?.find(e => e.id === equipId);
             const rarity = equippedItem ? equippedItem.rarity : 'C';
 
+            // Define rarity background colors for the slot
+            const slotBgColors: Record<string, string> = {
+              C: 'bg-slate-800/80 border-slate-600',
+              UC: 'bg-emerald-900/40 border-emerald-700/50',
+              R: 'bg-indigo-900/40 border-indigo-700/50',
+              E: 'bg-fuchsia-900/40 border-fuchsia-700/50',
+              L: 'bg-amber-900/40 border-amber-700/50'
+            };
+
+            const textColors: Record<string, string> = {
+              C: 'text-slate-500',
+              UC: 'text-emerald-500',
+              R: 'text-indigo-500',
+              E: 'text-fuchsia-500',
+              L: 'text-amber-500'
+            };
+
             return (
             <button 
               key={i} 
@@ -281,13 +298,19 @@ const HeroCard: React.FC<HeroCardProps> = ({
                 onEquipClick && onEquipClick(hero.id, i);
               }}
               disabled={isLocked}
-              className={`flex-1 h-full rounded-lg flex items-center justify-center transition-all relative group/slot ${
+              className={`flex-1 h-full rounded-lg flex items-center justify-center transition-all relative group/slot overflow-hidden ${
                 equipId 
-                  ? 'bg-slate-800/80 border border-slate-600 shadow-inner' 
+                  ? `${slotBgColors[rarity]} border shadow-inner` 
                   : 'bg-slate-900/40 border border-slate-800 border-dashed hover:bg-slate-800 hover:border-slate-600'
               } ${isLocked ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
-              <div className={`transform transition-transform ${equipId ? 'scale-110 drop-shadow-lg' : 'opacity-20 grayscale scale-75'}`}>
+              {equipId && (
+                 <div className={`absolute inset-0 flex items-center justify-center pointer-events-none opacity-20 font-black text-2xl -rotate-12 select-none ${textColors[rarity]}`}>
+                    {rarity}
+                 </div>
+              )}
+              
+              <div className={`transform transition-transform relative z-10 ${equipId ? 'scale-110 drop-shadow-lg' : 'opacity-20 grayscale scale-75'}`}>
                  <EquipmentIcon 
                     type={slotTypes[i]} 
                     rarity={equipId ? rarity : 'C'} 
@@ -295,24 +318,12 @@ const HeroCard: React.FC<HeroCardProps> = ({
                  />
               </div>
               
-              {equipId && (
-                 <div className={`absolute top-0.5 left-0.5 text-[6px] font-black px-1 rounded-sm border border-slate-900/50 shadow-sm z-10 ${
-                   rarity === 'L' ? 'bg-amber-500 text-black' :
-                   rarity === 'E' ? 'bg-fuchsia-600 text-white' :
-                   rarity === 'R' ? 'bg-indigo-600 text-white' :
-                   rarity === 'UC' ? 'bg-emerald-600 text-white' :
-                   'bg-slate-600 text-white'
-                 }`}>
-                    {rarity}
-                 </div>
-              )}
-              
               {equippedItem && (equippedItem.level || 0) > 0 ? (
-                 <div className="absolute -top-1.5 -right-1.5 bg-amber-500 text-black text-[8px] font-black w-4 h-4 flex items-center justify-center rounded-full border border-slate-900 shadow-sm z-10">
+                 <div className="absolute -top-1.5 -right-1.5 bg-amber-500 text-black text-[8px] font-black w-4 h-4 flex items-center justify-center rounded-full border border-slate-900 shadow-sm z-20">
                     +{equippedItem.level}
                  </div>
               ) : equipId && (
-                 <div className="absolute top-0.5 right-0.5 w-1.5 h-1.5 bg-emerald-500 rounded-full shadow-[0_0_4px_#10b981]"></div>
+                 <div className="absolute top-0.5 right-0.5 w-1.5 h-1.5 bg-emerald-500 rounded-full shadow-[0_0_4px_#10b981] z-20"></div>
               )}
             </button>
           )})}
