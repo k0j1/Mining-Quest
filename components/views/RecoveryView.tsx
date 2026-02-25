@@ -6,6 +6,8 @@ import { playClick } from '../../utils/sound';
 
 interface RecoveryViewProps {
   gameState: GameState;
+  onBuyPotion: () => void;
+  onBuyElixir: () => void;
   onPotion: (heroId: string) => void;
   onElixir: (heroId: string) => void;
   isSoundOn: boolean;
@@ -18,6 +20,8 @@ interface RecoveryViewProps {
 
 const RecoveryView: React.FC<RecoveryViewProps> = ({ 
   gameState, 
+  onBuyPotion,
+  onBuyElixir,
   onPotion, 
   onElixir, 
   isSoundOn, 
@@ -54,8 +58,8 @@ const RecoveryView: React.FC<RecoveryViewProps> = ({
     const isQuesting = activeQuestHeroIds.includes(hero.id);
     const isAssigned = allAssignedHeroIds.includes(hero.id);
     
-    const canAffordPotion = gameState.tokens >= 100;
-    const canAffordElixir = gameState.tokens >= 500;
+    const hasPotion = gameState.items.item01 > 0;
+    const hasElixir = gameState.items.item02 > 0;
 
     return (
       <div key={hero.id} className={`bg-slate-800/80 rounded-xl border flex flex-col relative overflow-hidden transition-all group ${
@@ -107,31 +111,31 @@ const RecoveryView: React.FC<RecoveryViewProps> = ({
                   {/* Potion Button */}
                   <button 
                     onClick={() => onPotion(hero.id)}
-                    disabled={isFull || isQuesting} 
+                    disabled={isFull || isQuesting || !hasPotion} 
                     className={`h-8 rounded-lg flex flex-col items-center justify-center border transition-all active:scale-95 ${
-                        isFull || isQuesting 
+                        isFull || isQuesting || !hasPotion
                           ? 'bg-slate-900 border-slate-800 opacity-30 cursor-not-allowed grayscale' 
                           : 'bg-slate-700 border-slate-600 hover:bg-slate-600 hover:border-slate-500'
                     }`}
                     title="Potion (+10 HP)"
                   >
                       <span className="text-xs leading-none">🩹</span>
-                      <span className={`text-[8px] font-bold leading-tight ${canAffordPotion ? 'text-slate-300' : 'text-rose-500'}`}>100</span>
+                      <span className={`text-[8px] font-bold leading-tight ${hasPotion ? 'text-slate-300' : 'text-rose-500'}`}>USE</span>
                   </button>
                   
                   {/* Elixir Button */}
                   <button 
                       onClick={() => onElixir(hero.id)}
-                      disabled={isFull || isQuesting} 
+                      disabled={isFull || isQuesting || !hasElixir} 
                       className={`h-8 rounded-lg flex flex-col items-center justify-center border transition-all active:scale-95 ${
-                          isFull || isQuesting
+                          isFull || isQuesting || !hasElixir
                             ? 'bg-slate-900 border-slate-800 opacity-30 cursor-not-allowed grayscale'
                             : 'bg-indigo-900/40 border-indigo-500/40 hover:bg-indigo-900/60 hover:border-indigo-400/60'
                       }`}
                       title="Elixir (Full Heal)"
                   >
                       <span className="text-xs leading-none">🧪</span>
-                      <span className={`text-[8px] font-bold leading-tight ${canAffordElixir ? 'text-indigo-300' : 'text-rose-500'}`}>500</span>
+                      <span className={`text-[8px] font-bold leading-tight ${hasElixir ? 'text-indigo-300' : 'text-rose-500'}`}>USE</span>
                   </button>
               </div>
           </div>
@@ -154,6 +158,50 @@ const RecoveryView: React.FC<RecoveryViewProps> = ({
 
        <div className="flex-1 overflow-y-auto px-3 py-4 pb-24 bg-slate-900 custom-scrollbar">
           
+          {/* Inventory Section */}
+          <div className="mb-6 bg-slate-800/50 rounded-2xl p-4 border border-slate-700/50">
+            <div className="flex items-center gap-2 mb-3">
+                <span className="w-1.5 h-4 bg-emerald-500 rounded-full"></span>
+                <h2 className="text-xs font-bold text-slate-300 uppercase tracking-widest">Shop & Inventory</h2>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+                {/* Potion */}
+                <div className="bg-slate-900/80 rounded-xl p-3 border border-slate-700 flex flex-col items-center">
+                    <div className="text-2xl mb-1">🩹</div>
+                    <div className="text-[10px] font-bold text-slate-300 mb-1">ポーション (+10 HP)</div>
+                    <div className="text-xs font-black text-emerald-400 mb-2">所持: {gameState.items.item01}</div>
+                    <button 
+                        onClick={() => { playClick(); onBuyPotion(); }}
+                        disabled={gameState.tokens < 100}
+                        className={`w-full py-2 rounded-lg text-[10px] font-bold transition-all ${
+                            gameState.tokens >= 100 
+                            ? 'bg-slate-700 hover:bg-slate-600 text-white border border-slate-600' 
+                            : 'bg-slate-800 text-slate-500 border border-slate-700 cursor-not-allowed'
+                        }`}
+                    >
+                        購入 (100 $CHH)
+                    </button>
+                </div>
+                {/* Elixir */}
+                <div className="bg-slate-900/80 rounded-xl p-3 border border-slate-700 flex flex-col items-center">
+                    <div className="text-2xl mb-1">🧪</div>
+                    <div className="text-[10px] font-bold text-slate-300 mb-1">エリクサー (全回復)</div>
+                    <div className="text-xs font-black text-indigo-400 mb-2">所持: {gameState.items.item02}</div>
+                    <button 
+                        onClick={() => { playClick(); onBuyElixir(); }}
+                        disabled={gameState.tokens < 500}
+                        className={`w-full py-2 rounded-lg text-[10px] font-bold transition-all ${
+                            gameState.tokens >= 500 
+                            ? 'bg-indigo-900/60 hover:bg-indigo-800/80 text-indigo-200 border border-indigo-500/50' 
+                            : 'bg-slate-800 text-slate-500 border border-slate-700 cursor-not-allowed'
+                        }`}
+                    >
+                        購入 (500 $CHH)
+                    </button>
+                </div>
+            </div>
+          </div>
+
           {/* Section: Party Groups */}
           {parties.map(party => {
               if (party.heroes.length === 0) return null;

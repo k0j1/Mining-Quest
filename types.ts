@@ -108,4 +108,8 @@ export interface GameState {
   activePartyIndex: number; // 0, 1, 2
   unlockedParties: boolean[]; // [true, false, false]
   partyPresets: (string | null)[][]; // 3 arrays of 3 slots. string=heroId, null=empty
+  items: {
+    item01: number; // Potion
+    item02: number; // Elixir
+  };
 }

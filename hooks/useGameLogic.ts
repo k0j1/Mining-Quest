@@ -26,7 +26,11 @@ export const useGameLogic = () => {
       [null, null, null],
       [null, null, null],
       [null, null, null]
-    ]
+    ],
+    items: {
+      item01: 0,
+      item02: 0
+    }
   });
 
   // --- UI State ---
@@ -284,13 +288,28 @@ export const useGameLogic = () => {
             return acc;
         }, []);
 
+        // --- 5. Load Player Stats (Items) ---
+        const { data: statsData, error: statsError } = await supabase
+          .from('quest_player_stats')
+          .select('item01, item02')
+          .eq('fid', fid)
+          .single();
+          
+        if (statsError && statsError.code !== 'PGRST116') { // Ignore not found error
+            console.error("[useGameLogic] Stats load error:", statsError);
+        }
+
         setGameState(prev => ({
             ...prev,
             heroes: loadedHeroes,
             equipment: loadedEquipment,
             partyPresets: newPartyPresets,
             unlockedParties: newUnlockedParties,
-            activeQuests: loadedQuests
+            activeQuests: loadedQuests,
+            items: {
+                item01: statsData?.item01 || 0,
+                item02: statsData?.item02 || 0
+            }
         }));
         
         console.log(`[useGameLogic] Data Loaded: ${loadedHeroes.length} Heroes, ${loadedEquipment.length} Equipment, ${loadedQuests.length} Quests`);
@@ -322,7 +341,7 @@ export const useGameLogic = () => {
   });
 
   // Item Logic
-  const { usePotion, useElixir, mergeEquipment } = useItems({
+  const { buyPotion, buyElixir, usePotion, useElixir, mergeEquipment } = useItems({
     gameState, setGameState, showNotification, farcasterUser, refetchBalance
   });
 
@@ -356,6 +375,8 @@ export const useGameLogic = () => {
       unlockParty, 
       assignHeroToParty, 
       swapPartyPositions, 
+      buyPotion,
+      buyElixir,
       usePotion, 
       useElixir,
       mergeEquipment,

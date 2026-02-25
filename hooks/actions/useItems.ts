@@ -27,11 +27,62 @@ export const useItems = ({ gameState, setGameState, showNotification, farcasterU
     }).eq('player_hid', parseInt(heroId));
   };
 
-  const usePotion = (heroId: string) => {
+  const buyPotion = async () => {
     const cost = 100;
     if (gameState.tokens < cost) {
       playError();
       showNotification(`トークンが足りません！ (必要: ${cost.toLocaleString()} $CHH)`, 'error');
+      return;
+    }
+
+    playConfirm();
+    setGameState(prev => ({
+      ...prev,
+      tokens: prev.tokens - cost,
+      items: { ...prev.items, item01: prev.items.item01 + 1 }
+    }));
+
+    if (farcasterUser?.fid) {
+      const { data: currentStats } = await supabase.from('quest_player_stats').select('item01').eq('fid', farcasterUser.fid).single();
+      await supabase.from('quest_player_stats')
+          .update({ item01: (currentStats?.item01 || 0) + 1 })
+          .eq('fid', farcasterUser.fid);
+    }
+    
+    refetchBalance();
+    showNotification('ポーションを購入しました', 'success');
+  };
+
+  const buyElixir = async () => {
+    const cost = 500;
+    if (gameState.tokens < cost) {
+      playError();
+      showNotification(`トークンが足りません！ (必要: ${cost.toLocaleString()} $CHH)`, 'error');
+      return;
+    }
+
+    playConfirm();
+    setGameState(prev => ({
+      ...prev,
+      tokens: prev.tokens - cost,
+      items: { ...prev.items, item02: prev.items.item02 + 1 }
+    }));
+
+    if (farcasterUser?.fid) {
+      const { data: currentStats } = await supabase.from('quest_player_stats').select('item02').eq('fid', farcasterUser.fid).single();
+      await supabase.from('quest_player_stats')
+          .update({ item02: (currentStats?.item02 || 0) + 1 })
+          .eq('fid', farcasterUser.fid);
+    }
+    
+    refetchBalance();
+    showNotification('エリクサーを購入しました', 'success');
+  };
+
+  const usePotion = async (heroId: string) => {
+    if (gameState.items.item01 <= 0) {
+      playError();
+      showNotification(`ポーションを持っていません`, 'error');
       return;
     }
     const hero = gameState.heroes.find(h => h.id === heroId);
@@ -41,23 +92,28 @@ export const useItems = ({ gameState, setGameState, showNotification, farcasterU
     playConfirm();
     setGameState(prev => ({
       ...prev,
-      tokens: prev.tokens - cost,
-      heroes: prev.heroes.map(h => h.id === heroId ? { ...h, hp: newHp } : h)
+      heroes: prev.heroes.map(h => h.id === heroId ? { ...h, hp: newHp } : h),
+      items: { ...prev.items, item01: prev.items.item01 - 1 }
     }));
     
     updateHeroHpDB(heroId, newHp);
-    
-    // Refetch balance once
-    refetchBalance();
+
+    if (farcasterUser?.fid) {
+      const { data: currentStats } = await supabase.from('quest_player_stats').select('item01').eq('fid', farcasterUser.fid).single();
+      if (currentStats && currentStats.item01 > 0) {
+          await supabase.from('quest_player_stats')
+              .update({ item01: currentStats.item01 - 1 })
+              .eq('fid', farcasterUser.fid);
+      }
+    }
 
     showNotification(`${hero.name}を回復しました (+10HP)`, 'success');
   };
 
-  const useElixir = (heroId: string) => {
-    const cost = 500;
-    if (gameState.tokens < cost) {
+  const useElixir = async (heroId: string) => {
+    if (gameState.items.item02 <= 0) {
       playError();
-      showNotification(`トークンが足りません！ (必要: ${cost.toLocaleString()} $CHH)`, 'error');
+      showNotification(`エリクサーを持っていません`, 'error');
       return;
     }
     const hero = gameState.heroes.find(h => h.id === heroId);
@@ -67,14 +123,20 @@ export const useItems = ({ gameState, setGameState, showNotification, farcasterU
     playConfirm();
     setGameState(prev => ({
       ...prev,
-      tokens: prev.tokens - cost,
-      heroes: prev.heroes.map(h => h.id === heroId ? { ...h, hp: newHp } : h)
+      heroes: prev.heroes.map(h => h.id === heroId ? { ...h, hp: newHp } : h),
+      items: { ...prev.items, item02: prev.items.item02 - 1 }
     }));
     
     updateHeroHpDB(heroId, newHp);
-    
-    // Refetch balance once
-    refetchBalance();
+
+    if (farcasterUser?.fid) {
+      const { data: currentStats } = await supabase.from('quest_player_stats').select('item02').eq('fid', farcasterUser.fid).single();
+      if (currentStats && currentStats.item02 > 0) {
+          await supabase.from('quest_player_stats')
+              .update({ item02: currentStats.item02 - 1 })
+              .eq('fid', farcasterUser.fid);
+      }
+    }
 
     showNotification(`${hero.name}を全回復しました`, 'success');
   };
@@ -156,5 +218,5 @@ export const useItems = ({ gameState, setGameState, showNotification, farcasterU
     }
   };
 
-  return { usePotion, useElixir, mergeEquipment };
+  return { buyPotion, buyElixir, usePotion, useElixir, mergeEquipment };
 };
