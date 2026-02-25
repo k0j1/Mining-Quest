@@ -389,7 +389,7 @@ export const useQuest = ({ gameState, setGameState, showNotification, setReturnR
   /**
    * Commits the pending quest results to DB and updates local state.
    */
-  const confirmQuestReturn = async (results: QuestResult[], closeModal: boolean = true, skipRewardUpdate: boolean = false) => {
+  const confirmQuestReturn = async (results: QuestResult[], closeModal: boolean = true, skipRewardUpdate: boolean = false, skipCountUpdate: boolean = false) => {
     let dbSuccess = true;
     const processedQuestPids: string[] = [];
     const allDeadHeroIds: string[] = [];
@@ -469,18 +469,35 @@ export const useQuest = ({ gameState, setGameState, showNotification, setReturnR
         // Update Stats
         if (processedQuestPids.length > 0) {
             const processedCount = processedQuestPids.length;
-            await supabase.rpc('increment_player_stat', { 
-                player_fid: farcasterUser.fid, 
-                column_name: 'quest_count', 
-                amount: processedCount 
-            });
+            
+            if (!skipCountUpdate) {
+                console.log(`[useQuest] Incrementing quest_count by ${processedCount} for FID: ${farcasterUser.fid}`);
+                
+                const { error: countError } = await supabase.rpc('increment_player_stat', { 
+                    player_fid: parseInt(farcasterUser.fid.toString()), 
+                    column_name: 'quest_count', 
+                    amount: processedCount 
+                });
+
+                if (countError) {
+                    console.error("[useQuest] Failed to increment quest_count via RPC, trying direct update:", countError);
+                    // Fallback: Direct Update
+                    const { data: currentStats } = await supabase.from('quest_player_stats').select('quest_count').eq('fid', farcasterUser.fid).single();
+                    await supabase.from('quest_player_stats')
+                        .update({ quest_count: (currentStats?.quest_count || 0) + processedCount })
+                        .eq('fid', farcasterUser.fid);
+                }
+            }
 
             if (accumulatedTotalReward > 0 && !skipRewardUpdate) {
-                await supabase.rpc('increment_player_stat', { 
-                    player_fid: farcasterUser.fid, 
+                const { error: rewardError } = await supabase.rpc('increment_player_stat', { 
+                    player_fid: parseInt(farcasterUser.fid.toString()), 
                     column_name: 'total_reward', 
                     amount: accumulatedTotalReward 
                 });
+                if (rewardError) {
+                    console.error("[useQuest] Failed to increment total_reward via RPC:", rewardError);
+                }
             }
         }
     } else {

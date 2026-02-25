@@ -22,7 +22,7 @@ interface ResultModalProps {
   results: QuestResult[];
   totalTokens: number;
   onClose: () => void;
-  onConfirm: (results: QuestResult[], closeModal?: boolean, skipRewardUpdate?: boolean) => Promise<void>; // New Confirm Action
+  onConfirm: (results: QuestResult[], closeModal?: boolean, skipRewardUpdate?: boolean, skipCountUpdate?: boolean) => Promise<void>; // New Confirm Action
   farcasterUser?: any; 
 }
 
@@ -57,9 +57,6 @@ const ResultModal: React.FC<ResultModalProps> = ({ results, totalTokens, onClose
     setQuestStatuses(initialStatuses);
   }, [results]); 
 
-  // GSAP Animation removed to prevent visibility issues
-  // useLayoutEffect(() => { ... }, [claimSuccess]);
-
   const handleConfirmClaim = async () => {
       playClick();
       setIsPreparingClaim(true);
@@ -85,6 +82,7 @@ const ResultModal: React.FC<ResultModalProps> = ({ results, totalTokens, onClose
         // 1. Check if we should proceed to On-Chain Claim
         let hash: string | null = null;
         let newTotalReward = 0;
+        let newQuestCount = 0;
         let shouldUpdateTotalReward = false;
 
         if (farcasterUser?.fid && targetResult.totalReward > 0 && sdk.wallet.ethProvider) {
@@ -95,7 +93,7 @@ const ResultModal: React.FC<ResultModalProps> = ({ results, totalTokens, onClose
                 // Fetch Updated Stats
                 const { data: stats, error } = await supabase
                     .from('quest_player_stats')
-                    .select('total_reward')
+                    .select('total_reward, quest_count')
                     .eq('fid', farcasterUser.fid)
                     .single();
 
@@ -106,6 +104,7 @@ const ResultModal: React.FC<ResultModalProps> = ({ results, totalTokens, onClose
                 // Calculate New Total Reward (Current DB + This Quest Reward)
                 const currentTotalReward = stats.total_reward || 0;
                 newTotalReward = currentTotalReward + targetResult.totalReward;
+                newQuestCount = (stats.quest_count || 0) + 1;
                 shouldUpdateTotalReward = true;
 
                 // Prepare Params
@@ -203,22 +202,26 @@ const ResultModal: React.FC<ResultModalProps> = ({ results, totalTokens, onClose
         // 2. DB Save (Only after successful claim or if no claim needed)
         setStatusMsg('Saving...');
         
-        // If we successfully claimed on-chain, update DB total_reward with the value we used
+        // If we successfully claimed on-chain, update DB total_reward and quest_count with the value we used
         if (shouldUpdateTotalReward && farcasterUser?.fid) {
              const { error: updateError } = await supabase
                 .from('quest_player_stats')
-                .update({ total_reward: newTotalReward })
+                .update({ 
+                    total_reward: newTotalReward,
+                    quest_count: newQuestCount
+                })
                 .eq('fid', farcasterUser.fid);
              
              if (updateError) {
-                 console.error("Failed to update total_reward in DB:", updateError);
+                 console.error("Failed to update total_reward/quest_count in DB:", updateError);
                  // We continue, but log error. The onConfirm will handle other updates.
              }
         }
 
         // Pass closeModal=false because we might have more quests
         // Pass skipRewardUpdate=true because we handled it above
-        await onConfirm([targetResult], false, shouldUpdateTotalReward);
+        // Pass skipCountUpdate=true because we handled it above
+        await onConfirm([targetResult], false, shouldUpdateTotalReward, shouldUpdateTotalReward);
         
         // Update Status to Claimed
         setQuestStatuses(prev => ({ ...prev, [qId]: 'claimed' }));
