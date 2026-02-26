@@ -6,8 +6,8 @@ import { playClick } from '../../utils/sound';
 
 interface RecoveryViewProps {
   gameState: GameState;
-  onBuyPotion: () => void;
-  onBuyElixir: () => void;
+  onBuyPotion: (amount: number) => void;
+  onBuyElixir: (amount: number) => void;
   onPotion: (heroId: string) => void;
   onElixir: (heroId: string) => void;
   isSoundOn: boolean;
@@ -31,6 +31,8 @@ const RecoveryView: React.FC<RecoveryViewProps> = ({
   onChainBalance,
   onAccountClick
 }) => {
+  const [potionAmount, setPotionAmount] = React.useState(1);
+  const [elixirAmount, setElixirAmount] = React.useState(1);
   // Get list of heroes currently on quests
   const activeQuestHeroIds = gameState.activeQuests.flatMap(q => q.heroIds);
   
@@ -170,16 +172,29 @@ const RecoveryView: React.FC<RecoveryViewProps> = ({
                     <div className="text-2xl mb-1">🩹</div>
                     <div className="text-[10px] font-bold text-slate-300 mb-1">ポーション (+10 HP)</div>
                     <div className="text-xs font-black text-emerald-400 mb-2">所持: {gameState.items.item01}</div>
+                    
+                    <div className="flex items-center gap-2 mb-2 w-full justify-center">
+                        <button 
+                            onClick={() => { playClick(); setPotionAmount(Math.max(1, potionAmount - 1)); }}
+                            className="w-6 h-6 rounded bg-slate-800 text-slate-400 hover:text-white hover:bg-slate-700 flex items-center justify-center font-bold"
+                        >-</button>
+                        <span className="text-sm font-bold w-6 text-center">{potionAmount}</span>
+                        <button 
+                            onClick={() => { playClick(); setPotionAmount(Math.min(99, potionAmount + 1)); }}
+                            className="w-6 h-6 rounded bg-slate-800 text-slate-400 hover:text-white hover:bg-slate-700 flex items-center justify-center font-bold"
+                        >+</button>
+                    </div>
+
                     <button 
-                        onClick={() => { playClick(); onBuyPotion(); }}
-                        disabled={gameState.tokens < 100}
+                        onClick={() => { playClick(); onBuyPotion(potionAmount); }}
+                        disabled={gameState.tokens < 100 * potionAmount}
                         className={`w-full py-2 rounded-lg text-[10px] font-bold transition-all ${
-                            gameState.tokens >= 100 
+                            gameState.tokens >= 100 * potionAmount
                             ? 'bg-slate-700 hover:bg-slate-600 text-white border border-slate-600' 
                             : 'bg-slate-800 text-slate-500 border border-slate-700 cursor-not-allowed'
                         }`}
                     >
-                        購入 (100 $CHH)
+                        購入 ({(100 * potionAmount).toLocaleString()} $CHH)
                     </button>
                 </div>
                 {/* Elixir */}
@@ -187,16 +202,29 @@ const RecoveryView: React.FC<RecoveryViewProps> = ({
                     <div className="text-2xl mb-1">🧪</div>
                     <div className="text-[10px] font-bold text-slate-300 mb-1">エリクサー (全回復)</div>
                     <div className="text-xs font-black text-indigo-400 mb-2">所持: {gameState.items.item02}</div>
+                    
+                    <div className="flex items-center gap-2 mb-2 w-full justify-center">
+                        <button 
+                            onClick={() => { playClick(); setElixirAmount(Math.max(1, elixirAmount - 1)); }}
+                            className="w-6 h-6 rounded bg-slate-800 text-slate-400 hover:text-white hover:bg-slate-700 flex items-center justify-center font-bold"
+                        >-</button>
+                        <span className="text-sm font-bold w-6 text-center">{elixirAmount}</span>
+                        <button 
+                            onClick={() => { playClick(); setElixirAmount(Math.min(99, elixirAmount + 1)); }}
+                            className="w-6 h-6 rounded bg-slate-800 text-slate-400 hover:text-white hover:bg-slate-700 flex items-center justify-center font-bold"
+                        >+</button>
+                    </div>
+
                     <button 
-                        onClick={() => { playClick(); onBuyElixir(); }}
-                        disabled={gameState.tokens < 500}
+                        onClick={() => { playClick(); onBuyElixir(elixirAmount); }}
+                        disabled={gameState.tokens < 500 * elixirAmount}
                         className={`w-full py-2 rounded-lg text-[10px] font-bold transition-all ${
-                            gameState.tokens >= 500 
+                            gameState.tokens >= 500 * elixirAmount
                             ? 'bg-indigo-900/60 hover:bg-indigo-800/80 text-indigo-200 border border-indigo-500/50' 
                             : 'bg-slate-800 text-slate-500 border border-slate-700 cursor-not-allowed'
                         }`}
                     >
-                        購入 (500 $CHH)
+                        購入 ({(500 * elixirAmount).toLocaleString()} $CHH)
                     </button>
                 </div>
             </div>

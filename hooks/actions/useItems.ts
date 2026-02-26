@@ -27,8 +27,8 @@ export const useItems = ({ gameState, setGameState, showNotification, farcasterU
     }).eq('player_hid', parseInt(heroId));
   };
 
-  const buyPotion = async () => {
-    const cost = 100;
+  const buyPotion = async (amount: number = 1) => {
+    const cost = 100 * amount;
     if (gameState.tokens < cost) {
       playError();
       showNotification(`トークンが足りません！ (必要: ${cost.toLocaleString()} $CHH)`, 'error');
@@ -39,22 +39,22 @@ export const useItems = ({ gameState, setGameState, showNotification, farcasterU
     setGameState(prev => ({
       ...prev,
       tokens: prev.tokens - cost,
-      items: { ...prev.items, item01: prev.items.item01 + 1 }
+      items: { ...prev.items, item01: prev.items.item01 + amount }
     }));
 
     if (farcasterUser?.fid) {
       const { data: currentStats } = await supabase.from('quest_player_stats').select('item01').eq('fid', farcasterUser.fid).single();
       await supabase.from('quest_player_stats')
-          .update({ item01: (currentStats?.item01 || 0) + 1 })
+          .update({ item01: (currentStats?.item01 || 0) + amount })
           .eq('fid', farcasterUser.fid);
     }
     
     refetchBalance();
-    showNotification('ポーションを購入しました', 'success');
+    showNotification(`ポーションを${amount}個購入しました`, 'success');
   };
 
-  const buyElixir = async () => {
-    const cost = 500;
+  const buyElixir = async (amount: number = 1) => {
+    const cost = 500 * amount;
     if (gameState.tokens < cost) {
       playError();
       showNotification(`トークンが足りません！ (必要: ${cost.toLocaleString()} $CHH)`, 'error');
@@ -65,18 +65,18 @@ export const useItems = ({ gameState, setGameState, showNotification, farcasterU
     setGameState(prev => ({
       ...prev,
       tokens: prev.tokens - cost,
-      items: { ...prev.items, item02: prev.items.item02 + 1 }
+      items: { ...prev.items, item02: prev.items.item02 + amount }
     }));
 
     if (farcasterUser?.fid) {
       const { data: currentStats } = await supabase.from('quest_player_stats').select('item02').eq('fid', farcasterUser.fid).single();
       await supabase.from('quest_player_stats')
-          .update({ item02: (currentStats?.item02 || 0) + 1 })
+          .update({ item02: (currentStats?.item02 || 0) + amount })
           .eq('fid', farcasterUser.fid);
     }
     
     refetchBalance();
-    showNotification('エリクサーを購入しました', 'success');
+    showNotification(`エリクサーを${amount}個購入しました`, 'success');
   };
 
   const usePotion = async (heroId: string) => {
