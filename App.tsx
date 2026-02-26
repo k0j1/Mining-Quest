@@ -286,8 +286,7 @@ const App: React.FC = () => {
         return (
           <RecoveryView 
             gameState={gameState} 
-            onBuyPotion={actions.buyPotion}
-            onBuyElixir={actions.buyElixir}
+            onBuyItems={actions.buyItems}
             onPotion={actions.usePotion}
             onElixir={actions.useElixir}
             {...commonProps}

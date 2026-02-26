@@ -341,7 +341,7 @@ export const useGameLogic = () => {
   });
 
   // Item Logic
-  const { buyPotion, buyElixir, usePotion, useElixir, mergeEquipment } = useItems({
+  const { buyPotion, buyElixir, buyItems, usePotion, useElixir, mergeEquipment } = useItems({
     gameState, setGameState, showNotification, farcasterUser, refetchBalance
   });
 
@@ -377,6 +377,7 @@ export const useGameLogic = () => {
       swapPartyPositions, 
       buyPotion,
       buyElixir,
+      buyItems,
       usePotion, 
       useElixir,
       mergeEquipment,

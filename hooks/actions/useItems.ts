@@ -79,6 +79,46 @@ export const useItems = ({ gameState, setGameState, showNotification, farcasterU
     showNotification(`エリクサーを${amount}個購入しました`, 'success');
   };
 
+  const buyItems = async (potionAmount: number, elixirAmount: number) => {
+    const totalCost = (100 * potionAmount) + (500 * elixirAmount);
+    
+    if (totalCost === 0) return;
+
+    if (gameState.tokens < totalCost) {
+      playError();
+      showNotification(`トークンが足りません！ (必要: ${totalCost.toLocaleString()} $CHH)`, 'error');
+      return;
+    }
+
+    playConfirm();
+    setGameState(prev => ({
+      ...prev,
+      tokens: prev.tokens - totalCost,
+      items: { 
+          ...prev.items, 
+          item01: prev.items.item01 + potionAmount,
+          item02: prev.items.item02 + elixirAmount
+      }
+    }));
+
+    if (farcasterUser?.fid) {
+      const { data: currentStats } = await supabase.from('quest_player_stats').select('item01, item02').eq('fid', farcasterUser.fid).single();
+      await supabase.from('quest_player_stats')
+          .update({ 
+              item01: (currentStats?.item01 || 0) + potionAmount,
+              item02: (currentStats?.item02 || 0) + elixirAmount
+          })
+          .eq('fid', farcasterUser.fid);
+    }
+    
+    refetchBalance();
+    
+    let msg = [];
+    if (potionAmount > 0) msg.push(`ポーションx${potionAmount}`);
+    if (elixirAmount > 0) msg.push(`エリクサーx${elixirAmount}`);
+    showNotification(`${msg.join('、')}を購入しました`, 'success');
+  };
+
   const usePotion = async (heroId: string) => {
     if (gameState.items.item01 <= 0) {
       playError();
@@ -218,5 +258,5 @@ export const useItems = ({ gameState, setGameState, showNotification, farcasterU
     }
   };
 
-  return { buyPotion, buyElixir, usePotion, useElixir, mergeEquipment };
+  return { buyPotion, buyElixir, buyItems, usePotion, useElixir, mergeEquipment };
 };

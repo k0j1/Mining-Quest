@@ -6,8 +6,7 @@ import { playClick } from '../../utils/sound';
 
 interface RecoveryViewProps {
   gameState: GameState;
-  onBuyPotion: (amount: number) => void;
-  onBuyElixir: (amount: number) => void;
+  onBuyItems: (potionAmount: number, elixirAmount: number) => void;
   onPotion: (heroId: string) => void;
   onElixir: (heroId: string) => void;
   isSoundOn: boolean;
@@ -20,8 +19,7 @@ interface RecoveryViewProps {
 
 const RecoveryView: React.FC<RecoveryViewProps> = ({ 
   gameState, 
-  onBuyPotion,
-  onBuyElixir,
+  onBuyItems,
   onPotion, 
   onElixir, 
   isSoundOn, 
@@ -31,8 +29,8 @@ const RecoveryView: React.FC<RecoveryViewProps> = ({
   onChainBalance,
   onAccountClick
 }) => {
-  const [potionAmount, setPotionAmount] = React.useState(1);
-  const [elixirAmount, setElixirAmount] = React.useState(1);
+  const [potionAmount, setPotionAmount] = React.useState(0);
+  const [elixirAmount, setElixirAmount] = React.useState(0);
   // Get list of heroes currently on quests
   const activeQuestHeroIds = gameState.activeQuests.flatMap(q => q.heroIds);
   
@@ -52,6 +50,9 @@ const RecoveryView: React.FC<RecoveryViewProps> = ({
   const unassignedHeroes = gameState.heroes
     .filter(h => !allAssignedHeroIds.includes(h.id))
     .sort((a, b) => a.hp - b.hp);
+
+  const totalCost = (potionAmount * 100) + (elixirAmount * 500);
+  const canBuy = totalCost > 0 && gameState.tokens >= totalCost;
 
   // Render Helper for Hero Card
   const renderHeroCard = (hero: Hero) => {
@@ -121,7 +122,7 @@ const RecoveryView: React.FC<RecoveryViewProps> = ({
                     }`}
                     title="Potion (+10 HP)"
                   >
-                      <span className="text-xs leading-none">🩹</span>
+                      <span className="text-xs leading-none">⚗️</span>
                       <span className={`text-[8px] font-bold leading-tight ${hasPotion ? 'text-slate-300' : 'text-rose-500'}`}>USE</span>
                   </button>
                   
@@ -166,16 +167,17 @@ const RecoveryView: React.FC<RecoveryViewProps> = ({
                 <span className="w-1.5 h-4 bg-emerald-500 rounded-full"></span>
                 <h2 className="text-xs font-bold text-slate-300 uppercase tracking-widest">Shop & Inventory</h2>
             </div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 gap-3 mb-3">
                 {/* Potion */}
                 <div className="bg-slate-900/80 rounded-xl p-3 border border-slate-700 flex flex-col items-center">
-                    <div className="text-2xl mb-1">🩹</div>
+                    <div className="text-2xl mb-1">⚗️</div>
                     <div className="text-[10px] font-bold text-slate-300 mb-1">ポーション (+10 HP)</div>
+                    <div className="text-[10px] text-slate-400 mb-2">100 $CHH</div>
                     <div className="text-xs font-black text-emerald-400 mb-2">所持: {gameState.items.item01}</div>
                     
-                    <div className="flex items-center gap-2 mb-2 w-full justify-center">
+                    <div className="flex items-center gap-2 w-full justify-center">
                         <button 
-                            onClick={() => { playClick(); setPotionAmount(Math.max(1, potionAmount - 1)); }}
+                            onClick={() => { playClick(); setPotionAmount(Math.max(0, potionAmount - 1)); }}
                             className="w-6 h-6 rounded bg-slate-800 text-slate-400 hover:text-white hover:bg-slate-700 flex items-center justify-center font-bold"
                         >-</button>
                         <span className="text-sm font-bold w-6 text-center">{potionAmount}</span>
@@ -184,28 +186,17 @@ const RecoveryView: React.FC<RecoveryViewProps> = ({
                             className="w-6 h-6 rounded bg-slate-800 text-slate-400 hover:text-white hover:bg-slate-700 flex items-center justify-center font-bold"
                         >+</button>
                     </div>
-
-                    <button 
-                        onClick={() => { playClick(); onBuyPotion(potionAmount); }}
-                        disabled={gameState.tokens < 100 * potionAmount}
-                        className={`w-full py-2 rounded-lg text-[10px] font-bold transition-all ${
-                            gameState.tokens >= 100 * potionAmount
-                            ? 'bg-slate-700 hover:bg-slate-600 text-white border border-slate-600' 
-                            : 'bg-slate-800 text-slate-500 border border-slate-700 cursor-not-allowed'
-                        }`}
-                    >
-                        購入 ({(100 * potionAmount).toLocaleString()} $CHH)
-                    </button>
                 </div>
                 {/* Elixir */}
                 <div className="bg-slate-900/80 rounded-xl p-3 border border-slate-700 flex flex-col items-center">
                     <div className="text-2xl mb-1">🧪</div>
                     <div className="text-[10px] font-bold text-slate-300 mb-1">エリクサー (全回復)</div>
+                    <div className="text-[10px] text-slate-400 mb-2">500 $CHH</div>
                     <div className="text-xs font-black text-indigo-400 mb-2">所持: {gameState.items.item02}</div>
                     
-                    <div className="flex items-center gap-2 mb-2 w-full justify-center">
+                    <div className="flex items-center gap-2 w-full justify-center">
                         <button 
-                            onClick={() => { playClick(); setElixirAmount(Math.max(1, elixirAmount - 1)); }}
+                            onClick={() => { playClick(); setElixirAmount(Math.max(0, elixirAmount - 1)); }}
                             className="w-6 h-6 rounded bg-slate-800 text-slate-400 hover:text-white hover:bg-slate-700 flex items-center justify-center font-bold"
                         >-</button>
                         <span className="text-sm font-bold w-6 text-center">{elixirAmount}</span>
@@ -214,20 +205,25 @@ const RecoveryView: React.FC<RecoveryViewProps> = ({
                             className="w-6 h-6 rounded bg-slate-800 text-slate-400 hover:text-white hover:bg-slate-700 flex items-center justify-center font-bold"
                         >+</button>
                     </div>
-
-                    <button 
-                        onClick={() => { playClick(); onBuyElixir(elixirAmount); }}
-                        disabled={gameState.tokens < 500 * elixirAmount}
-                        className={`w-full py-2 rounded-lg text-[10px] font-bold transition-all ${
-                            gameState.tokens >= 500 * elixirAmount
-                            ? 'bg-indigo-900/60 hover:bg-indigo-800/80 text-indigo-200 border border-indigo-500/50' 
-                            : 'bg-slate-800 text-slate-500 border border-slate-700 cursor-not-allowed'
-                        }`}
-                    >
-                        購入 ({(500 * elixirAmount).toLocaleString()} $CHH)
-                    </button>
                 </div>
             </div>
+            
+            <button 
+                onClick={() => { 
+                    playClick(); 
+                    onBuyItems(potionAmount, elixirAmount); 
+                    setPotionAmount(0);
+                    setElixirAmount(0);
+                }}
+                disabled={!canBuy}
+                className={`w-full py-3 rounded-xl text-sm font-bold transition-all shadow-lg border-b-4 ${
+                    canBuy
+                    ? 'bg-emerald-600 hover:bg-emerald-500 text-white border-emerald-800' 
+                    : 'bg-slate-800 text-slate-500 border-slate-900 cursor-not-allowed'
+                }`}
+            >
+                {totalCost > 0 ? `まとめて購入 (${totalCost.toLocaleString()} $CHH)` : '購入するアイテムを選択'}
+            </button>
           </div>
 
           {/* Section: Party Groups */}
