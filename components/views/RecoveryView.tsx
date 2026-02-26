@@ -3,6 +3,7 @@ import React from 'react';
 import { GameState, Hero } from '../../types';
 import Header from '../Header';
 import { playClick } from '../../utils/sound';
+import { FlaskConical, TestTube } from 'lucide-react';
 
 interface RecoveryViewProps {
   gameState: GameState;
@@ -122,7 +123,7 @@ const RecoveryView: React.FC<RecoveryViewProps> = ({
                     }`}
                     title="Potion (+10 HP)"
                   >
-                      <span className="text-xs leading-none">⚗️</span>
+                      <span className="flex items-center justify-center h-4"><FlaskConical size={14} className="text-emerald-400" /></span>
                       <span className={`text-[8px] font-bold leading-tight ${hasPotion ? 'text-slate-300' : 'text-rose-500'}`}>USE</span>
                   </button>
                   
@@ -137,7 +138,7 @@ const RecoveryView: React.FC<RecoveryViewProps> = ({
                       }`}
                       title="Elixir (Full Heal)"
                   >
-                      <span className="text-xs leading-none">🧪</span>
+                      <span className="flex items-center justify-center h-4"><TestTube size={14} className="text-indigo-400" /></span>
                       <span className={`text-[8px] font-bold leading-tight ${hasElixir ? 'text-indigo-300' : 'text-rose-500'}`}>USE</span>
                   </button>
               </div>
@@ -170,7 +171,7 @@ const RecoveryView: React.FC<RecoveryViewProps> = ({
             <div className="grid grid-cols-2 gap-3 mb-3">
                 {/* Potion */}
                 <div className="bg-slate-900/80 rounded-xl p-3 border border-slate-700 flex flex-col items-center">
-                    <div className="text-2xl mb-1">⚗️</div>
+                    <div className="mb-1 flex items-center justify-center h-8"><FlaskConical size={24} className="text-emerald-400" /></div>
                     <div className="text-[10px] font-bold text-slate-300 mb-1">ポーション (+10 HP)</div>
                     <div className="text-[10px] text-slate-400 mb-2">100 $CHH</div>
                     <div className="text-xs font-black text-emerald-400 mb-2">所持: {gameState.items.item01}</div>
@@ -189,7 +190,7 @@ const RecoveryView: React.FC<RecoveryViewProps> = ({
                 </div>
                 {/* Elixir */}
                 <div className="bg-slate-900/80 rounded-xl p-3 border border-slate-700 flex flex-col items-center">
-                    <div className="text-2xl mb-1">🧪</div>
+                    <div className="mb-1 flex items-center justify-center h-8"><TestTube size={24} className="text-indigo-400" /></div>
                     <div className="text-[10px] font-bold text-slate-300 mb-1">エリクサー (全回復)</div>
                     <div className="text-[10px] text-slate-400 mb-2">500 $CHH</div>
                     <div className="text-xs font-black text-indigo-400 mb-2">所持: {gameState.items.item02}</div>
