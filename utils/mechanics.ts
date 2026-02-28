@@ -73,13 +73,15 @@ export const calculatePartyStats = (heroes: Hero[], allEquipment: Equipment[]): 
   const totalHp = activeHeroes.reduce((acc, h) => acc + h.hp, 0);
   const maxHp = activeHeroes.reduce((acc, h) => acc + h.maxHp, 0);
 
+  const round1 = (val: number) => parseFloat(val.toFixed(1));
+
   return {
-    totalRewardBonus: rewardEquip + rewardHero,
-    totalSpeedBonus: speedEquip + speedHero,
-    teamDamageReduction,
+    totalRewardBonus: round1(rewardEquip + rewardHero),
+    totalSpeedBonus: round1(speedEquip + speedHero),
+    teamDamageReduction: round1(teamDamageReduction),
     breakdown: {
-      reward: { hero: rewardHero, equip: rewardEquip },
-      speed: { hero: speedHero, equip: speedEquip }
+      reward: { hero: round1(rewardHero), equip: round1(rewardEquip) },
+      speed: { hero: round1(speedHero), equip: round1(speedEquip) }
     },
     totalHp,
     maxHp
@@ -106,7 +108,8 @@ export const calculateHeroDamageReduction = (
       selfSkillMitigation = (hero.skillDamage || 0);
   }
 
-  return helmetBonus + teamDamageReduction + selfSkillMitigation;
+  const totalMitigation = helmetBonus + teamDamageReduction + selfSkillMitigation;
+  return parseFloat(totalMitigation.toFixed(1));
 };
 
 /**
@@ -114,7 +117,7 @@ export const calculateHeroDamageReduction = (
  * Formula: Base + (Level * 0.1)
  */
 export const calculateEquipmentBonus = (baseBonus: number, level: number): number => {
-  return baseBonus + (level * 0.1);
+  return parseFloat((baseBonus + (level * 0.1)).toFixed(1));
 };
 
 /**
@@ -122,5 +125,5 @@ export const calculateEquipmentBonus = (baseBonus: number, level: number): numbe
  * Useful for displaying the base stat.
  */
 export const calculateEquipmentBaseBonus = (currentBonus: number, level: number): number => {
-  return currentBonus - (level * 0.1);
+  return parseFloat((currentBonus - (level * 0.1)).toFixed(1));
 };
