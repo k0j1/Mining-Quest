@@ -91,8 +91,8 @@ export const useQuest = ({ gameState, setGameState, showNotification, setReturnR
     const equipBonusMultiplier = pickaxeBonus / 100;
 
     // Initial Bonus Calculation
-    let totalBonusAmount = Math.floor(baseReward * totalBonusMultiplier);
-    let addEquipmentRewardOnly = Math.floor(baseReward * equipBonusMultiplier);
+    let totalBonusAmount = Math.ceil(baseReward * totalBonusMultiplier);
+    let addEquipmentRewardOnly = Math.ceil(baseReward * equipBonusMultiplier);
     let addHeroSkillRewardOnly = totalBonusAmount - addEquipmentRewardOnly;
 
     // Note: Cap logic removed. Total reward can exceed config.maxReward via bonuses.
