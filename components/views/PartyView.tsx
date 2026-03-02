@@ -363,7 +363,7 @@ const PartyView: React.FC<PartyViewProps> = ({
                         <div className="text-lg">⛏️</div>
                         <div>
                             <div className="text-[8px] text-slate-500 font-bold uppercase">Reward</div>
-                            <div className="text-xs font-black text-amber-500">+{partyStats.rewardBonus}%</div>
+                            <div className="text-xs font-black text-amber-500">{partyStats.rewardBonus > 0 ? '+' : ''}{partyStats.rewardBonus}%</div>
                         </div>
                         </div>
                     </div>
@@ -374,7 +374,7 @@ const PartyView: React.FC<PartyViewProps> = ({
                         <div className="text-lg">👢</div>
                         <div>
                             <div className="text-[8px] text-slate-500 font-bold uppercase">Speed</div>
-                            <div className="text-xs font-black text-emerald-400">+{partyStats.speedBonus}%</div>
+                            <div className="text-xs font-black text-emerald-400">{partyStats.speedBonus > 0 ? '+' : ''}{partyStats.speedBonus}%</div>
                         </div>
                         </div>
                     </div>

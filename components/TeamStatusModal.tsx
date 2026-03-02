@@ -63,18 +63,18 @@ const TeamStatusModal: React.FC<TeamStatusModalProps> = ({ stats, onClose }) => 
                         </div>
                         <div>
                             <div className="text-[10px] text-amber-500 font-bold uppercase tracking-wider">Reward Bonus</div>
-                            <div className="text-2xl font-black text-white">+{stats.rewardBonus}%</div>
+                            <div className="text-2xl font-black text-white">{stats.rewardBonus > 0 ? '+' : ''}{stats.rewardBonus}%</div>
                         </div>
                     </div>
                     
                     <div className="space-y-2 pt-2 border-t border-slate-700/50">
                         <div className="flex justify-between items-center text-xs">
                             <span className="text-slate-400">Hero Skills</span>
-                            <span className="font-bold text-amber-400">+{stats.rewardHero}%</span>
+                            <span className="font-bold text-amber-400">{stats.rewardHero > 0 ? '+' : ''}{stats.rewardHero}%</span>
                         </div>
                         <div className="flex justify-between items-center text-xs">
                             <span className="text-slate-400">Equipment</span>
-                            <span className="font-bold text-amber-400">+{stats.rewardEquip}%</span>
+                            <span className="font-bold text-amber-400">{stats.rewardEquip > 0 ? '+' : ''}{stats.rewardEquip}%</span>
                         </div>
                     </div>
                 </div>
@@ -87,18 +87,18 @@ const TeamStatusModal: React.FC<TeamStatusModalProps> = ({ stats, onClose }) => 
                         </div>
                         <div>
                             <div className="text-[10px] text-emerald-500 font-bold uppercase tracking-wider">Speed Boost</div>
-                            <div className="text-2xl font-black text-white">+{stats.speedBonus}%</div>
+                            <div className="text-2xl font-black text-white">{stats.speedBonus > 0 ? '+' : ''}{stats.speedBonus}%</div>
                         </div>
                     </div>
                     
                     <div className="space-y-2 pt-2 border-t border-slate-700/50">
                         <div className="flex justify-between items-center text-xs">
                             <span className="text-slate-400">Hero Skills</span>
-                            <span className="font-bold text-emerald-400">+{stats.speedHero}%</span>
+                            <span className="font-bold text-emerald-400">{stats.speedHero > 0 ? '+' : ''}{stats.speedHero}%</span>
                         </div>
                         <div className="flex justify-between items-center text-xs">
                             <span className="text-slate-400">Equipment</span>
-                            <span className="font-bold text-emerald-400">+{stats.speedEquip}%</span>
+                            <span className="font-bold text-emerald-400">{stats.speedEquip > 0 ? '+' : ''}{stats.speedEquip}%</span>
                         </div>
                     </div>
                 </div>
@@ -111,7 +111,7 @@ const TeamStatusModal: React.FC<TeamStatusModalProps> = ({ stats, onClose }) => 
                         </div>
                         <div>
                             <div className="text-[10px] text-indigo-400 font-bold uppercase tracking-wider">Team Defense</div>
-                            <div className="text-2xl font-black text-white">+{stats.teamDefBonus}%</div>
+                            <div className="text-2xl font-black text-white">{stats.teamDefBonus > 0 ? '+' : ''}{stats.teamDefBonus}%</div>
                         </div>
                     </div>
                     <p className="text-[9px] text-slate-500 mt-2 pl-1">
