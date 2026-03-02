@@ -226,9 +226,9 @@ const HeroCard: React.FC<HeroCardProps> = ({
                     HP {hero.hp}
                  </span>
 
-                 {totalDamageReduction > 0 ? (
-                    <span className="text-[7px] font-bold text-indigo-200 bg-indigo-900/80 px-1 py-0.5 rounded backdrop-blur-sm border border-indigo-500/30 whitespace-nowrap flex items-center">
-                        <span className="mr-0.5">🛡️</span>+{totalDamageReduction.toFixed(1)}%
+                 {totalDamageReduction !== 0 ? (
+                    <span className={`text-[7px] font-bold px-1 py-0.5 rounded backdrop-blur-sm border whitespace-nowrap flex items-center ${totalDamageReduction > 0 ? 'text-indigo-200 bg-indigo-900/80 border-indigo-500/30' : 'text-rose-200 bg-rose-900/80 border-rose-500/30'}`}>
+                        <span className="mr-0.5">🛡️</span>{totalDamageReduction > 0 ? '+' : ''}{totalDamageReduction.toFixed(1)}%
                     </span>
                  ) : <span></span>}
               </div>

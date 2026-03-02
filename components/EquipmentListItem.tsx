@@ -64,9 +64,9 @@ const EquipmentListItem: React.FC<EquipmentListItemProps> = ({
       </div>
       <div className={`${layout === 'grid' ? 'text-[9px]' : 'text-[10px]'} text-slate-400 flex items-center gap-1`}>
         <span className="truncate">
-          {item.type === 'Pickaxe' ? `Rew +${effectiveBonus.toFixed(1)}%` : 
-           item.type === 'Helmet' ? `Def +${effectiveBonus.toFixed(1)}%` : 
-           `Spd +${effectiveBonus.toFixed(1)}%`}
+          {item.type === 'Pickaxe' ? `Rew ${effectiveBonus >= 0 ? '+' : ''}${effectiveBonus.toFixed(1)}%` : 
+           item.type === 'Helmet' ? `Def ${effectiveBonus >= 0 ? '+' : ''}${effectiveBonus.toFixed(1)}%` : 
+           `Spd ${effectiveBonus >= 0 ? '+' : ''}${effectiveBonus.toFixed(1)}%`}
         </span>
          
         {level > 0 && layout === 'grid' && (

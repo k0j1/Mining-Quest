@@ -275,7 +275,7 @@ const ResultModal: React.FC<ResultModalProps> = ({ results, totalTokens, onClose
                       <p className="text-slate-400 text-xs font-bold uppercase tracking-widest mb-6">Mission Accomplished</p>
                       
                       <div className="text-4xl font-black text-amber-400 mb-8 drop-shadow-md bg-slate-800/50 py-4 px-6 rounded-2xl border border-amber-500/20 w-full">
-                          +{totalTokens.toLocaleString()} <span className="text-lg text-amber-500">$CHH</span>
+                          {totalTokens >= 0 ? '+' : ''}{totalTokens.toLocaleString()} <span className="text-lg text-amber-500">$CHH</span>
                       </div>
                       
                       {txHash && (
@@ -350,7 +350,7 @@ const ResultModal: React.FC<ResultModalProps> = ({ results, totalTokens, onClose
                     {isClaimed && <span className="text-emerald-500 font-bold text-xs">✅ CLAIMED</span>}
                     {isProcessing && <span className="text-amber-500 font-bold text-xs animate-pulse">⏳ PROCESSING...</span>}
                     {isError && <span className="text-red-500 font-bold text-xs">⚠️ ERROR</span>}
-                    <span className={`block font-bold ${isClaimed ? 'text-slate-500 line-through' : 'text-amber-500'}`}>+{res.totalReward} $CHH</span>
+                    <span className={`block font-bold ${isClaimed ? 'text-slate-500 line-through' : 'text-amber-500'}`}>{res.totalReward >= 0 ? '+' : ''}{res.totalReward} $CHH</span>
                   </div>
                 </div>
                 
@@ -360,13 +360,13 @@ const ResultModal: React.FC<ResultModalProps> = ({ results, totalTokens, onClose
                   <div className="text-right font-mono font-bold text-slate-300">{res.baseReward}</div>
                   
                   <div className="text-emerald-400 font-bold mt-1">ボーナス合計:</div>
-                  <div className="text-right font-mono text-emerald-400 font-bold mt-1">+{res.bonusReward}</div>
+                  <div className="text-right font-mono text-emerald-400 font-bold mt-1">{res.bonusReward >= 0 ? '+' : ''}{res.bonusReward}</div>
                   
                   <div className="text-[9px] pl-2 border-l border-slate-700 ml-1 text-slate-500">└ ヒーロー特性</div>
-                  <div className="text-[9px] text-right font-mono text-slate-500">+{res.heroBonus}</div>
+                  <div className="text-[9px] text-right font-mono text-slate-500">{res.heroBonus >= 0 ? '+' : ''}{res.heroBonus}</div>
                   
                   <div className="text-[9px] pl-2 border-l border-slate-700 ml-1 text-slate-500">└ 装備品効果</div>
-                  <div className="text-[9px] text-right font-mono text-slate-500">+{res.equipmentBonus}</div>
+                  <div className="text-[9px] text-right font-mono text-slate-500">{res.equipmentBonus >= 0 ? '+' : ''}{res.equipmentBonus}</div>
                 </div>
 
                 {/* Action Logs */}
@@ -389,7 +389,7 @@ const ResultModal: React.FC<ResultModalProps> = ({ results, totalTokens, onClose
         <div ref={totalRef} className="mt-6 pt-6 border-t border-slate-800 bg-slate-900 rounded-2xl p-6 text-center shadow-xl border border-slate-800 shrink-0">
           <p className="text-slate-500 text-xs font-bold mb-2 uppercase tracking-wide">Total Earnings</p>
           <div className="text-4xl font-black text-white mb-6">
-            +{totalTokens.toLocaleString()} <span className="text-lg text-amber-500">$CHH</span>
+            {totalTokens >= 0 ? '+' : ''}{totalTokens.toLocaleString()} <span className="text-lg text-amber-500">$CHH</span>
           </div>
 
           {/* Error Message Area */}

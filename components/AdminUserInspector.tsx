@@ -355,8 +355,8 @@ const AdminUserInspector: React.FC = () => {
                                    {stats && (
                                        <div className="flex gap-2 text-[9px] font-mono">
                                            <span className="text-emerald-400">HP {stats.totalHp}</span>
-                                           <span className="text-amber-500">Rew+{stats.rewardBonus}%</span>
-                                           <span className="text-blue-400">Spd+{stats.speedBonus}%</span>
+                                           <span className="text-amber-500">Rew{stats.rewardBonus >= 0 ? '+' : ''}{stats.rewardBonus}%</span>
+                                           <span className="text-blue-400">Spd{stats.speedBonus >= 0 ? '+' : ''}{stats.speedBonus}%</span>
                                        </div>
                                    )}
                                </div>
@@ -456,7 +456,7 @@ const AdminUserInspector: React.FC = () => {
                                         <div className="mt-1">
                                             <div className="flex items-center gap-2 text-[10px]">
                                                 <span className="font-bold text-indigo-400">Party {partyNo}</span>
-                                                <span className="text-amber-500 font-mono font-bold">💰+{totalReward}</span>
+                                                <span className="text-amber-500 font-mono font-bold">💰{totalReward >= 0 ? '+' : ''}{totalReward}</span>
                                             </div>
                                             
                                             {heroImpacts.length > 0 && (
@@ -509,7 +509,7 @@ const AdminUserInspector: React.FC = () => {
                                 <div key={q.id} className="bg-slate-900/50 border border-slate-800 p-2 rounded flex justify-between items-center text-[10px]">
                                     <div className="text-slate-300">{(q.quest_mining && q.quest_mining.name) || `Quest #${q.quest_id}`}</div>
                                     <div className="flex gap-3 text-slate-500 font-mono">
-                                        <span className="text-emerald-500 font-bold">+{q.reward} $CHH</span>
+                                        <span className="text-emerald-500 font-bold">{q.reward >= 0 ? '+' : ''}{q.reward} $CHH</span>
                                         <span>{new Date(q.archived_at || q.created_at || q.end_time || 0).toLocaleDateString()}</span>
                                     </div>
                                 </div>

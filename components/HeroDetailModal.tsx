@@ -154,7 +154,7 @@ const HeroDetailModal: React.FC<HeroDetailModalProps> = ({ hero, equipment, onCl
                             {pickaxe ? (
                                 <>
                                     <span className="text-[8px] text-white font-bold truncate w-full relative z-10">{pickaxe.name}</span>
-                                    <span className="text-[7px] text-amber-400 font-bold relative z-10">+{pickaxe.bonus.toFixed(1)}%</span>
+                                    <span className="text-[7px] text-amber-400 font-bold relative z-10">{pickaxe.bonus >= 0 ? '+' : ''}{pickaxe.bonus.toFixed(1)}%</span>
                                 </>
                             ) : <span className="text-[8px] text-slate-600 relative z-10">None</span>}
                         </div>
@@ -178,7 +178,7 @@ const HeroDetailModal: React.FC<HeroDetailModalProps> = ({ hero, equipment, onCl
                             {helmet ? (
                                 <>
                                     <span className="text-[8px] text-white font-bold truncate w-full relative z-10">{helmet.name}</span>
-                                    <span className="text-[7px] text-emerald-400 font-bold relative z-10">+{helmet.bonus.toFixed(1)}%</span>
+                                    <span className="text-[7px] text-emerald-400 font-bold relative z-10">{helmet.bonus >= 0 ? '+' : ''}{helmet.bonus.toFixed(1)}%</span>
                                 </>
                             ) : <span className="text-[8px] text-slate-600 relative z-10">None</span>}
                         </div>
@@ -202,7 +202,7 @@ const HeroDetailModal: React.FC<HeroDetailModalProps> = ({ hero, equipment, onCl
                             {boots ? (
                                 <>
                                     <span className="text-[8px] text-white font-bold truncate w-full relative z-10">{boots.name}</span>
-                                    <span className="text-[7px] text-blue-400 font-bold relative z-10">+{boots.bonus.toFixed(1)}%</span>
+                                    <span className="text-[7px] text-blue-400 font-bold relative z-10">{boots.bonus >= 0 ? '+' : ''}{boots.bonus.toFixed(1)}%</span>
                                 </>
                             ) : <span className="text-[8px] text-slate-600 relative z-10">None</span>}
                         </div>
