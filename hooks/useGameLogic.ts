@@ -181,10 +181,10 @@ export const useGameLogic = () => {
               h.boots_player_eid ? h.boots_player_eid.toString() : ''
             ],
             // Map New Skill Columns
-            skillQuest: base.skill_quest || 0,
-            skillDamage: base.skill_damage || 0,
-            skillTime: base.skill_time || 0,
-            skillType: base.skill_type || 0
+            skillQuest: base.skill_quest ?? 0,
+            skillDamage: base.skill_damage ?? 0,
+            skillTime: base.skill_time ?? 0,
+            skillType: base.skill_type ?? 0
           });
           return acc;
         }, []);

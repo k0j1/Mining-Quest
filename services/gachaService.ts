@@ -63,10 +63,10 @@ export const rollGachaItem = async (type: 'Hero' | 'Equipment', forceRarity?: Qu
             damageReduction: drMap[result.rarity] || 0,
             hp: result.hp,
             imageUrl: getHeroImageUrl(result.name, 's'),
-            skillQuest: result.skill_quest || 0,
-            skillDamage: result.skill_damage || 0,
-            skillTime: result.skill_time || 0,
-            skillType: result.skill_type || 0,
+            skillQuest: result.skill_quest ?? 0,
+            skillDamage: result.skill_damage ?? 0,
+            skillTime: result.skill_time ?? 0,
+            skillType: result.skill_type ?? 0,
             isPersisted: true // Flag to indicate this doesn't need client-side insert
         };
     }
@@ -93,10 +93,10 @@ export const rollGachaItem = async (type: 'Hero' | 'Equipment', forceRarity?: Qu
       damageReduction: drMap[selectedHero.rarity] || 0,
       hp: selectedHero.hp,
       imageUrl: getHeroImageUrl(selectedHero.name, 's'),
-      skillQuest: selectedHero.skill_quest || 0,
-      skillDamage: selectedHero.skill_damage || 0,
-      skillTime: selectedHero.skill_time || 0,
-      skillType: selectedHero.skill_type || 0,
+      skillQuest: selectedHero.skill_quest ?? 0,
+      skillDamage: selectedHero.skill_damage ?? 0,
+      skillTime: selectedHero.skill_time ?? 0,
+      skillType: selectedHero.skill_type ?? 0,
       isPersisted: false
     };
   }

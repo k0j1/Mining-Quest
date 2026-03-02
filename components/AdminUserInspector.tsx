@@ -219,17 +219,20 @@ const AdminUserInspector: React.FC = () => {
         // Skill Bonus
         const master = h.quest_hero;
         if (master) {
-            rewardBonus += master.skill_quest || 0;
-            speedBonus += master.skill_time || 0;
-            
-            // Regex fallback
-            if (!master.skill_quest && master.ability) {
-               const m = master.ability.match(/報酬\s*\+(\d+)%/);
-               if (m) rewardBonus += parseInt(m[1]);
+            if (master.skill_quest !== undefined && master.skill_quest !== null) {
+                rewardBonus += master.skill_quest;
+            } else if (master.ability) {
+                // Regex fallback
+                const m = master.ability.match(/報酬\s*([+-]?\d+)%/);
+                if (m) rewardBonus += parseInt(m[1]);
             }
-            if (!master.skill_time && master.ability) {
-               const m = master.ability.match(/速度\s*\+(\d+)%/);
-               if (m) speedBonus += parseInt(m[1]);
+
+            if (master.skill_time !== undefined && master.skill_time !== null) {
+                speedBonus += master.skill_time;
+            } else if (master.ability) {
+                // Regex fallback
+                const m = master.ability.match(/速度\s*([+-]?\d+)%/);
+                if (m) speedBonus += parseInt(m[1]);
             }
         }
 

@@ -28,12 +28,12 @@ export const calculatePartyStats = (heroes: Hero[], allEquipment: Equipment[]): 
 
   const rewardHero = activeHeroes.reduce((acc, h) => {
     let bonus = 0;
-    if (h.skillQuest && h.skillQuest > 0) {
+    if (h.skillQuest !== undefined && h.skillQuest !== null) {
       if (isSkillActive(h)) bonus = h.skillQuest;
     } else {
       // Legacy Regex Fallback
       if (isSkillActive(h) && h.trait) {
-        const match = h.trait.match(/クエスト報酬\s*\+(\d+)%/);
+        const match = h.trait.match(/クエスト報酬\s*([+-]?\d+)%/);
         bonus = match ? parseInt(match[1]) : 0;
       }
     }
@@ -48,11 +48,12 @@ export const calculatePartyStats = (heroes: Hero[], allEquipment: Equipment[]): 
 
   const speedHero = activeHeroes.reduce((acc, h) => {
     let bonus = 0;
-    if (isSkillActive(h)) {
-      bonus = h.skillTime || 0;
+    if (h.skillTime !== undefined && h.skillTime !== null) {
+      if (isSkillActive(h)) bonus = h.skillTime;
+    } else {
       // Legacy Regex Fallback
-      if (bonus === 0 && h.trait) {
-        const match = h.trait.match(/採掘速度\s*\+(\d+)%/);
+      if (isSkillActive(h) && h.trait) {
+        const match = h.trait.match(/採掘速度\s*([+-]?\d+)%/);
         if (match) bonus = parseInt(match[1]);
       }
     }
@@ -64,8 +65,8 @@ export const calculatePartyStats = (heroes: Hero[], allEquipment: Equipment[]): 
   // but skills often apply to team.
   let teamDamageReduction = 0;
   activeHeroes.forEach(h => {
-    if (isSkillActive(h) && (h.skillType || 0) % 10 === 1) {
-      teamDamageReduction += (h.skillDamage || 0);
+    if (isSkillActive(h) && (h.skillType ?? 0) % 10 === 1) {
+      teamDamageReduction += (h.skillDamage ?? 0);
     }
   });
 
@@ -104,8 +105,8 @@ export const calculateHeroDamageReduction = (
   // Check if skill is active and is a self-defensive skill (usually not team type)
   // Logic derived from useQuest: (h.skillType || 0) % 10 !== 1 means Self?
   let selfSkillMitigation = 0;
-  if (isSkillActive(hero) && (hero.skillType || 0) % 10 !== 1) {
-      selfSkillMitigation = (hero.skillDamage || 0);
+  if (isSkillActive(hero) && (hero.skillType ?? 0) % 10 !== 1) {
+      selfSkillMitigation = (hero.skillDamage ?? 0);
   }
 
   const totalMitigation = helmetBonus + teamDamageReduction + selfSkillMitigation;
