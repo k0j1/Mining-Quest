@@ -3,6 +3,36 @@ import { Dispatch, SetStateAction } from 'react';
 import { GameState } from '../../types';
 import { playConfirm, playError } from '../../utils/sound';
 import { supabase } from '../../lib/supabase';
+import { sdk } from '@farcaster/frame-sdk';
+import { encodeFunctionData, createWalletClient, custom, createPublicClient, http } from 'viem';
+import { base } from 'viem/chains';
+import { ITEM_SHOP_CONTRACT_ADDRESS, CHH_CONTRACT_ADDRESS } from '../../constants';
+
+const ITEM_SHOP_ABI = [
+  {
+    "inputs": [
+      { "internalType": "uint256", "name": "potionAmount", "type": "uint256" },
+      { "internalType": "uint256", "name": "elixirAmount", "type": "uint256" }
+    ],
+    "name": "buyItems",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  }
+];
+
+const ERC20_ABI = [
+  {
+    "inputs": [
+      { "internalType": "address", "name": "spender", "type": "address" },
+      { "internalType": "uint256", "name": "amount", "type": "uint256" }
+    ],
+    "name": "approve",
+    "outputs": [{ "internalType": "bool", "name": "", "type": "bool" }],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  }
+];
 
 interface UseItemsProps {
   gameState: GameState;
@@ -90,33 +120,102 @@ export const useItems = ({ gameState, setGameState, showNotification, farcasterU
       return;
     }
 
-    playConfirm();
-    setGameState(prev => ({
-      ...prev,
-      tokens: prev.tokens - totalCost,
-      items: { 
-          ...prev.items, 
-          item01: prev.items.item01 + potionAmount,
-          item02: prev.items.item02 + elixirAmount
-      }
-    }));
+    try {
+      // 1. スマートコントラクトの呼び出し (オンチェーン決済)
+      const walletClient = createWalletClient({
+        chain: base,
+        transport: custom(sdk.wallet.ethProvider)
+      });
 
-    if (farcasterUser?.fid) {
-      const { data: currentStats } = await supabase.from('quest_player_stats').select('item01, item02').eq('fid', farcasterUser.fid).single();
-      await supabase.from('quest_player_stats')
-          .update({ 
-              item01: (currentStats?.item01 || 0) + potionAmount,
-              item02: (currentStats?.item02 || 0) + elixirAmount
-          })
-          .eq('fid', farcasterUser.fid);
+      const publicClient = createPublicClient({
+        chain: base,
+        transport: http()
+      });
+
+      const [account] = await walletClient.requestAddresses();
+      if (!account) {
+        showNotification("ウォレットが接続されていません", 'error');
+        return;
+      }
+
+      // 1.1 Approve CHH Tokens
+      const approveData = encodeFunctionData({
+        abi: ERC20_ABI,
+        functionName: 'approve',
+        args: [ITEM_SHOP_CONTRACT_ADDRESS as `0x${string}`, BigInt(totalCost) * 10n**18n] // Assuming 18 decimals
+      });
+
+      showNotification("トークンの使用を承認しています...", 'success');
+      const approveTxHash = await walletClient.sendTransaction({
+        account,
+        to: CHH_CONTRACT_ADDRESS as `0x${string}`,
+        data: approveData,
+        value: 0n,
+      });
+
+      if (!approveTxHash) {
+         showNotification("Approveがキャンセルされました", 'error');
+         return;
+      }
+
+      await publicClient.waitForTransactionReceipt({ hash: approveTxHash });
+
+      // 1.2 Buy Items
+      const buyData = encodeFunctionData({
+        abi: ITEM_SHOP_ABI,
+        functionName: 'buyItems',
+        args: [BigInt(potionAmount), BigInt(elixirAmount)]
+      });
+
+      showNotification("アイテムを購入しています...", 'success');
+      const txHash = await walletClient.sendTransaction({
+        account,
+        to: ITEM_SHOP_CONTRACT_ADDRESS as `0x${string}`,
+        data: buyData,
+        value: 0n,
+      });
+
+      if (!txHash) {
+         showNotification("トランザクションがキャンセルされました", 'error');
+         return;
+      }
+
+      await publicClient.waitForTransactionReceipt({ hash: txHash });
+
+      // 2. トランザクション成功後、オフチェーンのステータスを更新 (バックエンド対応)
+      playConfirm();
+      setGameState(prev => ({
+        ...prev,
+        tokens: prev.tokens - totalCost,
+        items: { 
+            ...prev.items, 
+            item01: prev.items.item01 + potionAmount,
+            item02: prev.items.item02 + elixirAmount
+        }
+      }));
+
+      if (farcasterUser?.fid) {
+        const { data: currentStats } = await supabase.from('quest_player_stats').select('item01, item02').eq('fid', farcasterUser.fid).single();
+        await supabase.from('quest_player_stats')
+            .update({ 
+                item01: (currentStats?.item01 || 0) + potionAmount,
+                item02: (currentStats?.item02 || 0) + elixirAmount
+            })
+            .eq('fid', farcasterUser.fid);
+      }
+      
+      refetchBalance();
+      
+      let msg = [];
+      if (potionAmount > 0) msg.push(`ポーションx${potionAmount}`);
+      if (elixirAmount > 0) msg.push(`エリクサーx${elixirAmount}`);
+      showNotification(`${msg.join('、')}を購入しました`, 'success');
+
+    } catch (error) {
+      console.error("Transaction failed:", error);
+      playError();
+      showNotification("トランザクションに失敗しました", 'error');
     }
-    
-    refetchBalance();
-    
-    let msg = [];
-    if (potionAmount > 0) msg.push(`ポーションx${potionAmount}`);
-    if (elixirAmount > 0) msg.push(`エリクサーx${elixirAmount}`);
-    showNotification(`${msg.join('、')}を購入しました`, 'success');
   };
 
   const usePotion = async (heroId: string) => {

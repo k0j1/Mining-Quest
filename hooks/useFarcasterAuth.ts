@@ -2,8 +2,8 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { sdk } from '@farcaster/frame-sdk';
 import { supabase } from '../lib/supabase';
+import { CHH_CONTRACT_ADDRESS } from '../constants';
 
-const CHH_CONTRACT_ADDRESS = '0xb0525542E3D818460546332e76E511562dFf9B07';
 const BASE_RPC_URL = 'https://mainnet.base.org';
 
 export const useFarcasterAuth = (setNotification: (msg: string, type: 'error' | 'success') => void) => {

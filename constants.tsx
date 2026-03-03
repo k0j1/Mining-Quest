@@ -8,7 +8,11 @@ import { getHeroImageUrl } from './utils/heroUtils';
 export const IS_TEST_MODE = true;
 
 // App Version
-export const APP_VERSION = '0.2.26';
+export const APP_VERSION = '0.2.28';
+
+// Item Shop Contract (Base Sepolia / Base Mainnet)
+export const ITEM_SHOP_CONTRACT_ADDRESS = "0x29521909C3b09Bd7861fAD32A49d12414C296c5A"; // TODO: Replace with actual deployed address
+export const CHH_CONTRACT_ADDRESS = '0xb0525542E3D818460546332e76E511562dFf9B07';
 
 // Equipment Stats Configuration
 export const EQUIPMENT_STATS = {
