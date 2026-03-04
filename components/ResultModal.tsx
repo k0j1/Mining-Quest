@@ -396,8 +396,8 @@ const ResultModal: React.FC<ResultModalProps> = ({ results, totalTokens, onClose
 
           {/* Error Message Area */}
           {errorMsg && (
-            <div className="mb-4 bg-red-900/20 border border-red-500/50 p-3 rounded-lg text-left overflow-auto max-h-80 select-text relative">
-                <div className="flex justify-between items-center mb-2 sticky top-0 -mt-3 -mx-3 p-2 bg-red-950/80 backdrop-blur-sm border-b border-red-500/30">
+            <div className="mb-4 bg-red-900/20 border border-red-500/50 rounded-lg text-left overflow-hidden flex flex-col max-h-80 select-text">
+                <div className="flex justify-between items-center p-2 px-3 bg-red-950/80 backdrop-blur-sm border-b border-red-500/30 shrink-0">
                     <p className="text-red-400 text-xs font-bold">{t('result.claim_error')}</p>
                     <button 
                         onClick={() => { 
@@ -410,7 +410,9 @@ const ResultModal: React.FC<ResultModalProps> = ({ results, totalTokens, onClose
                         {copyFeedback ? t('result.copied') : t('result.copy')}
                     </button>
                 </div>
-                <p className="text-red-300 text-xs font-mono whitespace-pre-wrap break-all cursor-text">{errorMsg}</p>
+                <div className="p-3 overflow-y-auto">
+                    <p className="text-red-300 text-xs font-mono whitespace-pre-wrap break-all cursor-text">{errorMsg}</p>
+                </div>
             </div>
           )}
 
