@@ -109,14 +109,14 @@ const ResultModal: React.FC<ResultModalProps> = ({ results, totalTokens, onClose
                 newQuestCount = (stats.quest_count || 0) + 1;
                 shouldUpdateTotalReward = true;
 
-                // Prepare Params (Convert to Wei for contract)
+                // Prepare Params
                 const params = {
                     fid: farcasterUser.fid,
                     questPid: parseInt(targetResult.questId || "0"),
                     questId: targetResult.questMasterId || 0,
-                    questReward: (BigInt(targetResult.baseReward) * 10n**18n).toString(), 
-                    reward: (BigInt(targetResult.totalReward) * 10n**18n).toString(),
-                    totalReward: (BigInt(newTotalReward) * 10n**18n).toString() // Use the NEW calculated total in Wei
+                    questReward: targetResult.baseReward, 
+                    reward: targetResult.totalReward,
+                    totalReward: newTotalReward // Use the NEW calculated total
                 };
 
                 // Request Signature
