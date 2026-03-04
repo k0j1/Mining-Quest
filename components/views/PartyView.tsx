@@ -13,6 +13,7 @@ import { calculatePartyStats } from '../../utils/mechanics';
 import { gsap } from 'gsap';
 import { getHeroImageUrl } from '../../utils/heroUtils';
 import EquipmentList from '../EquipmentList';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 interface PartyViewProps {
   gameState: GameState;
@@ -47,6 +48,7 @@ const PartyView: React.FC<PartyViewProps> = ({
   onAccountClick,
   onMergeEquipment
 }) => {
+  const { t } = useLanguage();
   const [selectedSlotIndex, setSelectedSlotIndex] = useState<number | null>(null);
   const [selectedHeroId, setSelectedHeroId] = useState<string | null>(null);
   const [equippingState, setEquippingState] = useState<{ heroId: string, slotIndex: number } | null>(null);
@@ -274,7 +276,7 @@ const PartyView: React.FC<PartyViewProps> = ({
       <div className="flex flex-col h-full bg-slate-900">
         
         <Header 
-          title="PARTY" 
+          title={t('party.title')} 
           tokens={gameState.tokens} 
           isSoundOn={isSoundOn} 
           onToggleSound={onToggleSound}
@@ -324,7 +326,7 @@ const PartyView: React.FC<PartyViewProps> = ({
                                         : 'bg-slate-900 text-slate-700 border-slate-700'
                                 }`}
                             >
-                                {isUnlocked ? `Party 0${idx + 1}` : '🔒 LOCK'}
+                                {isUnlocked ? `${t('depart.party')} 0${idx + 1}` : `🔒 ${t('party.lock')}`}
                             </button>
                         );
                     })}
@@ -352,7 +354,7 @@ const PartyView: React.FC<PartyViewProps> = ({
                 <div className="flex justify-between items-center mb-2">
                     <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center">
                     <span className="w-1.5 h-1.5 bg-indigo-500 rounded-full mr-2"></span>
-                    Team Status
+                    {t('party.team_status')}
                     </h3>
                 </div>
                 
@@ -362,7 +364,7 @@ const PartyView: React.FC<PartyViewProps> = ({
                         <div className="flex items-center gap-2">
                         <div className="text-lg">⛏️</div>
                         <div>
-                            <div className="text-[8px] text-slate-500 font-bold uppercase">Reward</div>
+                            <div className="text-[8px] text-slate-500 font-bold uppercase">{t('party.reward')}</div>
                             <div className="text-xs font-black text-amber-500">{partyStats.rewardBonus >= 0 ? '+' : ''}{partyStats.rewardBonus}%</div>
                         </div>
                         </div>
@@ -373,7 +375,7 @@ const PartyView: React.FC<PartyViewProps> = ({
                         <div className="flex items-center gap-2">
                         <div className="text-lg">👢</div>
                         <div>
-                            <div className="text-[8px] text-slate-500 font-bold uppercase">Speed</div>
+                            <div className="text-[8px] text-slate-500 font-bold uppercase">{t('party.speed')}</div>
                             <div className="text-xs font-black text-emerald-400">{partyStats.speedBonus >= 0 ? '+' : ''}{partyStats.speedBonus}%</div>
                         </div>
                         </div>
@@ -384,7 +386,7 @@ const PartyView: React.FC<PartyViewProps> = ({
                     onClick={() => { playClick(); setShowTeamStatus(true); }}
                     className="w-full text-[9px] text-slate-500 bg-slate-900/30 hover:bg-slate-900/50 py-1.5 rounded font-bold transition-colors"
                 >
-                    詳細ステータスを表示
+                    {t('party.show_details')}
                 </button>
             </div>
 
@@ -394,11 +396,11 @@ const PartyView: React.FC<PartyViewProps> = ({
                   <div className="flex items-center justify-between mb-3">
                      <h2 className="text-xs font-bold text-slate-500 uppercase tracking-widest flex items-center">
                         <span className="w-1 h-3 bg-slate-600 mr-2 rounded-full"></span>
-                        Barracks
+                        {t('party.barracks')}
                      </h2>
                      {selectedSlotIndex !== null && (
                         <span className="text-[9px] text-indigo-400 bg-indigo-900/20 px-2 py-0.5 rounded animate-pulse">
-                            Select Hero for Slot {selectedSlotIndex + 1}
+                            {t('party.select_hero_for_slot')} {selectedSlotIndex + 1}
                         </span>
                      )}
                   </div>
@@ -430,7 +432,7 @@ const PartyView: React.FC<PartyViewProps> = ({
                             {sortMode === 'RARITY' ? '⭐' : sortMode === 'HP_ASC' ? '💓' : '💪'}
                         </span>
                         <span>
-                            {sortMode === 'RARITY' ? 'レア度順' : sortMode === 'HP_ASC' ? 'HP低い順' : 'HP高い順'}
+                            {sortMode === 'RARITY' ? t('party.sort_rarity') : sortMode === 'HP_ASC' ? t('party.sort_hp_asc') : t('party.sort_hp_desc')}
                         </span>
                       </button>
                   </div>
@@ -458,7 +460,7 @@ const PartyView: React.FC<PartyViewProps> = ({
                   })}
                   {filteredHeroes.length === 0 && (
                       <div className="col-span-2 text-center py-8 text-slate-600 text-xs font-bold">
-                          {gameState.heroes.length === 0 ? "NO HEROES IN BARRACKS" : "NO HEROES MATCH FILTER"}
+                          {gameState.heroes.length === 0 ? t('party.no_heroes') : t('party.no_match')}
                       </div>
                   )}
               </div>
@@ -481,7 +483,7 @@ const PartyView: React.FC<PartyViewProps> = ({
                 className="fixed top-20 right-3 z-50 bg-slate-900/80 backdrop-blur-md border border-slate-700/50 rounded-2xl p-2 shadow-2xl flex flex-col gap-2"
             >
                 <div className="text-[8px] font-bold text-slate-400 text-center uppercase tracking-widest border-b border-slate-700/50 pb-1">
-                    Party {activePartyIndex + 1}
+                    {t('depart.party')} {activePartyIndex + 1}
                 </div>
                 <div className="flex gap-2">
                     {[0, 1, 2].map(slotIdx => {
@@ -555,14 +557,14 @@ const PartyView: React.FC<PartyViewProps> = ({
              <div className="w-16 h-16 bg-slate-800 rounded-2xl flex items-center justify-center mx-auto mb-6 text-2xl border border-slate-700 text-slate-400">
                 🔒
              </div>
-             <h3 className="text-lg font-bold text-white mb-2 tracking-wide">DEPLOY PARTY 0{unlockingIndex + 1}</h3>
+             <h3 className="text-lg font-bold text-white mb-2 tracking-wide">{t('party.deploy_party')} 0{unlockingIndex + 1}</h3>
              <p className="text-slate-400 text-xs mb-8 leading-relaxed">
-               コスト: <span className="text-amber-500 font-bold">10,000 $CHH</span>
+               {t('party.cost')}: <span className="text-amber-500 font-bold">10,000 $CHH</span>
              </p>
              <div className="flex gap-3">
-                <button onClick={() => setUnlockingIndex(null)} className="flex-1 py-3 rounded-xl bg-slate-800 text-slate-400 font-bold text-sm hover:bg-slate-700">キャンセル</button>
+                <button onClick={() => setUnlockingIndex(null)} className="flex-1 py-3 rounded-xl bg-slate-800 text-slate-400 font-bold text-sm hover:bg-slate-700">{t('party.cancel')}</button>
                 <button onClick={confirmUnlock} className={`flex-1 py-3 rounded-xl font-bold text-sm text-white shadow-md transition-all ${gameState.tokens >= 10000 ? 'bg-indigo-600 hover:bg-indigo-500' : 'bg-slate-700 text-slate-500'}`}>
-                  {gameState.tokens >= 10000 ? '解放する' : '不足'}
+                  {gameState.tokens >= 10000 ? t('party.unlock') : t('party.insufficient')}
                 </button>
              </div>
           </div>

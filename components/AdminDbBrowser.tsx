@@ -64,10 +64,10 @@ const AdminDbBrowser: React.FC = () => {
   };
 
   const handleDelete = async (row: any) => {
-    if (!row.fid && !confirm("This record does not have an FID. Are you sure you want to delete MASTER DATA?")) {
+    if (!row.fid && !confirm("このレコードにはFIDがありません。マスターデータを削除してもよろしいですか？")) {
       return;
     }
-    if (!confirm("Are you sure you want to DELETE this record? This cannot be undone.")) {
+    if (!confirm("このレコードを削除してもよろしいですか？この操作は取り消せません。")) {
       return;
     }
 
@@ -76,10 +76,10 @@ const AdminDbBrowser: React.FC = () => {
       const query = supabase.from(activeTable).delete().eq(pk, row[pk]);
       const { error } = await query;
       if (error) throw error;
-      alert('Delete Successful');
+      alert('削除に成功しました');
       fetchData(activeTable);
     } catch (e: any) {
-      alert(`Delete Failed: ${e.message}`);
+      alert(`削除に失敗しました: ${e.message}`);
     }
   };
 
@@ -91,11 +91,11 @@ const AdminDbBrowser: React.FC = () => {
       const query = supabase.from(activeTable).update(updatedRow).eq(pk, updatedRow[pk]);
       const { error } = await query;
       if (error) throw error;
-      alert('Update Successful');
+      alert('更新に成功しました');
       setEditingRow(null);
       fetchData(activeTable);
     } catch (e: any) {
-      alert(`Update Failed: ${e.message}`);
+      alert(`更新に失敗しました: ${e.message}`);
     }
   };
 
@@ -119,18 +119,18 @@ const AdminDbBrowser: React.FC = () => {
 
       <div className="flex-1 overflow-auto p-4 bg-slate-950 text-xs font-mono">
         {loading ? (
-          <div className="text-center py-10 text-slate-500">Loading...</div>
+          <div className="text-center py-10 text-slate-500">読み込み中...</div>
         ) : error ? (
           <div className="text-red-400 p-4 border border-red-900 rounded bg-red-900/20">{error}</div>
         ) : (
           <div className="min-w-max">
             {data.length === 0 ? (
-              <p className="text-slate-600 italic">No Data found.</p>
+              <p className="text-slate-600 italic">データが見つかりません。</p>
             ) : (
               <table className="w-full border-collapse border border-slate-800 text-left">
                 <thead>
                   <tr className="bg-slate-900">
-                    <th className="p-2 border border-slate-800 text-slate-400 sticky left-0 bg-slate-900 z-10 shadow-md">Action</th>
+                    <th className="p-2 border border-slate-800 text-slate-400 sticky left-0 bg-slate-900 z-10 shadow-md">操作</th>
                     {Object.keys(data[0]).map(key => (
                       <th key={key} className="p-2 border border-slate-800 text-indigo-400">{key}</th>
                     ))}
@@ -144,14 +144,14 @@ const AdminDbBrowser: React.FC = () => {
                           onClick={() => handleEdit(row)}
                           className="px-2 py-1 bg-slate-800 hover:bg-indigo-600 rounded text-[10px] text-white transition-colors border border-slate-700"
                         >
-                          EDIT
+                          編集
                         </button>
                         {row.fid && (
                           <button 
                             onClick={() => handleDelete(row)}
                             className="px-2 py-1 bg-rose-900/30 hover:bg-rose-600 rounded text-[10px] text-rose-200 hover:text-white transition-colors border border-rose-900/50"
                           >
-                            DEL
+                            削除
                           </button>
                         )}
                       </td>
@@ -174,7 +174,7 @@ const AdminDbBrowser: React.FC = () => {
         <div className="fixed inset-0 z-[400] bg-black/80 flex items-center justify-center p-4">
           <div className="bg-slate-900 w-full max-w-2xl rounded-xl border border-slate-700 flex flex-col max-h-[90vh]">
             <div className="p-4 border-b border-slate-800 flex justify-between">
-              <h3 className="text-white font-bold">Edit Row ({activeTable})</h3>
+              <h3 className="text-white font-bold">行の編集 ({activeTable})</h3>
               <button onClick={() => setEditingRow(null)} className="text-slate-500 hover:text-white">✕</button>
             </div>
             <div className="flex-1 p-4">
@@ -188,8 +188,8 @@ const AdminDbBrowser: React.FC = () => {
               </p>
             </div>
             <div className="p-4 border-t border-slate-800 flex justify-end gap-3">
-              <button onClick={() => setEditingRow(null)} className="px-4 py-2 bg-slate-800 text-white rounded">Cancel</button>
-              <button onClick={handleSave} className="px-4 py-2 bg-indigo-600 text-white rounded font-bold hover:bg-indigo-500">Save Changes</button>
+              <button onClick={() => setEditingRow(null)} className="px-4 py-2 bg-slate-800 text-white rounded">キャンセル</button>
+              <button onClick={handleSave} className="px-4 py-2 bg-indigo-600 text-white rounded font-bold hover:bg-indigo-500">変更を保存</button>
             </div>
           </div>
         </div>

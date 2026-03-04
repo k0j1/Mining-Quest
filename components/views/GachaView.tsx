@@ -10,6 +10,7 @@ import { HERO_RATES, EQUIPMENT_RATES } from '../../services/gachaService';
 import { getHeroImageUrl } from '../../utils/heroUtils';
 import EquipmentIcon from '../EquipmentIcon';
 import gsap from 'gsap';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 interface GachaViewProps {
   gameState: GameState;
@@ -28,6 +29,7 @@ interface GachaViewProps {
 
 // --- Rate Display Component ---
 const RateDisplay: React.FC<{ rates: Record<string, number> }> = ({ rates }) => {
+  const { t } = useLanguage();
   const colors: Record<string, string> = {
     C: 'text-slate-400',
     UC: 'text-emerald-400',
@@ -38,7 +40,7 @@ const RateDisplay: React.FC<{ rates: Record<string, number> }> = ({ rates }) => 
 
   return (
     <div className="bg-slate-950 p-3 rounded-xl border border-slate-800 mb-4 flex justify-between items-center text-[10px] font-bold">
-       <span className="text-slate-500 mr-2">提供割合:</span>
+       <span className="text-slate-500 mr-2">{t('gacha.rates')}</span>
        <div className="flex gap-3">
          {Object.entries(rates).map(([rarity, rate]) => (
            <span key={rarity} className={colors[rarity]}>
@@ -225,6 +227,7 @@ const HeroListItem: React.FC<{
   rarityColors: Record<string, string>; 
   onZoom: (full: string, thumb: string) => void; 
 }> = ({ hero, rarityColors, onZoom }) => {
+  const { t } = useLanguage();
   const [hasError, setHasError] = useState(false);
   
   // Use _s image for both since high-res is removed
@@ -250,7 +253,7 @@ const HeroListItem: React.FC<{
          {hasError ? (
            <div className="w-full h-full flex flex-col items-center justify-center bg-slate-800 text-slate-500">
              <span className="text-xl mb-1">⚠️</span>
-             <span className="text-[8px] font-bold">NO IMAGE</span>
+             <span className="text-[8px] font-bold">{t('gacha.no_image')}</span>
            </div>
          ) : (
            <img 
@@ -289,6 +292,7 @@ const HeroListItem: React.FC<{
 };
 
 const HeroListModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
+  const { t } = useLanguage();
   const [zoomData, setZoomData] = useState<{ full: string; thumb: string } | null>(null);
   const [heroList, setHeroList] = useState<HeroDefinition[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -336,7 +340,7 @@ const HeroListModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
         {/* Header */}
         <div className="p-4 border-b border-slate-800 bg-slate-900 flex justify-between items-center shrink-0">
           <h2 className="text-lg font-bold text-white flex items-center gap-2">
-            <span>📜</span> 排出ヒーロー一覧
+            <span>📜</span> {t('gacha.hero_list_title')}
           </h2>
           <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-full bg-slate-800 text-slate-400 hover:text-white hover:bg-slate-700 transition-colors">
             ✕
@@ -350,7 +354,7 @@ const HeroListModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
           {isLoading ? (
             <div className="text-center py-10">
               <div className="w-8 h-8 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
-              <p className="text-slate-500 text-xs">Loading...</p>
+              <p className="text-slate-500 text-xs">{t('gacha.loading')}</p>
             </div>
           ) : (
             <>
@@ -367,7 +371,7 @@ const HeroListModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
                 ))
               ) : (
                 <div className="text-center py-10 text-slate-500 text-xs">
-                  No hero data found in database.
+                  {t('gacha.no_hero_data')}
                 </div>
               )}
             </>
@@ -391,7 +395,7 @@ const HeroListModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
               className="max-w-[90vw] max-h-[70vh] object-contain rounded-2xl shadow-[0_0_50px_rgba(255,255,255,0.1)] border-2 border-slate-700"
             />
           </div>
-          <p className="text-slate-500 text-xs font-bold tracking-[0.2em] mt-8 animate-pulse">TAP TO CLOSE</p>
+          <p className="text-slate-500 text-xs font-bold tracking-[0.2em] mt-8 animate-pulse">{t('gacha.tap_to_close')}</p>
         </div>
       )}
 
@@ -465,6 +469,7 @@ const EquipmentListItem: React.FC<{
 };
 
 const EquipmentListModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
+  const { t } = useLanguage();
   const [equipList, setEquipList] = useState<EquipmentDefinition[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -511,7 +516,7 @@ const EquipmentListModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
         {/* Header */}
         <div className="p-4 border-b border-slate-800 bg-slate-900 flex justify-between items-center shrink-0">
           <h2 className="text-lg font-bold text-white flex items-center gap-2">
-            <span>⚒️</span> 排出装備一覧
+            <span>⚒️</span> {t('gacha.equip_list_title')}
           </h2>
           <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-full bg-slate-800 text-slate-400 hover:text-white hover:bg-slate-700 transition-colors">
             ✕
@@ -525,7 +530,7 @@ const EquipmentListModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
           {isLoading ? (
             <div className="text-center py-10">
               <div className="w-8 h-8 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
-              <p className="text-slate-500 text-xs">Loading...</p>
+              <p className="text-slate-500 text-xs">{t('gacha.loading')}</p>
             </div>
           ) : (
             sortedList.map((item, idx) => (
@@ -538,7 +543,7 @@ const EquipmentListModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
           )}
           {!isLoading && sortedList.length === 0 && (
             <div className="text-center py-10 text-slate-500 text-xs">
-              No equipment data found in database.
+              {t('gacha.no_equip_data')}
             </div>
           )}
         </div>
@@ -564,6 +569,7 @@ const GachaView: React.FC<GachaViewProps> = ({
   onChainBalance, 
   onAccountClick 
 }) => {
+  const { t } = useLanguage();
   const [gachaTab, setGachaTab] = useState<'Hero' | 'Equipment'>('Hero');
   const [showHeroList, setShowHeroList] = useState(false);
   const [showEquipmentList, setShowEquipmentList] = useState(false);
@@ -582,7 +588,7 @@ const GachaView: React.FC<GachaViewProps> = ({
     <>
       <div className="flex flex-col h-full bg-slate-900">
          <Header 
-           title="GACHA" 
+           title={t('gacha.title')} 
            tokens={gameState.tokens} 
            isSoundOn={isSoundOn} 
            onToggleSound={onToggleSound} 
@@ -598,13 +604,13 @@ const GachaView: React.FC<GachaViewProps> = ({
                 className={`flex-1 py-3 rounded-lg font-bold text-xs transition-all ${gachaTab === 'Hero' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-500 hover:text-slate-300'}`}
                 onClick={() => { playClick(); setGachaTab('Hero'); }}
               >
-                ヒーロー
+                {t('gacha.hero')}
               </button>
               <button 
                 className={`flex-1 py-3 rounded-lg font-bold text-xs transition-all ${gachaTab === 'Equipment' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-500 hover:text-slate-300'}`}
                 onClick={() => { playClick(); setGachaTab('Equipment'); }}
               >
-                装備品
+                {t('gacha.equipment')}
               </button>
             </div>
 
@@ -623,20 +629,20 @@ const GachaView: React.FC<GachaViewProps> = ({
                   className="absolute top-5 right-5 z-40 flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-900/60 text-slate-400 hover:bg-slate-800 hover:text-white border border-slate-700/50 backdrop-blur-md transition-all active:scale-95 shadow-sm group"
                 >
                   <span className="text-xs group-hover:scale-110 transition-transform">{gachaTab === 'Hero' ? '📜' : '⚒️'}</span>
-                  <span className="text-[10px] font-bold">一覧</span>
+                  <span className="text-[10px] font-bold">{t('gacha.list')}</span>
               </button>
 
               {isGachaRolling && (
                 <div className="absolute inset-0 z-50 bg-slate-900/90 flex flex-col items-center justify-center p-6 space-y-4 backdrop-blur-[2px]">
                   <div className="w-12 h-12 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
-                  <p className="font-bold text-indigo-400 text-xs tracking-widest">CONNECTING...</p>
+                  <p className="font-bold text-indigo-400 text-xs tracking-widest">{t('gacha.connecting')}</p>
                 </div>
               )}
               
               <div className="flex-1 flex flex-col justify-between pt-8">
                  <div className="flex-1 flex flex-col items-center justify-center">
                     <h2 className="text-xl font-black text-white mb-2 uppercase tracking-widest drop-shadow-md">
-                      {gachaTab === 'Hero' ? 'Hero Summon' : 'Equipment Forge'}
+                      {gachaTab === 'Hero' ? t('gacha.hero_summon') : t('gacha.equip_forge')}
                     </h2>
                     
                     <GachaShowcase tab={gachaTab} />
@@ -653,7 +659,7 @@ const GachaView: React.FC<GachaViewProps> = ({
                           : 'bg-indigo-600 border-indigo-800 text-white hover:bg-indigo-500 shadow-lg shadow-indigo-900/40'
                       }`}
                     >
-                      <span className="font-bold text-sm">1回ガチャ</span>
+                      <span className="font-bold text-sm">{t('gacha.single_pull')}</span>
                       <div className="text-right">
                          <div className={`font-black ${!canAffordSingle ? 'text-rose-400' : 'text-amber-400'}`}>
                            {singleCost.toLocaleString()}
@@ -677,8 +683,8 @@ const GachaView: React.FC<GachaViewProps> = ({
                         {canAffordTriple && <div className="absolute inset-0 bg-white/20 -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-in-out skew-x-12"></div>}
                         
                         <div className="flex flex-col items-start relative z-10">
-                          <span className="font-black text-sm italic">3連ガチャ</span>
-                          <span className="text-[9px] font-bold bg-black/20 px-1.5 rounded text-yellow-200">R以上1枠確定</span>
+                          <span className="font-black text-sm italic">{t('gacha.triple_pull')}</span>
+                          <span className="text-[9px] font-bold bg-black/20 px-1.5 rounded text-yellow-200">{t('gacha.guaranteed_r')}</span>
                         </div>
                         <div className="text-right relative z-10">
                            <div className={`font-black text-lg ${!canAffordTriple ? 'text-rose-400' : 'text-white'}`}>

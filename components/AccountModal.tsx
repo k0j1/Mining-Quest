@@ -1,6 +1,7 @@
 
 import React, { useState } from 'react';
 import AdminDashboard from './AdminDashboard';
+import { useLanguage } from '../contexts/LanguageContext';
 
 interface AccountModalProps {
   user: any;
@@ -14,6 +15,7 @@ const ADMIN_FIDS = [406233, 137908, 1379028];
 
 const AccountModal: React.FC<AccountModalProps> = ({ user, balance, onClose, onTestMaintenance }) => {
   const [showAdmin, setShowAdmin] = useState(false);
+  const { language, setLanguage, t } = useLanguage();
 
   if (!user) return null;
 
@@ -51,13 +53,31 @@ const AccountModal: React.FC<AccountModalProps> = ({ user, balance, onClose, onT
             {truncatedAddress}
           </p>
 
-          <div className="w-full bg-slate-900/50 rounded-2xl p-6 border border-white/5 mb-8">
-            <p className="text-slate-500 text-[10px] uppercase font-black tracking-widest mb-1">On-chain Balance</p>
+          <div className="w-full bg-slate-900/50 rounded-2xl p-6 border border-white/5 mb-6">
+            <p className="text-slate-500 text-[10px] uppercase font-black tracking-widest mb-1">{t('account.balance')}</p>
             <div className="flex items-baseline justify-center gap-2">
               <span className="text-4xl font-orbitron font-black text-yellow-400">
                 {balance !== null ? balance.toLocaleString(undefined, { maximumFractionDigits: 1 }) : '---'}
               </span>
               <span className="text-yellow-600 font-bold">$CHH</span>
+            </div>
+          </div>
+
+          <div className="w-full bg-slate-900/50 rounded-2xl p-4 border border-white/5 mb-8 flex justify-between items-center">
+            <span className="text-sm font-bold text-slate-300">{t('account.language')}</span>
+            <div className="flex bg-slate-800 rounded-lg p-1">
+              <button
+                onClick={() => setLanguage('en')}
+                className={`px-3 py-1.5 rounded-md text-xs font-bold transition-colors ${language === 'en' ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-white'}`}
+              >
+                EN
+              </button>
+              <button
+                onClick={() => setLanguage('ja')}
+                className={`px-3 py-1.5 rounded-md text-xs font-bold transition-colors ${language === 'ja' ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-white'}`}
+              >
+                JA
+              </button>
             </div>
           </div>
 
@@ -67,7 +87,7 @@ const AccountModal: React.FC<AccountModalProps> = ({ user, balance, onClose, onT
                  onClick={() => setShowAdmin(true)}
                  className="w-full py-3 bg-slate-800 hover:bg-slate-700 text-indigo-300 border border-indigo-500/30 rounded-2xl font-bold text-sm transition-all flex items-center justify-center gap-2"
                >
-                 <span>🛠️</span> ADMIN DASHBOARD
+                 <span>🛠️</span> 管理ダッシュボード
                </button>
              )}
 
@@ -75,7 +95,7 @@ const AccountModal: React.FC<AccountModalProps> = ({ user, balance, onClose, onT
                onClick={onClose}
                className="w-full py-4 bg-indigo-600 hover:bg-indigo-500 text-white rounded-2xl font-black text-lg transition-all active:scale-95 shadow-lg shadow-indigo-900/40"
              >
-               閉じる
+               {t('common.close')}
              </button>
           </div>
         </div>

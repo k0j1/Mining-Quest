@@ -4,6 +4,7 @@ import { GameState, Hero } from '../../types';
 import Header from '../Header';
 import { playClick } from '../../utils/sound';
 import { FlaskConical, TestTube } from 'lucide-react';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 interface RecoveryViewProps {
   gameState: GameState;
@@ -30,6 +31,7 @@ const RecoveryView: React.FC<RecoveryViewProps> = ({
   onChainBalance,
   onAccountClick
 }) => {
+  const { t } = useLanguage();
   const [potionAmount, setPotionAmount] = React.useState(0);
   const [elixirAmount, setElixirAmount] = React.useState(0);
   // Get list of heroes currently on quests
@@ -77,7 +79,7 @@ const RecoveryView: React.FC<RecoveryViewProps> = ({
           {isQuesting && (
             <div className="absolute inset-0 bg-slate-950/70 z-20 flex items-center justify-center backdrop-blur-[1px]">
               <span className="text-[8px] font-black text-amber-500 border border-amber-500/30 bg-amber-950/90 px-1.5 py-0.5 rounded uppercase tracking-wider transform -rotate-6">
-                  MISSION
+                  {t('recovery.mission')}
               </span>
             </div>
           )}
@@ -124,7 +126,7 @@ const RecoveryView: React.FC<RecoveryViewProps> = ({
                     title="Potion (+10 HP)"
                   >
                       <span className="flex items-center justify-center h-4"><FlaskConical size={14} className="text-emerald-400" /></span>
-                      <span className={`text-[8px] font-bold leading-tight ${hasPotion ? 'text-slate-300' : 'text-rose-500'}`}>USE</span>
+                      <span className={`text-[8px] font-bold leading-tight ${hasPotion ? 'text-slate-300' : 'text-rose-500'}`}>{t('recovery.use')}</span>
                   </button>
                   
                   {/* Elixir Button */}
@@ -139,7 +141,7 @@ const RecoveryView: React.FC<RecoveryViewProps> = ({
                       title="Elixir (Full Heal)"
                   >
                       <span className="flex items-center justify-center h-4"><TestTube size={14} className="text-indigo-400" /></span>
-                      <span className={`text-[8px] font-bold leading-tight ${hasElixir ? 'text-indigo-300' : 'text-rose-500'}`}>USE</span>
+                      <span className={`text-[8px] font-bold leading-tight ${hasElixir ? 'text-indigo-300' : 'text-rose-500'}`}>{t('recovery.use')}</span>
                   </button>
               </div>
           </div>
@@ -150,7 +152,7 @@ const RecoveryView: React.FC<RecoveryViewProps> = ({
   return (
     <div className="flex flex-col h-full bg-slate-900">
        <Header 
-         title="RECOVERY" 
+         title={t('recovery.title')} 
          tokens={gameState.tokens} 
          isSoundOn={isSoundOn} 
          onToggleSound={onToggleSound} 
@@ -166,15 +168,15 @@ const RecoveryView: React.FC<RecoveryViewProps> = ({
           <div className="mb-6 bg-slate-800/50 rounded-2xl p-4 border border-slate-700/50">
             <div className="flex items-center gap-2 mb-3">
                 <span className="w-1.5 h-4 bg-emerald-500 rounded-full"></span>
-                <h2 className="text-xs font-bold text-slate-300 uppercase tracking-widest">Shop & Inventory</h2>
+                <h2 className="text-xs font-bold text-slate-300 uppercase tracking-widest">{t('recovery.shop_inventory')}</h2>
             </div>
             <div className="grid grid-cols-2 gap-3 mb-3">
                 {/* Potion */}
                 <div className="bg-slate-900/80 rounded-xl p-3 border border-slate-700 flex flex-col items-center">
                     <div className="mb-1 flex items-center justify-center h-8"><FlaskConical size={24} className="text-emerald-400" /></div>
-                    <div className="text-[10px] font-bold text-slate-300 mb-1">ポーション (+10 HP)</div>
+                    <div className="text-[10px] font-bold text-slate-300 mb-1">{t('recovery.potion')}</div>
                     <div className="text-[10px] text-slate-400 mb-2">100 $CHH</div>
-                    <div className="text-xs font-black text-emerald-400 mb-2">所持: {gameState.items.item01}</div>
+                    <div className="text-xs font-black text-emerald-400 mb-2">{t('recovery.owned')} {gameState.items.item01}</div>
                     
                     <div className="flex items-center gap-2 w-full justify-center">
                         <button 
@@ -191,9 +193,9 @@ const RecoveryView: React.FC<RecoveryViewProps> = ({
                 {/* Elixir */}
                 <div className="bg-slate-900/80 rounded-xl p-3 border border-slate-700 flex flex-col items-center">
                     <div className="mb-1 flex items-center justify-center h-8"><TestTube size={24} className="text-indigo-400" /></div>
-                    <div className="text-[10px] font-bold text-slate-300 mb-1">エリクサー (全回復)</div>
+                    <div className="text-[10px] font-bold text-slate-300 mb-1">{t('recovery.elixir')}</div>
                     <div className="text-[10px] text-slate-400 mb-2">500 $CHH</div>
-                    <div className="text-xs font-black text-indigo-400 mb-2">所持: {gameState.items.item02}</div>
+                    <div className="text-xs font-black text-indigo-400 mb-2">{t('recovery.owned')} {gameState.items.item02}</div>
                     
                     <div className="flex items-center gap-2 w-full justify-center">
                         <button 
@@ -223,7 +225,7 @@ const RecoveryView: React.FC<RecoveryViewProps> = ({
                     : 'bg-slate-800 text-slate-500 border-slate-900 cursor-not-allowed'
                 }`}
             >
-                {totalCost > 0 ? `まとめて購入 (${totalCost.toLocaleString()} $CHH)` : '購入するアイテムを選択'}
+                {totalCost > 0 ? `${t('recovery.buy_bulk')} (${totalCost.toLocaleString()} $CHH)` : t('recovery.select_items')}
             </button>
           </div>
 
@@ -239,7 +241,7 @@ const RecoveryView: React.FC<RecoveryViewProps> = ({
                       <div className="flex items-center gap-2 mb-2 px-1">
                           <span className="w-1.5 h-4 bg-indigo-500 rounded-full"></span>
                           <h2 className="text-xs font-bold text-slate-400 uppercase tracking-widest">
-                              Party 0{party.id + 1}
+                              {t('recovery.party')} 0{party.id + 1}
                           </h2>
                       </div>
                       <div className="grid grid-cols-3 gap-2 p-2 rounded-2xl bg-slate-800/30 border border-slate-800/50">
@@ -253,7 +255,7 @@ const RecoveryView: React.FC<RecoveryViewProps> = ({
           <div className="mt-8 border-t border-slate-800 pt-6">
               <div className="flex items-center gap-2 mb-2 px-1">
                   <span className="w-1.5 h-4 bg-slate-600 rounded-full"></span>
-                  <h2 className="text-xs font-bold text-slate-400 uppercase tracking-widest">Standby (HP Low→High)</h2>
+                  <h2 className="text-xs font-bold text-slate-400 uppercase tracking-widest">{t('recovery.standby')}</h2>
               </div>
               
               {unassignedHeroes.length > 0 ? (
@@ -262,7 +264,7 @@ const RecoveryView: React.FC<RecoveryViewProps> = ({
                   </div>
               ) : (
                   <div className="p-8 text-center border border-dashed border-slate-800 rounded-xl text-slate-600 text-xs font-bold">
-                      NO HEROES
+                      {t('recovery.no_heroes')}
                   </div>
               )}
           </div>

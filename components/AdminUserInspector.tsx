@@ -257,7 +257,7 @@ const AdminUserInspector: React.FC = () => {
                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500">🔍</span>
                 <input 
                     type="text" 
-                    placeholder="Search User by Name..." 
+                    placeholder="ユーザー名で検索..." 
                     value={userSearch}
                     onChange={(e) => setUserSearch(e.target.value)}
                     onFocus={() => { fetchUserList(); setShowUserDropdown(true); }}
@@ -274,13 +274,13 @@ const AdminUserInspector: React.FC = () => {
                             onClick={() => handleUserSelect(user)}
                             className="p-3 border-b border-slate-800 last:border-none cursor-pointer hover:bg-indigo-900/20 transition-colors flex items-center justify-between group"
                         >
-                            <div className="font-bold text-slate-200 text-sm group-hover:text-white">@{user.username || 'Unknown'}</div>
+                            <div className="font-bold text-slate-200 text-sm group-hover:text-white">@{user.username || '不明'}</div>
                             <div className="text-[10px] text-slate-500 text-right">
                                 <div className="flex gap-2 justify-end">
-                                   <span className="text-amber-500 font-bold">Earned: {user.total_reward?.toLocaleString() || 0}</span>
-                                   <span className="text-emerald-500 font-bold">Claimed: {Number(user.claimedOnChain || 0).toLocaleString()}</span>
+                                   <span className="text-amber-500 font-bold">獲得: {user.total_reward?.toLocaleString() || 0}</span>
+                                   <span className="text-emerald-500 font-bold">請求済: {Number(user.claimedOnChain || 0).toLocaleString()}</span>
                                 </div>
-                                <div>Last: {new Date(user.last_active).toLocaleDateString()}</div>
+                                <div>最終: {new Date(user.last_active).toLocaleDateString()}</div>
                             </div>
                         </div>
                     ))}
@@ -294,12 +294,12 @@ const AdminUserInspector: React.FC = () => {
         {loadingDetails ? (
            <div className="h-full flex flex-col items-center justify-center text-slate-500 space-y-4">
               <div className="w-10 h-10 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
-              <span className="text-sm tracking-wider">Loading User Data...</span>
+              <span className="text-sm tracking-wider">ユーザーデータを読み込み中...</span>
            </div>
         ) : !selectedUser ? (
            <div className="h-full flex flex-col items-center justify-center text-slate-600 opacity-50">
               <span className="text-4xl mb-4">👤</span>
-              <span className="text-sm font-bold">Select a user to inspect</span>
+              <span className="text-sm font-bold">ユーザーを選択してください</span>
            </div>
         ) : (
            <div className="space-y-10 max-w-6xl mx-auto pb-20">
@@ -313,18 +313,18 @@ const AdminUserInspector: React.FC = () => {
                     <h2 className="text-2xl font-black text-white mb-2 tracking-tight">@{selectedUser.username} <span className="text-xs text-slate-500 font-normal ml-2">FID: {selectedUser.fid}</span></h2>
                     <div className="flex flex-wrap justify-center md:justify-start gap-3">
                        <span className="px-3 py-1 rounded-full bg-amber-900/20 border border-amber-500/30 text-amber-500 font-mono font-bold text-sm" title="Total Reward Earned (DB)">
-                          Earned: {selectedUser.total_reward?.toLocaleString() || 0} $CHH
+                          獲得: {selectedUser.total_reward?.toLocaleString() || 0} $CHH
                        </span>
                        {claimedOnChain !== null && (
                           <span className="px-3 py-1 rounded-full bg-emerald-900/20 border border-emerald-500/30 text-emerald-400 font-mono font-bold text-sm" title="Claimed on Chain">
-                             Claimed: {claimedOnChain === 'Error' ? 'Error' : Number(claimedOnChain).toLocaleString()} $CHH
+                             請求済: {claimedOnChain === 'Error' ? 'エラー' : Number(claimedOnChain).toLocaleString()} $CHH
                           </span>
                        )}
                        <span className="px-3 py-1 rounded-full bg-slate-800 border border-slate-700 text-slate-400 text-xs font-bold">
-                          Quests: {selectedUser.quest_count || 0}
+                          クエスト: {selectedUser.quest_count || 0}
                        </span>
                        <span className="px-3 py-1 rounded-full bg-slate-800 border border-slate-700 text-slate-400 text-xs font-bold">
-                          Gacha Heroes: {selectedUser.gacha_hero_count || 0}
+                          ガチャヒーロー: {selectedUser.gacha_hero_count || 0}
                        </span>
                     </div>
                  </div>
@@ -335,7 +335,7 @@ const AdminUserInspector: React.FC = () => {
                 <div>
                    <h3 className="text-xs font-black text-indigo-400 uppercase tracking-widest mb-4 flex items-center">
                        <span className="w-2 h-2 bg-indigo-500 rounded-full mr-2"></span>
-                       Parties & Status
+                       パーティ & ステータス
                    </h3>
                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
                       {[0, 1, 2].map(idx => {
@@ -351,12 +351,12 @@ const AdminUserInspector: React.FC = () => {
                             <div key={idx} className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden shadow-sm flex flex-col">
                                <div className="bg-slate-800/50 px-3 py-2 border-b border-slate-700 flex justify-between items-center">
                                    <span className="text-[10px] font-bold text-indigo-400">PARTY {idx + 1}</span>
-                                   {!party && <span className="text-[9px] text-slate-500">Not Created</span>}
+                                   {!party && <span className="text-[9px] text-slate-500">未作成</span>}
                                    {stats && (
                                        <div className="flex gap-2 text-[9px] font-mono">
                                            <span className="text-emerald-400">HP {stats.totalHp}</span>
-                                           <span className="text-amber-500">Rew{stats.rewardBonus >= 0 ? '+' : ''}{stats.rewardBonus}%</span>
-                                           <span className="text-blue-400">Spd{stats.speedBonus >= 0 ? '+' : ''}{stats.speedBonus}%</span>
+                                           <span className="text-amber-500">報酬{stats.rewardBonus >= 0 ? '+' : ''}{stats.rewardBonus}%</span>
+                                           <span className="text-blue-400">速度{stats.speedBonus >= 0 ? '+' : ''}{stats.speedBonus}%</span>
                                        </div>
                                    )}
                                </div>
@@ -387,7 +387,7 @@ const AdminUserInspector: React.FC = () => {
                                                    </div>
                                                </>
                                            ) : (
-                                               <div className="w-full h-full flex items-center justify-center text-[10px] text-slate-700 font-bold uppercase">Empty</div>
+                                               <div className="w-full h-full flex items-center justify-center text-[10px] text-slate-700 font-bold uppercase">空き</div>
                                            )}
                                        </div>
                                    )})}
@@ -405,7 +405,7 @@ const AdminUserInspector: React.FC = () => {
                   <div>
                     <h3 className="text-xs font-black text-amber-500 uppercase tracking-widest mb-3 flex items-center gap-2">
                         <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
-                        Active Quests
+                        進行中のクエスト
                     </h3>
                     {userDetails?.activeQuests && userDetails.activeQuests.length > 0 ? (
                         <div className="space-y-2">
@@ -451,7 +451,7 @@ const AdminUserInspector: React.FC = () => {
                                 <div key={q.quest_pid} className="bg-slate-900 border border-amber-500/30 p-3 rounded-xl flex justify-between items-center relative overflow-hidden">
                                     <div className="absolute left-0 top-0 bottom-0 w-1 bg-amber-500"></div>
                                     <div className="pl-2 min-w-0 flex-1">
-                                        <div className="text-xs font-bold text-white truncate">{qm.name || 'Unknown Quest'}</div>
+                                        <div className="text-xs font-bold text-white truncate">{qm.name || '不明なクエスト'}</div>
                                         
                                         <div className="mt-1">
                                             <div className="flex items-center gap-2 text-[10px]">
@@ -484,7 +484,7 @@ const AdminUserInspector: React.FC = () => {
                                           <button 
                                             onClick={() => handleInstantComplete(q.quest_pid)}
                                             className="bg-indigo-600 hover:bg-indigo-500 text-white text-[8px] font-bold px-2 py-1 rounded shadow-sm border border-indigo-400 transition-all active:scale-95"
-                                            title="Finish Now (Set time to past)"
+                                            title="今すぐ完了 (時間を過去に設定)"
                                           >
                                             ✅ クエスト完了
                                           </button>
@@ -494,20 +494,20 @@ const AdminUserInspector: React.FC = () => {
                             )})}
                         </div>
                     ) : (
-                        <div className="text-xs text-slate-600 italic">No active quests.</div>
+                        <div className="text-xs text-slate-600 italic">進行中のクエストはありません。</div>
                     )}
                   </div>
 
                   {/* Completed Quests Log */}
                   <div>
                     <h3 className="text-xs font-black text-slate-500 uppercase tracking-widest mb-3 flex items-center gap-2">
-                        <span className="text-lg">📜</span> Recent History
+                        <span className="text-lg">📜</span> 最近の履歴
                     </h3>
                     <div className="space-y-1.5 max-h-60 overflow-y-auto pr-2 custom-scrollbar">
                         {userDetails?.completedQuests && userDetails.completedQuests.length > 0 ? (
                             userDetails.completedQuests.map((q: any) => (
                                 <div key={q.id} className="bg-slate-900/50 border border-slate-800 p-2 rounded flex justify-between items-center text-[10px]">
-                                    <div className="text-slate-300">{(q.quest_mining && q.quest_mining.name) || `Quest #${q.quest_id}`}</div>
+                                    <div className="text-slate-300">{(q.quest_mining && q.quest_mining.name) || `クエスト #${q.quest_id}`}</div>
                                     <div className="flex gap-3 text-slate-500 font-mono">
                                         <span className="text-emerald-500 font-bold">{q.reward >= 0 ? '+' : ''}{q.reward} $CHH</span>
                                         <span>{new Date(q.archived_at || q.created_at || q.end_time || 0).toLocaleDateString()}</span>
@@ -515,7 +515,7 @@ const AdminUserInspector: React.FC = () => {
                                 </div>
                             ))
                         ) : (
-                            <div className="text-xs text-slate-600 italic">No history found.</div>
+                            <div className="text-xs text-slate-600 italic">履歴が見つかりません。</div>
                         )}
                     </div>
                   </div>
@@ -526,10 +526,10 @@ const AdminUserInspector: React.FC = () => {
                   <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-4 flex items-center justify-between">
                        <span className="flex items-center gap-2">
                            <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
-                           Inventory: Heroes
+                           インベントリ: ヒーロー
                        </span>
                        <span className="text-slate-600 bg-slate-900 px-2 py-0.5 rounded text-[10px]">
-                           Live: {userDetails?.heroes?.length || 0} / Lost: {userDetails?.lostHeroes?.length || 0}
+                           生存: {userDetails?.heroes?.length || 0} / ロスト: {userDetails?.lostHeroes?.length || 0}
                        </span>
                   </h3>
                   
@@ -563,12 +563,12 @@ const AdminUserInspector: React.FC = () => {
                   {/* Lost Heroes */}
                   {userDetails?.lostHeroes && userDetails.lostHeroes.length > 0 && (
                       <div className="border-t border-rose-900/30 pt-4 mt-4">
-                        <h4 className="text-[10px] font-bold text-rose-500 mb-2 uppercase">Graveyard (Recent Deaths)</h4>
+                        <h4 className="text-[10px] font-bold text-rose-500 mb-2 uppercase">墓地 (最近の死亡)</h4>
                         <div className="grid grid-cols-5 md:grid-cols-10 gap-2 opacity-70">
                             {userDetails.lostHeroes.map((h: any) => (
                                 <div key={h.lost_id} className="bg-slate-950 border border-slate-800 p-1.5 rounded text-center grayscale hover:grayscale-0 transition-all">
                                     <div className="text-lg">💀</div>
-                                    <div className="text-[8px] font-bold text-slate-400 truncate">{h.quest_hero?.name || 'Unknown'}</div>
+                                    <div className="text-[8px] font-bold text-slate-400 truncate">{h.quest_hero?.name || '不明'}</div>
                                     <div className="text-[7px] text-slate-600">{new Date(h.created_at || h.lost_at || 0).toLocaleDateString()}</div>
                                 </div>
                             ))}
@@ -581,8 +581,8 @@ const AdminUserInspector: React.FC = () => {
               {userDetails?.equipment && (
                  <div>
                     <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-4 flex items-center justify-between">
-                       <span>Inventory: Equipment</span>
-                       <span className="text-slate-600 bg-slate-900 px-2 py-0.5 rounded text-[10px]">Total: {userDetails.equipment.length}</span>
+                       <span>インベントリ: 装備</span>
+                       <span className="text-slate-600 bg-slate-900 px-2 py-0.5 rounded text-[10px]">合計: {userDetails.equipment.length}</span>
                     </h3>
                     <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-3">
                        {userDetails.equipment.map((e: any) => {

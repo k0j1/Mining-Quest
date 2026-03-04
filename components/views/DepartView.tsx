@@ -6,6 +6,7 @@ import { playClick, playError } from '../../utils/sound';
 import Header from '../Header';
 import { IS_TEST_MODE } from '../../constants';
 import { MiningEffect } from '../AmbientEffects';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 interface PredictionResult {
     minReward: number;
@@ -137,6 +138,7 @@ const DepartView: React.FC<DepartViewProps> = ({
   onChainBalance,
   onAccountClick
 }) => {
+  const { t } = useLanguage();
   const [selectedRank, setSelectedRank] = useState<QuestRank | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
 
@@ -217,7 +219,7 @@ const DepartView: React.FC<DepartViewProps> = ({
        <MiningEffect />
 
        <Header 
-         title="QUEST" 
+         title={t('depart.title')} 
          tokens={gameState.tokens} 
          isSoundOn={isSoundOn} 
          onToggleSound={onToggleSound} 
@@ -245,12 +247,12 @@ const DepartView: React.FC<DepartViewProps> = ({
             )}
           </div>
 
-          <p className="text-xs text-slate-500 mb-2 font-bold">難易度を選択してクエストに出発します</p>
+          <p className="text-xs text-slate-500 mb-2 font-bold">{t('depart.select_diff')}</p>
           
           {gameState.questConfigs.length === 0 && (
              <div className="text-center py-10 text-slate-500">
                 <div className="w-6 h-6 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
-                Loading Quests...
+                {t('depart.loading')}
              </div>
           )}
 
@@ -279,22 +281,22 @@ const DepartView: React.FC<DepartViewProps> = ({
                        <h3 className="font-bold text-slate-100 text-sm drop-shadow-md">{config.name}</h3>
                      </div>
                      <div className="text-right">
-                       <span className="block text-[9px] text-slate-400 font-bold mb-0.5 drop-shadow-md">TIME</span>
+                       <span className="block text-[9px] text-slate-400 font-bold mb-0.5 drop-shadow-md">{t('depart.time')}</span>
                        <span className="font-bold text-white text-xs drop-shadow-md">{Math.floor(config.duration / 60)} min</span>
                      </div>
                   </div>
 
                   <div className="grid grid-cols-3 gap-2 text-[10px]">
                      <div className="bg-slate-900/70 backdrop-blur-sm p-2 rounded-lg border border-slate-700/50 flex flex-col items-center justify-center text-center">
-                       <p className="text-slate-400 font-bold mb-0.5 text-[9px]">報酬</p>
+                       <p className="text-slate-400 font-bold mb-0.5 text-[9px]">{t('depart.reward')}</p>
                        <p className="text-amber-400 font-bold">{config.minReward}-{config.maxReward}</p>
                      </div>
                      <div className="bg-slate-900/70 backdrop-blur-sm p-2 rounded-lg border border-slate-700/50 flex flex-col items-center justify-center text-center">
-                       <p className="text-slate-400 font-bold mb-0.5 text-[9px]">ダメージ</p>
+                       <p className="text-slate-400 font-bold mb-0.5 text-[9px]">{t('depart.damage')}</p>
                        <p className="text-rose-400 font-bold">{config.minDmg}-{config.maxDmg}</p>
                      </div>
                      <div className="bg-slate-900/70 backdrop-blur-sm p-2 rounded-lg border border-slate-700/50 flex flex-col items-center justify-center text-center">
-                       <p className="text-slate-400 font-bold mb-0.5 text-[9px]">コスト</p>
+                       <p className="text-slate-400 font-bold mb-0.5 text-[9px]">{t('depart.cost')}</p>
                        <p className="text-slate-200 font-bold">{config.burnCost} $CHH</p>
                      </div>
                   </div>
@@ -309,19 +311,19 @@ const DepartView: React.FC<DepartViewProps> = ({
          <div className="fixed inset-0 z-[1000] bg-slate-900/80 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in pb-[calc(env(safe-area-inset-bottom)+6rem)]">
            <div className="w-full max-w-md bg-slate-900 border border-slate-700 rounded-3xl overflow-hidden flex flex-col max-h-[85vh] shadow-2xl relative">
              <div className="p-4 border-b border-slate-800 bg-slate-900 text-center shrink-0">
-               <h2 className="text-lg font-bold text-white">出撃確認</h2>
+               <h2 className="text-lg font-bold text-white">{t('depart.confirm_title')}</h2>
              </div>
              
              {/* DANGER / WARNING BANNER */}
              {(isDanger || isWarning) && (
                 <div className={`w-full py-1 text-center text-[10px] font-black uppercase tracking-[0.2em] shadow-lg flex items-center justify-center gap-2 animate-pulse ${isDanger ? 'bg-red-600 text-white' : 'bg-amber-500 text-slate-900'}`}>
-                    <span>{isDanger ? '💀 WIPEOUT RISK' : '⚠️ DEATH RISK'}</span>
+                    <span>{isDanger ? t('depart.wipeout_risk') : t('depart.death_risk')}</span>
                 </div>
              )}
              
              <div className="p-6 overflow-y-auto custom-scrollbar">
                <div className="text-center mb-6">
-                 <p className="text-slate-500 text-[10px] font-bold uppercase tracking-wider mb-2">Target Destination</p>
+                 <p className="text-slate-500 text-[10px] font-bold uppercase tracking-wider mb-2">{t('depart.target_dest')}</p>
                  <h3 className="text-xl font-bold text-white mb-3">{currentRankConfig.name}</h3>
                  <div className="inline-block px-4 py-1.5 rounded-full bg-slate-800 border border-slate-700">
                    <span className={`font-bold mr-2 text-sm ${
@@ -330,9 +332,9 @@ const DepartView: React.FC<DepartViewProps> = ({
                       selectedRank === 'R' ? 'text-indigo-400' :
                       selectedRank === 'E' ? 'text-orange-400' :
                       'text-purple-400'
-                   }`}>{selectedRank} RANK</span>
+                   }`}>{selectedRank} {t('depart.rank')}</span>
                    <span className={`text-xs font-bold border-l border-slate-700 pl-2 ${canAfford ? 'text-slate-400' : 'text-rose-500'}`}>
-                     Cost: {currentRankConfig.burnCost} $CHH
+                     {t('depart.cost')}: {currentRankConfig.burnCost} $CHH
                    </span>
                  </div>
                </div>
@@ -356,10 +358,10 @@ const DepartView: React.FC<DepartViewProps> = ({
 
                     <div className="absolute top-0 right-0 p-2 opacity-10 text-4xl">🔮</div>
                     <h4 className="text-[10px] font-black text-indigo-400 uppercase tracking-widest mb-3 border-b border-slate-700 pb-2 flex justify-between">
-                        <span>Mission Forecast</span>
+                        <span>{t('depart.mission_forecast')}</span>
                         {(isDanger || isWarning) && (
                             <span className={`animate-pulse ${isDanger ? 'text-red-500' : 'text-amber-500'}`}>
-                                {isDanger ? 'HIGH MORTALITY' : 'CAUTION'}
+                                {isDanger ? t('depart.high_mortality') : t('depart.caution')}
                             </span>
                         )}
                     </h4>
@@ -368,7 +370,7 @@ const DepartView: React.FC<DepartViewProps> = ({
                         {/* Reward Forecast */}
                         <div className="flex flex-col">
                             <div className="flex justify-between items-start">
-                                <span className="text-xs font-bold text-slate-400 mt-1">報酬予測</span>
+                                <span className="text-xs font-bold text-slate-400 mt-1">{t('depart.reward_forecast')}</span>
                                 <div className="text-right flex flex-col items-end">
                                     <div className="flex items-center gap-2">
                                         <span className="text-[10px] text-slate-500 line-through font-mono decoration-slate-600">
@@ -395,7 +397,7 @@ const DepartView: React.FC<DepartViewProps> = ({
                         {/* Damage Forecast (Updated Layout) */}
                         <div className="flex flex-col">
                             <div className="flex justify-between items-center mb-1">
-                                <span className="text-xs font-bold text-slate-400">ヒーロー別 被ダメージ予測</span>
+                                <span className="text-xs font-bold text-slate-400">{t('depart.damage_forecast')}</span>
                             </div>
                             
                             {/* Per Hero Breakdown with Ranges */}
@@ -431,7 +433,7 @@ const DepartView: React.FC<DepartViewProps> = ({
                         {/* Duration Forecast (Speed Logic) */}
                         <div className="flex flex-col">
                             <div className="flex justify-between items-center">
-                                <span className="text-xs font-bold text-slate-400">所要時間 (速度上昇)</span>
+                                <span className="text-xs font-bold text-slate-400">{t('depart.duration_forecast')}</span>
                                 <div className="text-right flex flex-col items-end">
                                     <div className="flex items-center gap-2">
                                         <span className="text-[10px] text-slate-500 line-through font-mono decoration-slate-600">
@@ -461,7 +463,7 @@ const DepartView: React.FC<DepartViewProps> = ({
                <div className="mb-6">
                  <div className="flex justify-between items-end mb-3">
                    <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">
-                     SELECT PARTY
+                     {t('depart.select_party')}
                    </p>
                  </div>
                  
@@ -496,8 +498,8 @@ const DepartView: React.FC<DepartViewProps> = ({
                                 : 'bg-slate-900 text-slate-600 border-slate-800 cursor-not-allowed opacity-50'
                           }`}
                         >
-                          {isUnlocked ? `Party ${idx + 1}` : '🔒'}
-                          {isQuesting && <span className="text-[8px] text-emerald-500">任務中</span>}
+                          {isUnlocked ? `${t('depart.party')} ${idx + 1}` : '🔒'}
+                          {isQuesting && <span className="text-[8px] text-emerald-500">{t('depart.questing')}</span>}
                         </button>
                       );
                     })}
@@ -505,13 +507,13 @@ const DepartView: React.FC<DepartViewProps> = ({
 
                  {!isPartyFull ? (
                     <div className="text-center p-4 border border-dashed border-rose-800/50 bg-rose-900/10 rounded-xl">
-                      <p className="text-rose-400 font-bold text-sm">メンバーが足りません</p>
-                      <p className="text-xs text-rose-300/70 mt-1">クエストには3名のヒーローが必要です</p>
+                      <p className="text-rose-400 font-bold text-sm">{t('depart.not_enough_members')}</p>
+                      <p className="text-xs text-rose-300/70 mt-1">{t('depart.need_3_heroes')}</p>
                     </div>
                  ) : isCurrentPartyQuesting ? (
                     <div className="text-center p-4 border border-dashed border-emerald-800/50 bg-emerald-900/10 rounded-xl">
-                      <p className="text-emerald-400 font-bold text-sm">このパーティは任務中です</p>
-                      <p className="text-xs text-emerald-300/70 mt-1">別のパーティを選択してください</p>
+                      <p className="text-emerald-400 font-bold text-sm">{t('depart.party_questing')}</p>
+                      <p className="text-xs text-emerald-300/70 mt-1">{t('depart.select_another_party')}</p>
                     </div>
                  ) : (
                     <div className="pointer-events-none transform scale-95">
@@ -528,7 +530,7 @@ const DepartView: React.FC<DepartViewProps> = ({
                  )}
                  {hasDeadHeroes && (
                    <p className="text-rose-400 text-xs text-center mt-4 font-bold">
-                     ⚠️ HPが0のヒーローがいます！出発できません。
+                     {t('depart.dead_hero_warning')}
                    </p>
                  )}
                </div>
@@ -539,7 +541,7 @@ const DepartView: React.FC<DepartViewProps> = ({
                  onClick={handleCancel}
                  className="flex-1 py-3 bg-slate-700 text-slate-300 rounded-xl font-bold hover:bg-slate-600 transition-all text-sm"
                >
-                 キャンセル
+                 {t('depart.cancel')}
                </button>
                <button 
                  onClick={handleConfirm}
@@ -554,7 +556,7 @@ const DepartView: React.FC<DepartViewProps> = ({
                         : 'bg-indigo-600 hover:bg-indigo-500'
                  }`}
                >
-                 {isProcessing ? '処理中...' : !isPartyFull ? 'メンバー不足' : isCurrentPartyQuesting ? '出撃中' : (!canAfford ? '資金不足' : isDanger ? '強行突破する (DANGER)' : '出発する')}
+                 {isProcessing ? t('depart.processing') : !isPartyFull ? t('depart.not_enough_members') : isCurrentPartyQuesting ? t('depart.questing') : (!canAfford ? t('depart.insufficient_funds') : isDanger ? t('depart.force_depart') : t('depart.depart_btn'))}
                </button>
              </div>
            </div>

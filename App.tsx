@@ -14,6 +14,7 @@ import { playClick, playConfirm, toggleSound } from './utils/sound';
 import { useGameLogic } from './hooks/useGameLogic';
 import { sdk } from '@farcaster/frame-sdk';
 import { supabase, isSupabaseConfigured } from './lib/supabase';
+import { useLanguage } from './contexts/LanguageContext';
 import gsap from 'gsap';
 
 // Views
@@ -46,6 +47,7 @@ const App: React.FC = () => {
   const contentRef = useRef<HTMLDivElement>(null);
 
   const { gameState, farcasterUser, onChainBalanceRaw, isBlocked, ui, actions, isFrameAdded, addFrame } = useGameLogic();
+  const { t } = useLanguage();
 
   // Admin Auto-Debug Mode
   useEffect(() => {
@@ -275,7 +277,7 @@ const App: React.FC = () => {
             state={gameState} 
             view={View.RETURN} 
             title="RESULT" 
-            actionButtonLabel="報酬を回収して帰還" 
+            actionButtonLabel={t('status.return_btn')} 
             onAction={actions.returnFromQuest}
             onDebugCompleteQuest={actions.debugCompleteQuest}
             {...commonProps}
@@ -357,7 +359,7 @@ const App: React.FC = () => {
   if (appError) {
     return (
       <div className="fixed inset-0 flex flex-col items-center justify-center bg-slate-950 text-white p-8 text-center z-[9999]">
-        <h2 className="text-2xl font-bold text-rose-500 mb-4">CRITICAL ERROR</h2>
+        <h2 className="text-2xl font-bold text-rose-500 mb-4">重大なエラー</h2>
         <div className="bg-slate-900 p-4 rounded-xl border border-rose-900 w-full overflow-auto max-h-[50vh] mb-8">
           <p className="font-mono text-xs text-rose-200 break-words whitespace-pre-wrap">{appError}</p>
         </div>
@@ -367,13 +369,13 @@ const App: React.FC = () => {
               onClick={() => { setAppError(null); setIsSDKLoaded(true); }}
               className="px-6 py-3 bg-slate-800 border border-slate-600 rounded-full font-bold hover:bg-slate-700 active:scale-95 text-sm"
             >
-              Ignore & Continue
+              無視して続行
             </button>
             <button 
               onClick={() => window.location.reload()}
               className="px-6 py-3 bg-indigo-600 border border-indigo-500 rounded-full font-bold hover:bg-indigo-500 active:scale-95 text-sm"
             >
-              Reload App
+              アプリを再読み込み
             </button>
         </div>
         <DebugConsole isEnabled={true} />

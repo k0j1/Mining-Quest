@@ -211,10 +211,10 @@ export const useItems = ({ gameState, setGameState, showNotification, farcasterU
       if (elixirAmount > 0) msg.push(`エリクサーx${elixirAmount}`);
       showNotification(`${msg.join('、')}を購入しました`, 'success');
 
-    } catch (error) {
+    } catch (error: any) {
       console.error("Transaction failed:", error);
       playError();
-      showNotification("トランザクションに失敗しました", 'error');
+      showNotification(`トランザクションに失敗しました: ${error.shortMessage || error.message || "不明なエラー"}`, 'error');
     }
   };
 

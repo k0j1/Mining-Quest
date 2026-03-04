@@ -7,6 +7,7 @@ import { createWalletClient, custom, parseAbi } from 'viem';
 import { base } from 'viem/chains';
 import { sdk } from '@farcaster/frame-sdk';
 import { supabase } from '../lib/supabase';
+import { useLanguage } from '../contexts/LanguageContext';
 
 // Contract Address
 const REWARD_CONTRACT_ADDRESS = "0x193708bB0AC212E59fc44d6D6F3507F25Bc97fd4";
@@ -29,6 +30,7 @@ interface ResultModalProps {
 type ClaimStatus = 'pending' | 'processing' | 'claimed' | 'error';
 
 const ResultModal: React.FC<ResultModalProps> = ({ results, totalTokens, onClose, onConfirm, farcasterUser }) => {
+  const { t } = useLanguage();
   const containerRef = useRef<HTMLDivElement>(null);
   const itemsRef = useRef<HTMLDivElement[]>([]);
   const totalRef = useRef<HTMLDivElement>(null);
@@ -245,7 +247,7 @@ const ResultModal: React.FC<ResultModalProps> = ({ results, totalTokens, onClose
       } catch (e: any) {
         console.error("Claim Error:", e);
         // If on-chain fails, DB is NOT updated, so user can retry.
-        setErrorMsg(e.message || "エラーが発生しました");
+        setErrorMsg(e.shortMessage || e.message || "エラーが発生しました");
         setQuestStatuses(prev => ({ ...prev, [qId]: 'error' }));
       } finally {
         setIsPreparingClaim(false);
@@ -271,8 +273,8 @@ const ResultModal: React.FC<ResultModalProps> = ({ results, totalTokens, onClose
                   
                   <div className="relative z-10 flex flex-col items-center">
                       <div className="text-6xl mb-6 animate-bounce drop-shadow-lg">💎</div>
-                      <h2 className="text-2xl font-black text-white mb-2 font-orbitron tracking-wider drop-shadow-md">GET REWARD</h2>
-                      <p className="text-slate-400 text-xs font-bold uppercase tracking-widest mb-6">Mission Accomplished</p>
+                      <h2 className="text-2xl font-black text-white mb-2 font-orbitron tracking-wider drop-shadow-md">{t('result.get_reward')}</h2>
+                      <p className="text-slate-400 text-xs font-bold uppercase tracking-widest mb-6">{t('result.mission_accomplished')}</p>
                       
                       <div className="text-4xl font-black text-amber-400 mb-8 drop-shadow-md bg-slate-800/50 py-4 px-6 rounded-2xl border border-amber-500/20 w-full">
                           {totalTokens >= 0 ? '+' : ''}{totalTokens.toLocaleString()} <span className="text-lg text-amber-500">$CHH</span>
@@ -285,7 +287,7 @@ const ResultModal: React.FC<ResultModalProps> = ({ results, totalTokens, onClose
                             rel="noopener noreferrer"
                             className="flex items-center justify-center gap-1 mb-8 text-[10px] text-indigo-400 hover:text-indigo-300 transition-colors bg-indigo-900/20 py-2 px-4 rounded-full border border-indigo-500/30"
                           >
-                              <span>🔗</span> View Transaction on BaseScan
+                              <span>🔗</span> {t('result.view_tx')}
                           </a>
                       )}
 
@@ -293,7 +295,7 @@ const ResultModal: React.FC<ResultModalProps> = ({ results, totalTokens, onClose
                           onClick={() => { playClick(); onClose(); }}
                           className="w-full py-4 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-bold shadow-lg shadow-emerald-900/30 transition-all active:scale-95 border-b-4 border-emerald-800"
                       >
-                          確認 (CLOSE)
+                          {t('result.close')}
                       </button>
                   </div>
               </div>
@@ -314,9 +316,9 @@ const ResultModal: React.FC<ResultModalProps> = ({ results, totalTokens, onClose
         {/* Header */}
         <div className="text-center mb-6">
           <h2 className="text-2xl font-black text-amber-500 mb-1">
-            MISSION COMPLETE
+            {t('result.mission_complete')}
           </h2>
-          <p className="text-slate-500 text-xs font-bold tracking-[0.2em] uppercase">Quest Report</p>
+          <p className="text-slate-500 text-xs font-bold tracking-[0.2em] uppercase">{t('result.quest_report')}</p>
         </div>
 
         {/* Scrollable List */}
@@ -347,25 +349,25 @@ const ResultModal: React.FC<ResultModalProps> = ({ results, totalTokens, onClose
                     <span className="font-bold text-slate-200 text-sm">{res.questName}</span>
                   </div>
                   <div className="text-right flex items-center gap-2">
-                    {isClaimed && <span className="text-emerald-500 font-bold text-xs">✅ CLAIMED</span>}
-                    {isProcessing && <span className="text-amber-500 font-bold text-xs animate-pulse">⏳ PROCESSING...</span>}
-                    {isError && <span className="text-red-500 font-bold text-xs">⚠️ ERROR</span>}
+                    {isClaimed && <span className="text-emerald-500 font-bold text-xs">✅ {t('result.claimed')}</span>}
+                    {isProcessing && <span className="text-amber-500 font-bold text-xs animate-pulse">⏳ {t('result.processing')}</span>}
+                    {isError && <span className="text-red-500 font-bold text-xs">⚠️ {t('result.error')}</span>}
                     <span className={`block font-bold ${isClaimed ? 'text-slate-500 line-through' : 'text-amber-500'}`}>{res.totalReward >= 0 ? '+' : ''}{res.totalReward} $CHH</span>
                   </div>
                 </div>
                 
                 {/* Rewards Breakdown */}
                 <div className="grid grid-cols-2 gap-y-1 gap-x-4 text-[10px] text-slate-500 mb-4 bg-slate-950/30 p-2.5 rounded-lg border border-slate-800/30">
-                  <div className="text-slate-400">基本報酬:</div>
+                  <div className="text-slate-400">{t('result.base_reward')}</div>
                   <div className="text-right font-mono font-bold text-slate-300">{res.baseReward}</div>
                   
-                  <div className="text-emerald-400 font-bold mt-1">ボーナス合計:</div>
+                  <div className="text-emerald-400 font-bold mt-1">{t('result.total_bonus')}</div>
                   <div className="text-right font-mono text-emerald-400 font-bold mt-1">{res.bonusReward >= 0 ? '+' : ''}{res.bonusReward}</div>
                   
-                  <div className="text-[9px] pl-2 border-l border-slate-700 ml-1 text-slate-500">└ ヒーロー特性</div>
+                  <div className="text-[9px] pl-2 border-l border-slate-700 ml-1 text-slate-500">{t('result.hero_trait')}</div>
                   <div className="text-[9px] text-right font-mono text-slate-500">{res.heroBonus >= 0 ? '+' : ''}{res.heroBonus}</div>
                   
-                  <div className="text-[9px] pl-2 border-l border-slate-700 ml-1 text-slate-500">└ 装備品効果</div>
+                  <div className="text-[9px] pl-2 border-l border-slate-700 ml-1 text-slate-500">{t('result.equip_effect')}</div>
                   <div className="text-[9px] text-right font-mono text-slate-500">{res.equipmentBonus >= 0 ? '+' : ''}{res.equipmentBonus}</div>
                 </div>
 
@@ -387,7 +389,7 @@ const ResultModal: React.FC<ResultModalProps> = ({ results, totalTokens, onClose
 
         {/* Total & Button */}
         <div ref={totalRef} className="mt-6 pt-6 border-t border-slate-800 bg-slate-900 rounded-2xl p-6 text-center shadow-xl border border-slate-800 shrink-0">
-          <p className="text-slate-500 text-xs font-bold mb-2 uppercase tracking-wide">Total Earnings</p>
+          <p className="text-slate-500 text-xs font-bold mb-2 uppercase tracking-wide">{t('result.total_earnings')}</p>
           <div className="text-4xl font-black text-white mb-6">
             {totalTokens >= 0 ? '+' : ''}{totalTokens.toLocaleString()} <span className="text-lg text-amber-500">$CHH</span>
           </div>
@@ -396,7 +398,7 @@ const ResultModal: React.FC<ResultModalProps> = ({ results, totalTokens, onClose
           {errorMsg && (
             <div className="mb-4 bg-red-900/20 border border-red-500/50 p-3 rounded-lg text-left overflow-auto max-h-40 select-text relative">
                 <div className="flex justify-between items-center mb-2 sticky top-0 -mt-3 -mx-3 p-2 bg-red-950/80 backdrop-blur-sm border-b border-red-500/30">
-                    <p className="text-red-400 text-xs font-bold">CLAIM ERROR</p>
+                    <p className="text-red-400 text-xs font-bold">{t('result.claim_error')}</p>
                     <button 
                         onClick={() => { 
                             navigator.clipboard.writeText(errorMsg); 
@@ -405,7 +407,7 @@ const ResultModal: React.FC<ResultModalProps> = ({ results, totalTokens, onClose
                         }}
                         className="text-[9px] bg-red-900/50 hover:bg-red-800 px-2 py-1 rounded border border-red-700 text-red-200 transition-colors"
                     >
-                        {copyFeedback ? 'COPIED!' : '📋 COPY'}
+                        {copyFeedback ? t('result.copied') : t('result.copy')}
                     </button>
                 </div>
                 <p className="text-red-300 text-[10px] font-mono whitespace-pre-wrap break-all cursor-text">{errorMsg}</p>
@@ -419,7 +421,7 @@ const ResultModal: React.FC<ResultModalProps> = ({ results, totalTokens, onClose
                 disabled={isPreparingClaim}
                 className="flex-1 min-w-[100px] py-4 bg-slate-800 hover:bg-slate-700 border border-slate-600 text-slate-400 rounded-xl font-bold transition-all active:scale-95"
              >
-                閉じる
+                {t('common.close')}
              </button>
 
              {/* Claim Button */}
@@ -439,7 +441,7 @@ const ResultModal: React.FC<ResultModalProps> = ({ results, totalTokens, onClose
                   </span>
                 ) : (
                   <span>
-                      {isAllClaimed ? '完了 (ALL CLAIMED)' : `報酬を受け取る (残り ${pendingCount} 件)`}
+                      {isAllClaimed ? t('result.all_claimed') : `${t('result.claim_reward')} (${t('result.remaining')} ${pendingCount})`}
                   </span>
                 )}
              </button>

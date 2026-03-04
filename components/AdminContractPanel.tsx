@@ -130,7 +130,7 @@ const AdminContractPanel: React.FC = () => {
     } catch (e: any) {
       console.error(e);
       playError();
-      setStatusMsg(`Error: ${e.message}`);
+      setStatusMsg(`Error: ${e.shortMessage || e.message}`);
     } finally {
       setIsLoading(false);
     }
@@ -149,12 +149,12 @@ const AdminContractPanel: React.FC = () => {
         {/* Info Card */}
         <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-lg">
           <h3 className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-4 border-b border-slate-800 pb-2">
-            Reward Contract Info
+            報酬コントラクト情報
           </h3>
           
           <div className="space-y-4">
             <div>
-              <label className="text-[10px] text-slate-500 font-bold block mb-1">CONTRACT ADDRESS</label>
+              <label className="text-[10px] text-slate-500 font-bold block mb-1">コントラクトアドレス</label>
               <div 
                 onClick={() => copyToClipboard(REWARD_CONTRACT_ADDRESS)}
                 className="flex items-center justify-between bg-slate-950 p-3 rounded-xl border border-slate-800 cursor-pointer hover:border-indigo-500 transition-colors group"
@@ -166,7 +166,7 @@ const AdminContractPanel: React.FC = () => {
 
             <div className="flex justify-between items-end">
                <div>
-                 <label className="text-[10px] text-slate-500 font-bold block mb-1">POOL BALANCE ($CHH)</label>
+                 <label className="text-[10px] text-slate-500 font-bold block mb-1">プール残高 ($CHH)</label>
                  <div className="text-3xl font-black text-white font-mono tracking-tight">
                     {Number(contractBalance).toLocaleString(undefined, { maximumFractionDigits: 2 })}
                     <span className="text-sm text-amber-500 ml-2 font-bold">CHH</span>
@@ -175,7 +175,7 @@ const AdminContractPanel: React.FC = () => {
                <button 
                  onClick={() => { playClick(); fetchBalances(); }}
                  className="p-2 bg-slate-800 rounded-lg hover:bg-slate-700 transition-colors"
-                 title="Refresh Balance"
+                 title="残高を更新"
                >
                  🔄
                </button>
@@ -186,12 +186,12 @@ const AdminContractPanel: React.FC = () => {
         {/* Item Shop Contract Info Card */}
         <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-lg">
           <h3 className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-4 border-b border-slate-800 pb-2">
-            Item Shop Contract Info
+            アイテムショップコントラクト情報
           </h3>
           
           <div className="space-y-4">
             <div>
-              <label className="text-[10px] text-slate-500 font-bold block mb-1">CONTRACT ADDRESS</label>
+              <label className="text-[10px] text-slate-500 font-bold block mb-1">コントラクトアドレス</label>
               <div 
                 onClick={() => copyToClipboard(ITEM_SHOP_CONTRACT_ADDRESS)}
                 className="flex items-center justify-between bg-slate-950 p-3 rounded-xl border border-slate-800 cursor-pointer hover:border-indigo-500 transition-colors group"
@@ -206,13 +206,13 @@ const AdminContractPanel: React.FC = () => {
         {/* Action Card */}
         <div className="bg-slate-900 border border-emerald-900/30 rounded-2xl p-6 shadow-lg">
           <h3 className="text-sm font-bold text-emerald-500 uppercase tracking-widest mb-4 border-b border-slate-800 pb-2 flex items-center gap-2">
-            <span>📥</span> Deposit Actions
+            <span>📥</span> 入金アクション
           </h3>
 
           <div className="bg-emerald-950/10 p-4 rounded-xl border border-emerald-500/20 mb-4">
              <p className="text-[10px] text-emerald-200/70 mb-4">
                あなたのウォレットから報酬プールへ $CHH を補充します。<br/>
-               <span className="text-slate-400">Your Balance: {Number(userBalance).toLocaleString(undefined, { maximumFractionDigits: 2 })} CHH</span>
+               <span className="text-slate-400">あなたの残高: {Number(userBalance).toLocaleString(undefined, { maximumFractionDigits: 2 })} CHH</span>
              </p>
              
              <div className="flex gap-2 mb-2">
@@ -221,7 +221,7 @@ const AdminContractPanel: React.FC = () => {
                    type="number" 
                    value={depositAmount}
                    onChange={(e) => setDepositAmount(e.target.value)}
-                   placeholder="Amount to deposit"
+                   placeholder="入金する額"
                    className="w-full bg-slate-950 border border-slate-700 rounded-xl pl-4 pr-16 py-3 text-sm text-white focus:border-emerald-500 outline-none"
                  />
                  <button 
@@ -243,11 +243,11 @@ const AdminContractPanel: React.FC = () => {
                {isLoading ? (
                  <>
                    <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
-                   {statusMsg || 'Processing...'}
+                   {statusMsg || '処理中...'}
                  </>
                ) : (
                  <>
-                   <span>💸</span> Deposit CHH
+                   <span>💸</span> CHHを入金
                  </>
                )}
              </button>

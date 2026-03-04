@@ -5,6 +5,7 @@ import { playClick } from '../utils/sound';
 import Header from './Header';
 import PartySlotGrid from './PartySlotGrid';
 import { IS_TEST_MODE, APP_VERSION } from '../constants';
+import { useLanguage } from '../contexts/LanguageContext';
 
 interface StatusBoardProps {
   state: GameState;
@@ -35,6 +36,7 @@ const QuestItem: React.FC<{
     onDebugComplete?: (id: string) => void;
     onClick?: () => void;
 }> = ({ quest, config, farcasterUser, onDebugComplete, onClick }) => {
+  const { t } = useLanguage();
   const [timeLeft, setTimeLeft] = useState(Math.max(0, Math.floor((quest.endTime - Date.now()) / 1000)));
   const [debugClicks, setDebugClicks] = useState(0);
 
@@ -98,22 +100,22 @@ const QuestItem: React.FC<{
             <h3 className="font-bold text-sm text-slate-100">{quest.name}</h3>
           </div>
           <p className="text-[10px] text-slate-500">
-            予想報酬: <span className="text-amber-500 font-bold">{minReward}-{maxReward}</span> $CHH
+            {t('status.expected_reward')} <span className="text-amber-500 font-bold">{minReward}-{maxReward}</span> $CHH
           </p>
         </div>
 
         <div className="text-right select-none" onClick={handleDebugClick}>
           {isCompleted ? (
             <div className="flex flex-col items-end">
-              <span className="text-[8px] font-bold text-emerald-500 uppercase tracking-wider mb-1">Status</span>
+              <span className="text-[8px] font-bold text-emerald-500 uppercase tracking-wider mb-1">{t('status.status')}</span>
               <div className="flex items-center gap-1.5 text-emerald-500 font-bold text-[10px] px-3 py-1 bg-emerald-500/10 rounded-full border border-emerald-500/20">
                 <span>✓</span>
-                <span>完了</span>
+                <span>{t('status.completed')}</span>
               </div>
             </div>
           ) : (
             <div className="flex flex-col items-end">
-              <span className="text-[8px] font-bold text-slate-500 uppercase tracking-wider mb-1">残り時間</span>
+              <span className="text-[8px] font-bold text-slate-500 uppercase tracking-wider mb-1">{t('status.time_left')}</span>
               <div className="font-bold text-lg text-slate-200 tabular-nums">
                 {minutes}:{seconds.toString().padStart(2, '0')}
               </div>
@@ -128,6 +130,7 @@ const QuestItem: React.FC<{
 const StatusBoard: React.FC<StatusBoardProps> = ({ 
   state, actionButtonLabel, onAction, title, view, isSoundOn, onToggleSound, onDebugAddTokens, farcasterUser, onChainBalance, onAccountClick, onShowLightpaper, onDebugCompleteQuest, onToggleDebug, onNavigate, isFrameAdded, onAddApp
 }) => {
+  const { t } = useLanguage();
   const isAdmin = farcasterUser && ADMIN_FIDS.includes(farcasterUser.fid);
 
   return (
@@ -166,7 +169,7 @@ const StatusBoard: React.FC<StatusBoardProps> = ({
                   className="flex items-center gap-2 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 rounded-full border border-slate-700 transition-all active:scale-95 group"
                 >
                   <span className="text-lg">📜</span>
-                  <span className="text-[10px] font-bold text-slate-400 group-hover:text-slate-200">View Lightpaper</span>
+                  <span className="text-[10px] font-bold text-slate-400 group-hover:text-slate-200">{t('status.view_lightpaper')}</span>
                   <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-3 h-3 text-slate-500">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
                   </svg>
@@ -180,7 +183,7 @@ const StatusBoard: React.FC<StatusBoardProps> = ({
                   className="flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-500 hover:to-teal-400 rounded-full border border-emerald-400/50 shadow-lg shadow-emerald-900/20 transition-all active:scale-95 group animate-pulse"
                 >
                   <span className="text-sm">📱</span>
-                  <span className="text-[10px] font-bold text-white tracking-wide">アプリを登録</span>
+                  <span className="text-[10px] font-bold text-white tracking-wide">{t('status.add_app')}</span>
                 </button>
               )}
 
@@ -212,11 +215,11 @@ const StatusBoard: React.FC<StatusBoardProps> = ({
             <div className="flex items-center justify-between mb-4 px-1">
               <h2 className="text-xs font-bold text-slate-400 uppercase tracking-widest flex items-center">
                 <span className="w-1 h-4 bg-amber-500 rounded-full mr-3"></span>
-                Ongoing Quests
+                {t('status.ongoing_quests')}
               </h2>
               {state.activeQuests.length > 0 && (
                 <span className="text-[10px] font-bold text-amber-500 bg-amber-900/20 px-2 py-0.5 rounded-full">
-                  進行中
+                  {t('status.in_progress')}
                 </span>
               )}
             </div>
@@ -234,7 +237,7 @@ const StatusBoard: React.FC<StatusBoardProps> = ({
                 ))
               ) : (
                 <div className="bg-slate-800 border border-dashed border-slate-700 rounded-2xl p-10 text-center">
-                  <p className="text-slate-500 text-xs font-bold tracking-wider">クエスト待機中</p>
+                  <p className="text-slate-500 text-xs font-bold tracking-wider">{t('status.waiting_quest')}</p>
                 </div>
               )}
             </div>
@@ -246,7 +249,7 @@ const StatusBoard: React.FC<StatusBoardProps> = ({
               <div className="flex justify-between items-center mb-8 px-1">
                 <h2 className="text-xs font-bold text-slate-400 uppercase tracking-widest flex items-center">
                   <span className="w-1 h-4 bg-indigo-500 rounded-full mr-3"></span>
-                  Tactical Teams
+                  {t('status.tactical_teams')}
                 </h2>
                 <div className="h-px flex-1 mx-6 bg-slate-800"></div>
               </div>
@@ -270,12 +273,12 @@ const StatusBoard: React.FC<StatusBoardProps> = ({
                         <div className={`px-4 py-1.5 rounded-full border font-bold text-[10px] tracking-wider shadow-sm ${
                             isActive ? 'bg-indigo-600 text-white border-indigo-500' : 'bg-slate-700 text-slate-400 border-slate-600'
                         }`}>
-                            PARTY 0{partyIndex + 1}
+                            {t('status.party')} 0{partyIndex + 1}
                         </div>
                         {isQuesting && (
                           <div className="flex items-center gap-2 bg-emerald-900/30 px-3 py-1.5 rounded-full border border-emerald-500/30">
                             <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full"></span>
-                            <span className="text-[9px] text-emerald-400 font-bold tracking-wide">任務中</span>
+                            <span className="text-[9px] text-emerald-400 font-bold tracking-wide">{t('status.questing')}</span>
                           </div>
                         )}
                       </div>
