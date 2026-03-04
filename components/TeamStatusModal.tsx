@@ -1,6 +1,7 @@
 
 import React from 'react';
 import { playClick } from '../utils/sound';
+import { useLanguage } from '../contexts/LanguageContext';
 
 interface TeamStatusModalProps {
   stats: {
@@ -18,6 +19,8 @@ interface TeamStatusModalProps {
 }
 
 const TeamStatusModal: React.FC<TeamStatusModalProps> = ({ stats, onClose }) => {
+  const { t } = useLanguage();
+
   return (
     <div className="fixed inset-0 z-[1200] flex items-center justify-center bg-slate-950/90 backdrop-blur-md p-4 animate-fade-in">
       <div className="w-full max-w-sm bg-slate-900 rounded-3xl border border-slate-700 shadow-2xl overflow-hidden flex flex-col max-h-[85vh]">
@@ -25,7 +28,7 @@ const TeamStatusModal: React.FC<TeamStatusModalProps> = ({ stats, onClose }) => 
         {/* Header */}
         <div className="p-4 border-b border-slate-800 bg-slate-900 flex justify-between items-center shrink-0">
           <h2 className="text-lg font-bold text-white flex items-center gap-2 tracking-wide uppercase">
-            <span className="text-2xl">📊</span> Team Status
+            <span className="text-2xl">📊</span> {t('party.team_status')}
           </h2>
           <button 
             onClick={() => { playClick(); onClose(); }}
@@ -110,12 +113,12 @@ const TeamStatusModal: React.FC<TeamStatusModalProps> = ({ stats, onClose }) => 
                             🛡️
                         </div>
                         <div>
-                            <div className="text-[10px] text-indigo-400 font-bold uppercase tracking-wider">Team Defense</div>
+                            <div className="text-[10px] text-indigo-400 font-bold uppercase tracking-wider">{t('party.team_defense')}</div>
                             <div className="text-2xl font-black text-white">{stats.teamDefBonus >= 0 ? '+' : ''}{stats.teamDefBonus}%</div>
                         </div>
                     </div>
                     <p className="text-[9px] text-slate-500 mt-2 pl-1">
-                        *チーム全体に適用されるダメージ軽減効果です。<br/>個別の装備(Helmet)効果はここには含まれません。
+                        {t('party.team_defense_desc1')}<br/>{t('party.team_defense_desc2')}
                     </p>
                 </div>
 

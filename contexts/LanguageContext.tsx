@@ -91,6 +91,9 @@ const translations: Record<Language, Record<string, string>> = {
     'party.cancel': 'Cancel',
     'party.unlock': 'Unlock',
     'party.insufficient': 'Insufficient',
+    'party.team_defense': 'Team Defense',
+    'party.team_defense_desc1': '*Applies damage reduction to the entire team.',
+    'party.team_defense_desc2': 'Individual equipment (Helmet) effects are not included here.',
     
     // GachaView
     'gacha.title': 'SUMMON',
@@ -293,6 +296,9 @@ const translations: Record<Language, Record<string, string>> = {
     'party.cancel': 'キャンセル',
     'party.unlock': '解放する',
     'party.insufficient': '不足',
+    'party.team_defense': 'チーム防御',
+    'party.team_defense_desc1': '*チーム全体に適用されるダメージ軽減効果です。',
+    'party.team_defense_desc2': '個別の装備(Helmet)効果はここには含まれません。',
     
     // GachaView
     'gacha.title': '召喚',
