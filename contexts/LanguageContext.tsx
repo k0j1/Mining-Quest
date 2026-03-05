@@ -132,6 +132,14 @@ const translations: Record<Language, Record<string, string>> = {
     'equip.no_material': 'No materials available for enhancement\n(Same name, rarity, level, unequipped)',
     'equip.no_equip': 'You do not have any {type}',
     'equip.execute_merge': 'EXECUTE MERGE +1',
+    'equip.selected': 'Selected',
+    'equip.synthesis': 'Equipment Synthesis',
+    'equip.armory': 'Armory (Equipment)',
+    'equip.select_to_merge': 'Select equipment to merge',
+    'equip.no_equip_found': 'No equipment found',
+    'equip.base': 'BASE',
+    'equip.material': 'MAT',
+    'common.test_mode': 'TEST MODE',
 
     // RecoveryView
     'recovery.title': 'RECOVERY',
@@ -353,6 +361,14 @@ const translations: Record<Language, Record<string, string>> = {
     'equip.no_material': '強化に使用できる素材がありません\n(同名・同レア・同レベル・未装備)',
     'equip.no_equip': '{type}を持っていません',
     'equip.execute_merge': '強化実行 (MERGE +1)',
+    'equip.selected': '選択中',
+    'equip.synthesis': '装備合成',
+    'equip.armory': '装備一覧',
+    'equip.select_to_merge': '装備を選択してください',
+    'equip.no_equip_found': '装備品がありません',
+    'equip.base': 'ベース',
+    'equip.material': '素材',
+    'common.test_mode': 'テストモード',
 
     // RecoveryView
     'recovery.title': '回復',

@@ -2,6 +2,7 @@ import React from 'react';
 import { Equipment } from '../types';
 import EquipmentIcon from './EquipmentIcon';
 import { calculateEquipmentBaseBonus } from '../utils/mechanics';
+import { useLanguage } from '../contexts/LanguageContext';
 
 interface EquipmentListItemProps {
   item: Equipment;
@@ -28,6 +29,7 @@ const EquipmentListItem: React.FC<EquipmentListItemProps> = ({
   layout = 'grid',
   className = ''
 }) => {
+  const { t } = useLanguage();
   const rarityColors: Record<string, string> = {
     C: 'text-slate-400',
     UC: 'text-emerald-400',
@@ -116,7 +118,7 @@ const EquipmentListItem: React.FC<EquipmentListItemProps> = ({
       
       {isEquippedByCurrentSlot && (
         <div className="text-indigo-400 font-bold text-xs bg-indigo-900/50 px-2 py-1 rounded border border-indigo-500/30">
-            選択中
+            {t('equip.selected')}
         </div>
       )}
     </button>

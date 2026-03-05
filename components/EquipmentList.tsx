@@ -4,6 +4,7 @@ import { Equipment, Hero, QuestRank } from '../types';
 import EquipmentIcon from './EquipmentIcon';
 import EquipmentListItem from './EquipmentListItem';
 import { playClick, playConfirm, playError } from '../utils/sound';
+import { useLanguage } from '../contexts/LanguageContext';
 
 interface EquipmentListProps {
   equipment: Equipment[];
@@ -12,6 +13,7 @@ interface EquipmentListProps {
 }
 
 const EquipmentList: React.FC<EquipmentListProps> = ({ equipment, heroes, onMerge }) => {
+  const { t } = useLanguage();
   const [filterType, setFilterType] = useState<'ALL' | 'Pickaxe' | 'Helmet' | 'Boots'>('ALL');
   const [isMergeMode, setIsMergeMode] = useState(false);
   const [mergeBaseId, setMergeBaseId] = useState<string | null>(null);
@@ -124,7 +126,7 @@ const EquipmentList: React.FC<EquipmentListProps> = ({ equipment, heroes, onMerg
         <div className="flex items-center justify-between mb-2">
             <h2 className="text-xs font-bold text-slate-500 uppercase tracking-widest flex items-center">
               <span className={`w-1 h-3 mr-2 rounded-full ${isMergeMode ? 'bg-amber-500' : 'bg-slate-600'}`}></span>
-              {isMergeMode ? 'Equipment Synthesis' : 'Armory (Equipment)'}
+              {isMergeMode ? t('equip.synthesis') : t('equip.armory')}
             </h2>
         </div>
 
@@ -152,14 +154,14 @@ const EquipmentList: React.FC<EquipmentListProps> = ({ equipment, heroes, onMerg
                 className="shrink-0 flex items-center gap-1.5 px-3 py-1.5 bg-amber-600 hover:bg-amber-500 text-white rounded-lg text-[10px] font-bold shadow-lg shadow-amber-900/20 transition-all active:scale-95"
               >
                 <span className="text-xs">⚒️</span>
-                <span>合成</span>
+                <span>{t('equip.merge')}</span>
               </button>
             ) : (
               <button 
                 onClick={toggleMergeMode}
                 className="shrink-0 text-[10px] font-bold text-slate-400 bg-slate-800 px-3 py-1.5 rounded-lg hover:bg-slate-700 transition-colors"
               >
-                キャンセル
+                {t('common.cancel')}
               </button>
             )}
         </div>
@@ -195,7 +197,7 @@ const EquipmentList: React.FC<EquipmentListProps> = ({ equipment, heroes, onMerg
                         <EquipmentIcon type="Helmet" rarity="C" size="1em" />
                         <EquipmentIcon type="Boots" rarity="C" size="1em" />
                      </div>
-                     <span className="text-[9px] text-slate-500 font-bold">BASE</span>
+                     <span className="text-[9px] text-slate-500 font-bold">{t('equip.base')}</span>
                    </>
                  )}
               </div>
@@ -228,7 +230,7 @@ const EquipmentList: React.FC<EquipmentListProps> = ({ equipment, heroes, onMerg
                         <EquipmentIcon type="Helmet" rarity="C" size="1em" />
                         <EquipmentIcon type="Boots" rarity="C" size="1em" />
                      </div>
-                     <span className="text-[9px] text-slate-500 font-bold">MAT</span>
+                     <span className="text-[9px] text-slate-500 font-bold">{t('equip.material')}</span>
                    </>
                  )}
               </div>
@@ -245,7 +247,7 @@ const EquipmentList: React.FC<EquipmentListProps> = ({ equipment, heroes, onMerg
                    : 'bg-slate-800 text-slate-600 cursor-not-allowed'
                }`}
              >
-               {baseItem && materialItem ? '合成実行 (MERGE +1)' : '装備を選択してください'}
+               {baseItem && materialItem ? t('equip.execute_merge') : t('equip.select_to_merge')}
              </button>
            </div>
         </div>
@@ -275,8 +277,8 @@ const EquipmentList: React.FC<EquipmentListProps> = ({ equipment, heroes, onMerg
       </div>
 
       {filteredList.length === 0 && (
-        <div className="py-12 text-center text-slate-600 text-xs font-bold border border-dashed border-slate-800 rounded-xl">
-            {isMergeMode && mergeBaseId ? "合成可能な素材がありません" : "装備品がありません"}
+        <div className="py-12 text-center text-slate-600 text-xs font-bold border border-dashed border-slate-800 rounded-xl whitespace-pre-wrap">
+            {isMergeMode && mergeBaseId ? t('equip.no_material') : t('equip.no_equip_found')}
         </div>
       )}
     </div>
