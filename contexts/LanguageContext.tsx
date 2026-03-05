@@ -169,6 +169,7 @@ const translations: Record<Language, Record<string, string>> = {
     'notify.approving_tokens': 'Approving token usage...',
     'notify.approve_cancelled': 'Approve cancelled',
     'notify.purchasing_items': 'Purchasing items...',
+    'notify.departing_quest': 'Departing for quest...',
     'notify.tx_cancelled': 'Transaction cancelled',
     'notify.items_purchased': 'Purchased {items}',
     'notify.tx_failed': 'Transaction failed: {message}',
@@ -292,6 +293,12 @@ const translations: Record<Language, Record<string, string>> = {
     'lightpaper.potion': 'Potion (+10HP)',
     'lightpaper.elixir': 'Elixir (MaxHP)',
     'lightpaper.back_home': 'Back to Home',
+    'lightpaper.smart_contracts': 'Smart Contracts',
+    'lightpaper.quest_manager': 'Quest Manager',
+    'lightpaper.item_shop': 'Item Shop',
+    'lightpaper.quest_treasury': 'Quest Treasury',
+    'lightpaper.contract_desc': 'All payments are processed through smart contracts on the Base chain. You can verify the source code below.',
+    'lightpaper.copy_code': 'Copy Code',
     
     // ShopView
     'shop.title': 'ITEM SHOP',
@@ -456,6 +463,7 @@ const translations: Record<Language, Record<string, string>> = {
     'notify.approving_tokens': 'トークンの使用を承認しています...',
     'notify.approve_cancelled': 'Approveがキャンセルされました',
     'notify.purchasing_items': 'アイテムを購入しています...',
+    'notify.departing_quest': 'クエストに出発しています...',
     'notify.tx_cancelled': 'トランザクションがキャンセルされました',
     'notify.items_purchased': '{items}を購入しました',
     'notify.tx_failed': 'トランザクションに失敗しました: {message}',
@@ -579,6 +587,12 @@ const translations: Record<Language, Record<string, string>> = {
     'lightpaper.potion': 'ポーション (+10HP)',
     'lightpaper.elixir': 'エリクサー (MaxHP)',
     'lightpaper.back_home': 'ホームに戻る',
+    'lightpaper.smart_contracts': 'スマートコントラクト',
+    'lightpaper.quest_manager': 'クエストマネージャー',
+    'lightpaper.item_shop': 'アイテムショップ',
+    'lightpaper.quest_treasury': 'クエストトレジャリー',
+    'lightpaper.contract_desc': 'すべての支払いはBaseチェーン上のスマートコントラクトを通じて処理されます。ソースコードは以下で確認できます。',
+    'lightpaper.copy_code': 'コードをコピー',
     
     // ShopView
     'shop.title': 'アイテムショップ',

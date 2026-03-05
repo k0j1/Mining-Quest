@@ -4,6 +4,36 @@ import { GameState, Quest, Hero, QuestRank, QuestConfig, QuestResult } from '../
 import { playClick, playDepart, playError } from '../../utils/sound';
 import { supabase } from '../../lib/supabase';
 import { calculatePartyStats, calculateHeroDamageReduction } from '../../utils/mechanics';
+import { sdk } from '@farcaster/frame-sdk';
+import { encodeFunctionData, createWalletClient, custom, createPublicClient, http } from 'viem';
+import { base } from 'viem/chains';
+import { QUEST_MANAGER_CONTRACT_ADDRESS, CHH_CONTRACT_ADDRESS } from '../../constants';
+
+const QUEST_MANAGER_ABI = [
+  {
+    "inputs": [
+      { "internalType": "uint256", "name": "questRank", "type": "uint256" },
+      { "internalType": "uint256", "name": "cost", "type": "uint256" }
+    ],
+    "name": "departQuest",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  }
+];
+
+const ERC20_ABI = [
+  {
+    "inputs": [
+      { "internalType": "address", "name": "spender", "type": "address" },
+      { "internalType": "uint256", "name": "amount", "type": "uint256" }
+    ],
+    "name": "approve",
+    "outputs": [{ "internalType": "bool", "name": "", "type": "bool" }],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  }
+];
 
 interface UseQuestProps {
   gameState: GameState;
@@ -187,6 +217,78 @@ export const useQuest = ({ gameState, setGameState, showNotification, setReturnR
     const actualDuration = Math.floor(config.duration * actualDurationMultiplier);
     const startTime = Date.now();
     const endTime = startTime + actualDuration * 1000;
+
+    // --- On-chain Transaction ---
+    if (config.burnCost > 0) {
+      try {
+        const walletClient = createWalletClient({
+          chain: base,
+          transport: custom(sdk.wallet.ethProvider)
+        });
+
+        const publicClient = createPublicClient({
+          chain: base,
+          transport: http()
+        });
+
+        const [account] = await walletClient.requestAddresses();
+        if (!account) {
+          showNotification(t('notify.wallet_not_connected'), 'error');
+          return false;
+        }
+
+        // 1. Approve CHH Tokens
+        const approveData = encodeFunctionData({
+          abi: ERC20_ABI,
+          functionName: 'approve',
+          args: [QUEST_MANAGER_CONTRACT_ADDRESS as `0x${string}`, BigInt(config.burnCost) * 10n**18n]
+        });
+
+        showNotification(t('notify.approving_tokens'), 'success');
+        const approveTxHash = await walletClient.sendTransaction({
+          account,
+          to: CHH_CONTRACT_ADDRESS as `0x${string}`,
+          data: approveData,
+          value: 0n,
+        });
+
+        if (!approveTxHash) {
+           showNotification(t('notify.approve_cancelled'), 'error');
+           return false;
+        }
+
+        await publicClient.waitForTransactionReceipt({ hash: approveTxHash });
+
+        // 2. Depart Quest
+        const rankMap: Record<QuestRank, number> = { C: 0, UC: 1, R: 2, E: 3, L: 4 };
+        const departData = encodeFunctionData({
+          abi: QUEST_MANAGER_ABI,
+          functionName: 'departQuest',
+          args: [BigInt(rankMap[rank]), BigInt(config.burnCost) * 10n**18n]
+        });
+
+        showNotification(t('notify.departing_quest'), 'success');
+        const txHash = await walletClient.sendTransaction({
+          account,
+          to: QUEST_MANAGER_CONTRACT_ADDRESS as `0x${string}`,
+          data: departData,
+          value: 0n,
+        });
+
+        if (!txHash) {
+           showNotification(t('notify.tx_cancelled'), 'error');
+           return false;
+        }
+
+        await publicClient.waitForTransactionReceipt({ hash: txHash });
+
+      } catch (error: any) {
+        console.error("Transaction failed:", error);
+        playError();
+        showNotification(t('notify.tx_failed', { message: error.shortMessage || error.message || t('error.unknown') }), 'error');
+        return false;
+      }
+    }
 
     // Create Local Quest Object with Results
     const newQuest: Quest = {
