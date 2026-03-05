@@ -207,7 +207,7 @@ const App: React.FC = () => {
   };
 
   const handleResetSettings = () => {
-    if (window.confirm("接続設定をリセットして、セットアップ画面に戻りますか？\n(入力されたAPIキー情報は削除されます)")) {
+    if (window.confirm(t('app.confirm_reset'))) {
       localStorage.removeItem('VITE_SUPABASE_URL');
       localStorage.removeItem('VITE_SUPABASE_ANON_KEY');
       
@@ -361,7 +361,7 @@ const App: React.FC = () => {
   if (appError) {
     return (
       <div className="fixed inset-0 flex flex-col items-center justify-center bg-slate-950 text-white p-8 text-center z-[9999]">
-        <h2 className="text-2xl font-bold text-rose-500 mb-4">重大なエラー</h2>
+        <h2 className="text-2xl font-bold text-rose-500 mb-4">{t('app.critical_error')}</h2>
         <div className="bg-slate-900 p-4 rounded-xl border border-rose-900 w-full overflow-auto max-h-[50vh] mb-8">
           <p className="font-mono text-xs text-rose-200 break-words whitespace-pre-wrap">{appError}</p>
         </div>
@@ -371,13 +371,13 @@ const App: React.FC = () => {
               onClick={() => { setAppError(null); setIsSDKLoaded(true); }}
               className="px-6 py-3 bg-slate-800 border border-slate-600 rounded-full font-bold hover:bg-slate-700 active:scale-95 text-sm"
             >
-              無視して続行
+              {t('app.ignore_continue')}
             </button>
             <button 
               onClick={() => window.location.reload()}
               className="px-6 py-3 bg-indigo-600 border border-indigo-500 rounded-full font-bold hover:bg-indigo-500 active:scale-95 text-sm"
             >
-              アプリを再読み込み
+              {t('app.reload_app')}
             </button>
         </div>
         <DebugConsole isEnabled={true} />

@@ -12,9 +12,10 @@ interface UseGachaProps {
   showNotification: (msg: string, type: 'error' | 'success') => void;
   farcasterUser?: any;
   refetchBalance: () => Promise<void>;
+  t: (key: string, params?: any) => string;
 }
 
-export const useGacha = ({ gameState, setGameState, showNotification, farcasterUser, refetchBalance }: UseGachaProps) => {
+export const useGacha = ({ gameState, setGameState, showNotification, farcasterUser, refetchBalance, t }: UseGachaProps) => {
   const [gachaResult, setGachaResult] = useState<{ type: 'Hero' | 'Equipment'; data: any[] } | null>(null);
   const [isGachaRolling, setIsGachaRolling] = useState(false);
 
@@ -141,7 +142,7 @@ export const useGacha = ({ gameState, setGameState, showNotification, farcasterU
     const cost = tab === 'Hero' ? 10000 : 6000;
     if (gameState.tokens < cost) {
       playError();
-      showNotification(`トークンが足りません！ (必要: ${cost.toLocaleString()} $CHH)`, 'error');
+      showNotification(t('notify.insufficient_tokens', { amount: cost.toLocaleString() }), 'error');
       return;
     }
     playConfirm();
@@ -161,7 +162,7 @@ export const useGacha = ({ gameState, setGameState, showNotification, farcasterU
 
     } catch (e: any) {
       console.error(e);
-      showNotification(`ガチャエラー: ${e.message}`, 'error');
+      showNotification(t('notify.gacha_error', { message: e.message }), 'error');
     } finally {
       setIsGachaRolling(false);
     }
@@ -173,7 +174,7 @@ export const useGacha = ({ gameState, setGameState, showNotification, farcasterU
 
     if (gameState.tokens < cost) {
       playError();
-      showNotification(`トークンが足りません！ (必要: ${cost.toLocaleString()} $CHH)`, 'error');
+      showNotification(t('notify.insufficient_tokens', { amount: cost.toLocaleString() }), 'error');
       return;
     }
     playConfirm();
@@ -199,7 +200,7 @@ export const useGacha = ({ gameState, setGameState, showNotification, farcasterU
 
     } catch (e: any) {
       console.error(e);
-      showNotification(`ガチャエラー: ${e.message}`, 'error');
+      showNotification(t('notify.gacha_error', { message: e.message }), 'error');
     } finally {
       setIsGachaRolling(false);
     }

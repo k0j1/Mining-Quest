@@ -6,7 +6,7 @@ import { CHH_CONTRACT_ADDRESS } from '../constants';
 
 const BASE_RPC_URL = 'https://mainnet.base.org';
 
-export const useFarcasterAuth = (setNotification: (msg: string, type: 'error' | 'success') => void) => {
+export const useFarcasterAuth = (setNotification: (msg: string, type: 'error' | 'success') => void, t: (key: string, params?: any) => string) => {
   const [farcasterUser, setFarcasterUser] = useState<any>(null);
   const [onChainBalanceRaw, setOnChainBalanceRaw] = useState<number | null>(null);
   const [isFrameAdded, setIsFrameAdded] = useState(true); // Default to true (hidden) to avoid flashing on unsupported envs
@@ -72,7 +72,7 @@ export const useFarcasterAuth = (setNotification: (msg: string, type: 'error' | 
     try {
       await sdk.actions.addFrame();
       setIsFrameAdded(true);
-      setNotification("MiniAppとして登録しました！", 'success');
+      setNotification(t('notify.miniapp_registered'), 'success');
     } catch (e: any) {
       console.error("Add Frame Error:", e);
       // Don't show error notification as user might have just cancelled
@@ -187,7 +187,7 @@ export const useFarcasterAuth = (setNotification: (msg: string, type: 'error' | 
         console.warn("Farcaster Context initialization warning:", e);
         // Only notify error if we actually tried and failed significantly, 
         // preventing notification spam on soft-errors
-        setNotification(`FC Login Error: ${e.message}`, 'error');
+        setNotification(t('notify.fc_login_error', { message: e.message }), 'error');
       }
     };
     

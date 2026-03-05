@@ -40,9 +40,10 @@ interface UseItemsProps {
   showNotification: (msg: string, type: 'error' | 'success') => void;
   farcasterUser?: any;
   refetchBalance: () => Promise<void>;
+  t: (key: string, params?: any) => string;
 }
 
-export const useItems = ({ gameState, setGameState, showNotification, farcasterUser, refetchBalance }: UseItemsProps) => {
+export const useItems = ({ gameState, setGameState, showNotification, farcasterUser, refetchBalance, t }: UseItemsProps) => {
 
   const updateHeroHpDB = async (heroId: string, newHp: number) => {
     if (!farcasterUser?.fid) return;
@@ -61,7 +62,7 @@ export const useItems = ({ gameState, setGameState, showNotification, farcasterU
     const cost = 100 * amount;
     if (gameState.tokens < cost) {
       playError();
-      showNotification(`トークンが足りません！ (必要: ${cost.toLocaleString()} $CHH)`, 'error');
+      showNotification(t('notify.insufficient_tokens', { amount: cost.toLocaleString() }), 'error');
       return;
     }
 
@@ -80,14 +81,14 @@ export const useItems = ({ gameState, setGameState, showNotification, farcasterU
     }
     
     refetchBalance();
-    showNotification(`ポーションを${amount}個購入しました`, 'success');
+    showNotification(t('notify.potion_purchased', { amount }), 'success');
   };
 
   const buyElixir = async (amount: number = 1) => {
     const cost = 500 * amount;
     if (gameState.tokens < cost) {
       playError();
-      showNotification(`トークンが足りません！ (必要: ${cost.toLocaleString()} $CHH)`, 'error');
+      showNotification(t('notify.insufficient_tokens', { amount: cost.toLocaleString() }), 'error');
       return;
     }
 
@@ -106,7 +107,7 @@ export const useItems = ({ gameState, setGameState, showNotification, farcasterU
     }
     
     refetchBalance();
-    showNotification(`エリクサーを${amount}個購入しました`, 'success');
+    showNotification(t('notify.elixir_purchased', { amount }), 'success');
   };
 
   const buyItems = async (potionAmount: number, elixirAmount: number) => {
@@ -116,7 +117,7 @@ export const useItems = ({ gameState, setGameState, showNotification, farcasterU
 
     if (gameState.tokens < totalCost) {
       playError();
-      showNotification(`トークンが足りません！ (必要: ${totalCost.toLocaleString()} $CHH)`, 'error');
+      showNotification(t('notify.insufficient_tokens', { amount: totalCost.toLocaleString() }), 'error');
       return;
     }
 
@@ -134,7 +135,7 @@ export const useItems = ({ gameState, setGameState, showNotification, farcasterU
 
       const [account] = await walletClient.requestAddresses();
       if (!account) {
-        showNotification("ウォレットが接続されていません", 'error');
+        showNotification(t('notify.wallet_not_connected'), 'error');
         return;
       }
 
@@ -145,7 +146,7 @@ export const useItems = ({ gameState, setGameState, showNotification, farcasterU
         args: [ITEM_SHOP_CONTRACT_ADDRESS as `0x${string}`, BigInt(totalCost) * 10n**18n] // Assuming 18 decimals
       });
 
-      showNotification("トークンの使用を承認しています...", 'success');
+      showNotification(t('notify.approving_tokens'), 'success');
       const approveTxHash = await walletClient.sendTransaction({
         account,
         to: CHH_CONTRACT_ADDRESS as `0x${string}`,
@@ -154,7 +155,7 @@ export const useItems = ({ gameState, setGameState, showNotification, farcasterU
       });
 
       if (!approveTxHash) {
-         showNotification("Approveがキャンセルされました", 'error');
+         showNotification(t('notify.approve_cancelled'), 'error');
          return;
       }
 
@@ -167,7 +168,7 @@ export const useItems = ({ gameState, setGameState, showNotification, farcasterU
         args: [BigInt(potionAmount), BigInt(elixirAmount)]
       });
 
-      showNotification("アイテムを購入しています...", 'success');
+      showNotification(t('notify.purchasing_items'), 'success');
       const txHash = await walletClient.sendTransaction({
         account,
         to: ITEM_SHOP_CONTRACT_ADDRESS as `0x${string}`,
@@ -176,7 +177,7 @@ export const useItems = ({ gameState, setGameState, showNotification, farcasterU
       });
 
       if (!txHash) {
-         showNotification("トランザクションがキャンセルされました", 'error');
+         showNotification(t('notify.tx_cancelled'), 'error');
          return;
       }
 
@@ -207,21 +208,21 @@ export const useItems = ({ gameState, setGameState, showNotification, farcasterU
       refetchBalance();
       
       let msg = [];
-      if (potionAmount > 0) msg.push(`ポーションx${potionAmount}`);
-      if (elixirAmount > 0) msg.push(`エリクサーx${elixirAmount}`);
-      showNotification(`${msg.join('、')}を購入しました`, 'success');
+      if (potionAmount > 0) msg.push(t('item.potion') + `x${potionAmount}`);
+      if (elixirAmount > 0) msg.push(t('item.elixir') + `x${elixirAmount}`);
+      showNotification(t('notify.items_purchased', { items: msg.join(', ') }), 'success');
 
     } catch (error: any) {
       console.error("Transaction failed:", error);
       playError();
-      showNotification(`トランザクションに失敗しました: ${error.shortMessage || error.message || "不明なエラー"}`, 'error');
+      showNotification(t('notify.tx_failed', { message: error.shortMessage || error.message || t('error.unknown') }), 'error');
     }
   };
 
   const usePotion = async (heroId: string) => {
     if (gameState.items.item01 <= 0) {
       playError();
-      showNotification(`ポーションを持っていません`, 'error');
+      showNotification(t('notify.no_potion'), 'error');
       return;
     }
     const hero = gameState.heroes.find(h => h.id === heroId);
@@ -246,13 +247,13 @@ export const useItems = ({ gameState, setGameState, showNotification, farcasterU
       }
     }
 
-    showNotification(`${hero.name}を回復しました (+10HP)`, 'success');
+    showNotification(t('notify.hero_recovered', { name: hero.name }), 'success');
   };
 
   const useElixir = async (heroId: string) => {
     if (gameState.items.item02 <= 0) {
       playError();
-      showNotification(`エリクサーを持っていません`, 'error');
+      showNotification(t('notify.no_elixir'), 'error');
       return;
     }
     const hero = gameState.heroes.find(h => h.id === heroId);
@@ -277,7 +278,7 @@ export const useItems = ({ gameState, setGameState, showNotification, farcasterU
       }
     }
 
-    showNotification(`${hero.name}を全回復しました`, 'success');
+    showNotification(t('notify.hero_fully_recovered', { name: hero.name }), 'success');
   };
 
   const mergeEquipment = async (baseId: string, materialId: string) => {
@@ -285,19 +286,19 @@ export const useItems = ({ gameState, setGameState, showNotification, farcasterU
     const materialItem = gameState.equipment.find(e => e.id === materialId);
 
     if (!baseItem || !materialItem) {
-      showNotification("アイテムが見つかりません", 'error');
+      showNotification(t('notify.item_not_found'), 'error');
       return;
     }
 
     if (baseItem.name !== materialItem.name || baseItem.rarity !== materialItem.rarity || baseItem.level !== materialItem.level) {
-      showNotification("同じ種類・レアリティ・レベルの装備のみマージ可能です", 'error');
+      showNotification(t('notify.merge_invalid'), 'error');
       return;
     }
 
     // Check if material is equipped
     const isEquipped = gameState.heroes.some(h => h.equipmentIds.includes(materialId));
     if (isEquipped) {
-      showNotification("装備中のアイテムは素材にできません", 'error');
+      showNotification(t('notify.material_equipped'), 'error');
       return;
     }
 
@@ -347,12 +348,12 @@ export const useItems = ({ gameState, setGameState, showNotification, farcasterU
         throw deleteError;
       }
 
-      showNotification(`装備を強化しました！ (+${newLevel})`, 'success');
+      showNotification(t('notify.equip_enhanced', { level: newLevel }), 'success');
     } catch (e) {
       console.error("Merge failed:", e);
       // Even if error occurs, if it's a network error but request went through, state might be desynced.
       // But we rely on optimistic update.
-      showNotification("強化処理中にエラーが発生しました", 'error');
+      showNotification(t('notify.merge_error'), 'error');
       // Revert state would be ideal here, but for now we rely on reload if error occurs
     }
   };

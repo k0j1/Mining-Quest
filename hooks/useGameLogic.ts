@@ -4,6 +4,7 @@ import { GameState, QuestConfig, QuestRank, Hero, Equipment, Quest, Species, Que
 import { INITIAL_HEROES, INITIAL_EQUIPMENT } from '../constants';
 import { supabase } from '../lib/supabase';
 import { getHeroImageUrl } from '../utils/heroUtils';
+import { useLanguage } from '../contexts/LanguageContext';
 
 // Sub-hooks
 import { useFarcasterAuth } from './useFarcasterAuth';
@@ -13,6 +14,7 @@ import { useParty } from './actions/useParty';
 import { useItems } from './actions/useItems';
 
 export const useGameLogic = () => {
+  const { t } = useLanguage();
   // --- Central Game State ---
   const [gameState, setGameState] = useState<GameState>({
     tokens: 50000, 
@@ -84,7 +86,7 @@ export const useGameLogic = () => {
 
   // --- 1. Farcaster Integration ---
   // Expose refetchBalance to pass to action hooks
-  const { farcasterUser, onChainBalanceRaw, refetchBalance, isFrameAdded, addFrame } = useFarcasterAuth(showNotification);
+  const { farcasterUser, onChainBalanceRaw, refetchBalance, isFrameAdded, addFrame } = useFarcasterAuth(showNotification, t);
 
   // Sync On-chain balance to game tokens if available
   useEffect(() => {
@@ -327,28 +329,28 @@ export const useGameLogic = () => {
   
   // Quest Logic
   const { depart, returnFromQuest, debugCompleteQuest, getQuestPrediction, confirmQuestReturn } = useQuest({
-    gameState, setGameState, showNotification, setReturnResult, farcasterUser, refetchBalance
+    gameState, setGameState, showNotification, setReturnResult, farcasterUser, refetchBalance, t
   });
 
   // Gacha Logic
   const { gachaResult, setGachaResult, isGachaRolling, rollGacha, rollGachaTriple } = useGacha({
-    gameState, setGameState, showNotification, farcasterUser, refetchBalance
+    gameState, setGameState, showNotification, farcasterUser, refetchBalance, t
   });
 
   // Party Logic
   const { equipItem, switchParty, unlockParty, assignHeroToParty, swapPartyPositions } = useParty({
-    gameState, setGameState, showNotification, farcasterUser, refetchBalance
+    gameState, setGameState, showNotification, farcasterUser, refetchBalance, t
   });
 
   // Item Logic
   const { buyPotion, buyElixir, buyItems, usePotion, useElixir, mergeEquipment } = useItems({
-    gameState, setGameState, showNotification, farcasterUser, refetchBalance
+    gameState, setGameState, showNotification, farcasterUser, refetchBalance, t
   });
 
   // Debug Actions
   const debugAddTokens = () => {
     setGameState(p => ({ ...p, tokens: p.tokens + 10000 }));
-    showNotification("デバッグ: 10,000 $CHHを追加しました", 'success');
+    showNotification(t('notify.debug_tokens_added'), 'success');
   };
 
   return {

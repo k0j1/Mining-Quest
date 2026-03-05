@@ -12,9 +12,10 @@ interface UseQuestProps {
   setReturnResult: (result: { results: QuestResult[], totalTokens: number } | null) => void;
   farcasterUser?: any;
   refetchBalance: () => Promise<void>;
+  t: (key: string, params?: any) => string;
 }
 
-export const useQuest = ({ gameState, setGameState, showNotification, setReturnResult, farcasterUser, refetchBalance }: UseQuestProps) => {
+export const useQuest = ({ gameState, setGameState, showNotification, setReturnResult, farcasterUser, refetchBalance, t }: UseQuestProps) => {
   
   // Exposed Helper: Calculate Prediction for UI
   const getQuestPrediction = (config: QuestConfig, partyHeroes: Hero[]) => {
@@ -141,7 +142,7 @@ export const useQuest = ({ gameState, setGameState, showNotification, setReturnR
     const config = gameState.questConfigs.find(q => q.rank === rank);
     if (!config) {
         playError();
-        showNotification("クエストデータの読み込みに失敗しました。", 'error');
+        showNotification(t('notify.quest_load_failed'), 'error');
         return false;
     }
 
@@ -154,7 +155,7 @@ export const useQuest = ({ gameState, setGameState, showNotification, setReturnR
 
     if (isPartyBusy) {
         playError();
-        showNotification("このパーティは既に任務中です。別のパーティを選択してください。", 'error');
+        showNotification(t('notify.party_busy'), 'error');
         return false;
     }
 
@@ -164,19 +165,19 @@ export const useQuest = ({ gameState, setGameState, showNotification, setReturnR
 
     if (partyHeroes.length < 3) {
       playError();
-      showNotification("パーティは3人揃える必要があります！編成してください。", 'error');
+      showNotification(t('notify.party_incomplete'), 'error');
       return false;
     }
 
     if (partyHeroes.some(h => h.hp <= 0)) {
       playError();
-      showNotification("HPが0のヒーローがいます。回復してください。", 'error');
+      showNotification(t('notify.hero_hp_zero'), 'error');
       return false;
     }
 
     if (gameState.tokens < config.burnCost) {
       playError();
-      showNotification(`トークンが足りません！ (必要: ${config.burnCost.toLocaleString()} $CHH)`, 'error');
+      showNotification(t('notify.insufficient_tokens', { amount: config.burnCost.toLocaleString() }), 'error');
       return false;
     }
 
@@ -268,7 +269,7 @@ export const useQuest = ({ gameState, setGameState, showNotification, setReturnR
     
     if (completed.length === 0) {
       playError();
-      showNotification("完了したクエストはありません。", 'error');
+      showNotification(t('notify.no_completed_quests'), 'error');
       return false;
     }
 
@@ -280,7 +281,7 @@ export const useQuest = ({ gameState, setGameState, showNotification, setReturnR
       if (!config) {
           console.warn(`[useQuest] Config not found for rank ${quest.rank}. Waiting for data...`);
           playError();
-          showNotification("クエストデータの読み込み中です。しばらく待ってから再試行してください。", 'error');
+          showNotification(t('notify.quest_loading'), 'error');
           return false;
       }
 
@@ -326,18 +327,18 @@ export const useQuest = ({ gameState, setGameState, showNotification, setReturnR
         if (damageTaken >= 9999) {
              newHp = 0;
              deadHeroIds.push(hero.id);
-             logs.push(`💀 悲報: ${hero.name} は帰らぬ犬となりました...`);
+             logs.push(t('quest.log_lost', { name: hero.name }));
              isDead = true;
         } else {
              if (newHp === 0) {
                deadHeroIds.push(hero.id);
-               logs.push(`💀 ${hero.name} は力尽きた... (HP 0)`);
+               logs.push(t('quest.log_fainted', { name: hero.name }));
                isDead = true;
              } else {
                if (damageTaken > 0) {
-                  logs.push(`💥 ${hero.name}: -${damageTaken} HP (残: ${newHp})`);
+                  logs.push(t('quest.log_damage', { name: hero.name, damage: damageTaken, hp: newHp }));
                } else {
-                  logs.push(`🛡️ ${hero.name}: 無傷で生還！`);
+                  logs.push(t('quest.log_safe', { name: hero.name }));
                }
              }
         }
@@ -354,7 +355,7 @@ export const useQuest = ({ gameState, setGameState, showNotification, setReturnR
 
       if (survivors === 0 && questHeroes.length > 0) {
         finalReward = 0;
-        logs.push(`❌ パーティ全滅！クエスト失敗。報酬は得られません。`);
+        logs.push(t('quest.log_party_wiped'));
       }
 
       totalPendingReward += finalReward;
@@ -462,7 +463,7 @@ export const useQuest = ({ gameState, setGameState, showNotification, setReturnR
             } catch (e: any) {
                 console.error(`Error syncing quest completion for PID ${questPid}:`, e);
                 dbSuccess = false;
-                showNotification(`クエスト同期エラー (ID: ${questPid}): ${e.message || 'Unknown Error'}`, 'error');
+                showNotification(t('notify.quest_sync_error', { id: questPid, message: e.message || 'Unknown Error' }), 'error');
             }
         }
 

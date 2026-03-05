@@ -10,9 +10,10 @@ interface UsePartyProps {
   showNotification: (msg: string, type: 'error' | 'success') => void;
   farcasterUser?: any;
   refetchBalance: () => Promise<void>;
+  t: (key: string, params?: any) => string;
 }
 
-export const useParty = ({ gameState, setGameState, showNotification, farcasterUser, refetchBalance }: UsePartyProps) => {
+export const useParty = ({ gameState, setGameState, showNotification, farcasterUser, refetchBalance, t }: UsePartyProps) => {
 
   const equipItem = async (heroId: string, slotIndex: number, equipmentId: string | null) => {
     playConfirm();
@@ -52,7 +53,7 @@ export const useParty = ({ gameState, setGameState, showNotification, farcasterU
     const cost = 10000;
     if (gameState.tokens < cost) {
       playError();
-      showNotification(`トークンが足りません！ (必要: ${cost.toLocaleString()} $CHH)`, 'error');
+      showNotification(t('notify.insufficient_tokens', { amount: cost.toLocaleString() }), 'error');
       return;
     }
     playConfirm();
