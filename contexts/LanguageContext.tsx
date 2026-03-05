@@ -117,6 +117,19 @@ const translations: Record<Language, Record<string, string>> = {
     'gacha.single': '1x SUMMON',
     'gacha.multi': '10x SUMMON',
     
+    // EquipmentSelector
+    'equip.select_equip': 'Select Equipment',
+    'equip.enhance': 'Enhance Equipment',
+    'equip.change': 'Change Equipment',
+    'equip.merge': 'Enhance (Merge)',
+    'equip.select_base': 'Select base equipment to enhance',
+    'equip.select_material': 'Select material',
+    'equip.confirm_merge': 'Execute enhancement?',
+    'equip.unequip': 'Unequip',
+    'equip.no_material': 'No materials available for enhancement\n(Same name, rarity, level, unequipped)',
+    'equip.no_equip': 'You do not have any {type}',
+    'equip.execute_merge': 'EXECUTE MERGE +1',
+
     // RecoveryView
     'recovery.title': 'RECOVERY',
     'recovery.shop_inventory': 'Shop & Inventory',
@@ -322,6 +335,19 @@ const translations: Record<Language, Record<string, string>> = {
     'gacha.single': '1回召喚',
     'gacha.multi': '10回召喚',
     
+    // EquipmentSelector
+    'equip.select_equip': '装備を選択',
+    'equip.enhance': '装備強化',
+    'equip.change': '装備変更',
+    'equip.merge': '強化 (Merge)',
+    'equip.select_base': '強化するベース装備を選択してください',
+    'equip.select_material': '素材を選択してください',
+    'equip.confirm_merge': '強化を実行しますか？',
+    'equip.unequip': '装備を外す',
+    'equip.no_material': '強化に使用できる素材がありません\n(同名・同レア・同レベル・未装備)',
+    'equip.no_equip': '{type}を持っていません',
+    'equip.execute_merge': '強化実行 (MERGE +1)',
+
     // RecoveryView
     'recovery.title': '回復',
     'recovery.shop_inventory': 'ショップ＆インベントリ',

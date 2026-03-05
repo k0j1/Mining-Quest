@@ -30,16 +30,16 @@ const MaintenanceScreen: React.FC<MaintenanceScreenProps> = ({
 
        <div className="relative z-10 flex flex-col items-center">
           <div className="text-6xl mb-6 animate-bounce">
-              {isBlocked ? '🚫' : '🚧'}
+              🚧
           </div>
           <h2 className="text-2xl font-black text-amber-500 mb-4 tracking-widest uppercase">
-              {isBlocked ? 'ACCESS RESTRICTED' : 'MAINTENANCE'}
+              MAINTENANCE
           </h2>
           <p className="text-slate-400 text-sm mb-8 leading-relaxed max-w-xs mx-auto">
             {isBlocked ? (
               <span>
-                このアカウントは利用が制限されています。<br/>
-                運営までお問い合わせください。
+                現在メンテナンス中です。<br/>
+                しばらく経ってから再度アクセスしてください。
               </span>
             ) : (
               <span>

@@ -4,6 +4,7 @@ import { Equipment, Hero } from '../types';
 import EquipmentIcon from './EquipmentIcon';
 import EquipmentListItem from './EquipmentListItem';
 import { playClick, playConfirm, playError } from '../utils/sound';
+import { useLanguage } from '../contexts/LanguageContext';
 
 interface EquipmentSelectorProps {
   hero: Hero;
@@ -24,6 +25,7 @@ const EquipmentSelector: React.FC<EquipmentSelectorProps> = ({
   allHeroes,
   onMerge
 }) => {
+  const { t } = useLanguage();
   const [mode, setMode] = useState<'equip' | 'merge'>('equip');
   const [mergeBaseId, setMergeBaseId] = useState<string | null>(null);
   const [mergeMaterialId, setMergeMaterialId] = useState<string | null>(null);
@@ -120,7 +122,7 @@ const EquipmentSelector: React.FC<EquipmentSelectorProps> = ({
               </div>
               <div>
                   <h2 className="text-lg font-orbitron font-bold text-white">
-                    {mode === 'equip' ? '装備を選択' : '装備強化'}
+                    {mode === 'equip' ? t('equip.select_equip') : t('equip.enhance')}
                   </h2>
                   <p className="text-[10px] text-slate-400 flex items-center gap-1">
                   {hero.name} - Slot {slotIndex + 1} ({requiredType})
@@ -138,13 +140,13 @@ const EquipmentSelector: React.FC<EquipmentSelectorProps> = ({
               onClick={() => { setMode('equip'); setMergeBaseId(null); setMergeMaterialId(null); playClick(); }}
               className={`flex-1 py-2 rounded-lg text-xs font-bold transition-all ${mode === 'equip' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-500 hover:text-slate-300'}`}
             >
-              装備変更
+              {t('equip.change')}
             </button>
             <button 
               onClick={() => { setMode('merge'); setMergeBaseId(null); setMergeMaterialId(null); playClick(); }}
               className={`flex-1 py-2 rounded-lg text-xs font-bold transition-all ${mode === 'merge' ? 'bg-amber-600 text-white shadow-lg' : 'text-slate-500 hover:text-slate-300'}`}
             >
-              強化 (Merge)
+              {t('equip.merge')}
             </button>
           </div>
         </div>
@@ -156,15 +158,15 @@ const EquipmentSelector: React.FC<EquipmentSelectorProps> = ({
           {mode === 'merge' && (
             <div className="mb-4 bg-amber-900/20 border border-amber-500/30 rounded-xl p-3 text-center">
               {!mergeBaseId ? (
-                <p className="text-xs text-amber-200">強化するベース装備を選択してください</p>
+                <p className="text-xs text-amber-200">{t('equip.select_base')}</p>
               ) : !mergeMaterialId ? (
                 <div className="flex items-center justify-between px-2">
-                   <button onClick={() => setMergeBaseId(null)} className="text-[10px] bg-slate-800 px-2 py-1 rounded text-slate-400">戻る</button>
-                   <p className="text-xs text-amber-200 font-bold">素材を選択してください</p>
+                   <button onClick={() => setMergeBaseId(null)} className="text-[10px] bg-slate-800 px-2 py-1 rounded text-slate-400">{t('common.back')}</button>
+                   <p className="text-xs text-amber-200 font-bold">{t('equip.select_material')}</p>
                    <div className="w-8"></div>
                 </div>
               ) : (
-                <p className="text-xs text-amber-200">強化を実行しますか？</p>
+                <p className="text-xs text-amber-200">{t('equip.confirm_merge')}</p>
               )}
             </div>
           )}
@@ -176,15 +178,15 @@ const EquipmentSelector: React.FC<EquipmentSelectorProps> = ({
               className="w-full p-4 rounded-xl border border-dashed border-red-500/30 bg-red-500/5 text-red-400 font-bold hover:bg-red-500/10 transition-colors flex items-center justify-center space-x-2 shrink-0 mb-2"
             >
               <span>🗑️</span>
-              <span>装備を外す</span>
+              <span>{t('equip.unequip')}</span>
             </button>
           )}
 
           {filteredList.length === 0 && (
-            <div className="py-12 text-center text-slate-500 text-sm">
+            <div className="py-12 text-center text-slate-500 text-sm whitespace-pre-wrap">
               {mode === 'merge' && mergeBaseId 
-                ? "強化に使用できる素材がありません\n(同名・同レア・同レベル・未装備)" 
-                : `${requiredType}を持っていません`}
+                ? t('equip.no_material')
+                : t('equip.no_equip').replace('{type}', requiredType)}
             </div>
           )}
 
@@ -245,13 +247,13 @@ const EquipmentSelector: React.FC<EquipmentSelectorProps> = ({
                 onClick={() => setMergeMaterialId(null)}
                 className="flex-1 py-3 bg-slate-800 text-slate-400 rounded-xl font-bold text-xs"
               >
-                キャンセル
+                {t('common.cancel')}
               </button>
               <button 
                 onClick={executeMerge}
                 className="flex-[2] py-3 bg-gradient-to-r from-amber-600 to-orange-600 text-white rounded-xl font-bold text-sm shadow-lg hover:brightness-110 active:scale-95 transition-all"
               >
-                強化実行 (MERGE +1)
+                {t('equip.execute_merge')}
               </button>
             </div>
           </div>
