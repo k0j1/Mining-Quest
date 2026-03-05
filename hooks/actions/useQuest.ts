@@ -463,7 +463,7 @@ export const useQuest = ({ gameState, setGameState, showNotification, setReturnR
             } catch (e: any) {
                 console.error(`Error syncing quest completion for PID ${questPid}:`, e);
                 dbSuccess = false;
-                showNotification(t('notify.quest_sync_error', { id: questPid, message: e.message || 'Unknown Error' }), 'error');
+                showNotification(t('notify.quest_sync_error', { id: questPid, message: e.message || t('error.unknown') }), 'error');
             }
         }
 

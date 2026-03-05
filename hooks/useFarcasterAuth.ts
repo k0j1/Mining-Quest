@@ -145,7 +145,7 @@ export const useFarcasterAuth = (setNotification: (msg: string, type: 'error' | 
                 ...u,
                 pfpUrl,
                 address: ethAddress,
-                username: u.username || 'Unknown Miner'
+                username: u.username || t('common.unknown_miner')
               };
               
               setFarcasterUser(user);

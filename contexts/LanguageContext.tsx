@@ -22,6 +22,7 @@ const translations: Record<Language, Record<string, string>> = {
     'common.test_warning_title': 'Test Play Notice',
     'common.test_warning_desc': 'Please note that all heroes, equipment, and items collected during the test play will be deleted after the test play ends.',
     'common.understand': 'I Understand',
+    'common.unknown_miner': 'Unknown Miner',
     
     // BottomNav
     'nav.home': 'HOME',
@@ -187,6 +188,7 @@ const translations: Record<Language, Record<string, string>> = {
     'app.critical_error': 'Critical Error',
     'app.ignore_continue': 'Ignore and Continue',
     'app.reload_app': 'Reload App',
+    'error.unknown': 'Unknown Error',
 
     // Quest Logs
     'quest.log_lost': '💀 Sad News: {name} has become a dog that never returns...',
@@ -294,6 +296,8 @@ const translations: Record<Language, Record<string, string>> = {
     // ShopView
     'shop.title': 'ITEM SHOP',
     'shop.buy': 'BUY',
+    'item.potion': 'Potion',
+    'item.elixir': 'Elixir',
   },
   ja: {
     // Common
@@ -305,6 +309,7 @@ const translations: Record<Language, Record<string, string>> = {
     'common.test_warning_title': 'テストプレイに関するご注意',
     'common.test_warning_desc': 'テストプレイ中に集めたヒーロー、装備品、アイテムはテストプレイ終了後にすべて消えるためご注意ください。',
     'common.understand': '理解しました',
+    'common.unknown_miner': '名もなき採掘者',
     
     // BottomNav (常に英語にするため、ここは英語のままか、使用しない)
     'nav.home': 'HOME',
@@ -470,6 +475,7 @@ const translations: Record<Language, Record<string, string>> = {
     'app.critical_error': '重大なエラー',
     'app.ignore_continue': '無視して続行',
     'app.reload_app': 'アプリを再読み込み',
+    'error.unknown': '不明なエラー',
 
     // Quest Logs
     'quest.log_lost': '💀 悲報: {name} は帰らぬ犬となりました...',
@@ -577,6 +583,8 @@ const translations: Record<Language, Record<string, string>> = {
     // ShopView
     'shop.title': 'アイテムショップ',
     'shop.buy': '購入',
+    'item.potion': 'ポーション',
+    'item.elixir': 'エリクサー',
   }
 };
 
