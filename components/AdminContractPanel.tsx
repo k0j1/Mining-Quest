@@ -3,7 +3,7 @@ import { createPublicClient, createWalletClient, custom, http, parseAbi, formatU
 import { base } from 'viem/chains';
 import { sdk } from '@farcaster/frame-sdk';
 import { playClick, playConfirm, playError } from '../utils/sound';
-import { ITEM_SHOP_CONTRACT_ADDRESS, QUEST_TREASURY_CONTRACT_ADDRESS } from '../constants';
+import { ITEM_SHOP_CONTRACT_ADDRESS, QUEST_TREASURY_CONTRACT_ADDRESS, QUEST_MANAGER_CONTRACT_ADDRESS } from '../constants';
 
 // Constants
 const REWARD_CONTRACT_ADDRESS = "0x193708bB0AC212E59fc44d6D6F3507F25Bc97fd4" as `0x${string}`;
@@ -277,6 +277,26 @@ const AdminContractPanel: React.FC = () => {
                 className="flex items-center justify-between bg-slate-950 p-3 rounded-xl border border-slate-800 cursor-pointer hover:border-indigo-500 transition-colors group"
               >
                 <code className="text-xs font-mono text-indigo-300 break-all">{ITEM_SHOP_CONTRACT_ADDRESS}</code>
+                <span className="text-slate-600 group-hover:text-white text-xs">📋</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Quest Manager Contract Info Card */}
+        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-lg">
+          <h3 className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-4 border-b border-slate-800 pb-2">
+            クエストマネージャー情報
+          </h3>
+          
+          <div className="space-y-4">
+            <div>
+              <label className="text-[10px] text-slate-500 font-bold block mb-1">コントラクトアドレス</label>
+              <div 
+                onClick={() => copyToClipboard(QUEST_MANAGER_CONTRACT_ADDRESS)}
+                className="flex items-center justify-between bg-slate-950 p-3 rounded-xl border border-slate-800 cursor-pointer hover:border-indigo-500 transition-colors group"
+              >
+                <code className="text-xs font-mono text-indigo-300 break-all">{QUEST_MANAGER_CONTRACT_ADDRESS}</code>
                 <span className="text-slate-600 group-hover:text-white text-xs">📋</span>
               </div>
             </div>
