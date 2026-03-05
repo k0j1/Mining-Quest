@@ -97,6 +97,11 @@ const translations: Record<Language, Record<string, string>> = {
     'party.team_defense': 'Team Defense',
     'party.team_defense_desc1': '*Applies damage reduction to the entire team.',
     'party.team_defense_desc2': 'Individual equipment (Helmet) effects are not included here.',
+    'party.total_hp': 'Total HP',
+    'party.reward_bonus': 'Reward Bonus',
+    'party.speed_boost': 'Speed Boost',
+    'party.hero_skills': 'Hero Skills',
+    'party.equipment': 'Equipment',
     
     // GachaView
     'gacha.title': 'SUMMON',
@@ -375,6 +380,11 @@ const translations: Record<Language, Record<string, string>> = {
     'party.team_defense': 'チーム防御',
     'party.team_defense_desc1': '*チーム全体に適用されるダメージ軽減効果です。',
     'party.team_defense_desc2': '個別の装備(Helmet)効果はここには含まれません。',
+    'party.total_hp': '合計 HP',
+    'party.reward_bonus': '報酬ボーナス',
+    'party.speed_boost': '速度ブースト',
+    'party.hero_skills': 'ヒーロースキル',
+    'party.equipment': '装備品',
     
     // GachaView
     'gacha.title': '召喚',

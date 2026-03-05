@@ -44,7 +44,7 @@ const TeamStatusModal: React.FC<TeamStatusModalProps> = ({ stats, onClose }) => 
             {/* HP Status */}
             <div className="bg-slate-800/60 rounded-xl p-4 border border-slate-700">
                 <div className="flex justify-between items-end mb-2">
-                    <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Total HP</span>
+                    <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">{t('party.total_hp')}</span>
                     <span className="text-xl font-black text-white">{stats.totalHp} <span className="text-sm text-slate-500">/ {stats.maxHp}</span></span>
                 </div>
                 <div className="w-full h-2 bg-slate-900 rounded-full overflow-hidden">
@@ -65,18 +65,18 @@ const TeamStatusModal: React.FC<TeamStatusModalProps> = ({ stats, onClose }) => 
                             ⛏️
                         </div>
                         <div>
-                            <div className="text-[10px] text-amber-500 font-bold uppercase tracking-wider">Reward Bonus</div>
+                            <div className="text-[10px] text-amber-500 font-bold uppercase tracking-wider">{t('party.reward_bonus')}</div>
                             <div className="text-2xl font-black text-white">{stats.rewardBonus >= 0 ? '+' : ''}{stats.rewardBonus}%</div>
                         </div>
                     </div>
                     
                     <div className="space-y-2 pt-2 border-t border-slate-700/50">
                         <div className="flex justify-between items-center text-xs">
-                            <span className="text-slate-400">Hero Skills</span>
+                            <span className="text-slate-400">{t('party.hero_skills')}</span>
                             <span className="font-bold text-amber-400">{stats.rewardHero >= 0 ? '+' : ''}{stats.rewardHero}%</span>
                         </div>
                         <div className="flex justify-between items-center text-xs">
-                            <span className="text-slate-400">Equipment</span>
+                            <span className="text-slate-400">{t('party.equipment')}</span>
                             <span className="font-bold text-amber-400">{stats.rewardEquip >= 0 ? '+' : ''}{stats.rewardEquip}%</span>
                         </div>
                     </div>
@@ -89,18 +89,18 @@ const TeamStatusModal: React.FC<TeamStatusModalProps> = ({ stats, onClose }) => 
                             👢
                         </div>
                         <div>
-                            <div className="text-[10px] text-emerald-500 font-bold uppercase tracking-wider">Speed Boost</div>
+                            <div className="text-[10px] text-emerald-500 font-bold uppercase tracking-wider">{t('party.speed_boost')}</div>
                             <div className="text-2xl font-black text-white">{stats.speedBonus >= 0 ? '+' : ''}{stats.speedBonus}%</div>
                         </div>
                     </div>
                     
                     <div className="space-y-2 pt-2 border-t border-slate-700/50">
                         <div className="flex justify-between items-center text-xs">
-                            <span className="text-slate-400">Hero Skills</span>
+                            <span className="text-slate-400">{t('party.hero_skills')}</span>
                             <span className="font-bold text-emerald-400">{stats.speedHero >= 0 ? '+' : ''}{stats.speedHero}%</span>
                         </div>
                         <div className="flex justify-between items-center text-xs">
-                            <span className="text-slate-400">Equipment</span>
+                            <span className="text-slate-400">{t('party.equipment')}</span>
                             <span className="font-bold text-emerald-400">{stats.speedEquip >= 0 ? '+' : ''}{stats.speedEquip}%</span>
                         </div>
                     </div>
