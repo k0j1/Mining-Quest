@@ -10,6 +10,7 @@ import Notification from './components/Notification';
 import DebugConsole from './components/DebugConsole'; 
 import EnvSetup from './components/EnvSetup'; 
 import MaintenanceScreen from './components/MaintenanceScreen';
+import TestWarningModal from './components/TestWarningModal';
 import { playClick, playConfirm, toggleSound } from './utils/sound';
 import { useGameLogic } from './hooks/useGameLogic';
 import { sdk } from '@farcaster/frame-sdk';
@@ -42,6 +43,7 @@ const App: React.FC = () => {
   const [isMaintenance, setIsMaintenance] = useState(false);
   const [isMaintenanceTest, setIsMaintenanceTest] = useState(false); 
   const [isConnectionChecked, setIsConnectionChecked] = useState(false);
+  const [showTestWarning, setShowTestWarning] = useState(true);
 
   // GSAP Ref for view transitions
   const contentRef = useRef<HTMLDivElement>(null);
@@ -427,6 +429,10 @@ const App: React.FC = () => {
           onClose={() => setShowAccountModal(false)}
           onTestMaintenance={() => setIsMaintenanceTest(true)}
         />
+      )}
+
+      {showTestWarning && (
+        <TestWarningModal onClose={() => setShowTestWarning(false)} />
       )}
 
       <BottomNav 

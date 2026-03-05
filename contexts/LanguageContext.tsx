@@ -19,6 +19,9 @@ const translations: Record<Language, Record<string, string>> = {
     'common.confirm': 'Confirm',
     'common.back': 'Back',
     'common.loading': 'Loading...',
+    'common.test_warning_title': 'Test Play Notice',
+    'common.test_warning_desc': 'Please note that all heroes, equipment, and items collected during the test play will be deleted after the test play ends.',
+    'common.understand': 'I Understand',
     
     // BottomNav
     'nav.home': 'HOME',
@@ -237,6 +240,9 @@ const translations: Record<Language, Record<string, string>> = {
     'common.confirm': '確認',
     'common.back': '戻る',
     'common.loading': '読み込み中...',
+    'common.test_warning_title': 'テストプレイに関するご注意',
+    'common.test_warning_desc': 'テストプレイ中に集めたヒーロー、装備品、アイテムはテストプレイ終了後にすべて消えるためご注意ください。',
+    'common.understand': '理解しました',
     
     // BottomNav (常に英語にするため、ここは英語のままか、使用しない)
     'nav.home': 'HOME',
