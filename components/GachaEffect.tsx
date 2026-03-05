@@ -3,6 +3,7 @@ import React, { useEffect, useState, useRef, useLayoutEffect } from 'react';
 import { playGachaReveal, playClick } from '../utils/sound';
 import EquipmentIcon from './EquipmentIcon';
 import gsap from 'gsap';
+import { useLanguage } from '../contexts/LanguageContext';
 
 interface GachaEffectProps {
   result: { type: 'Hero' | 'Equipment'; data: any[] } | null;
@@ -12,6 +13,7 @@ interface GachaEffectProps {
 const CONFETTI_COLORS = ['#f59e0b', '#ef4444', '#3b82f6', '#10b981', '#8b5cf6', '#ec4899', '#ffffff'];
 
 const GachaEffect: React.FC<GachaEffectProps> = ({ result, onClose }) => {
+  const { t } = useLanguage();
   const [phase, setPhase] = useState<'charging' | 'reveal'>('charging');
   const [currentIndex, setCurrentIndex] = useState(0);
 
@@ -258,7 +260,7 @@ const GachaEffect: React.FC<GachaEffectProps> = ({ result, onClose }) => {
            {/* Multi-pull Indicator */}
            {result.data.length > 1 && (
              <div className="absolute top-10 bg-slate-800/80 text-white px-4 py-1 rounded-full text-xs font-bold border border-slate-600 backdrop-blur-sm z-50">
-                Result {currentIndex + 1} / {result.data.length}
+                {t('gacha.result_count', { current: currentIndex + 1, total: result.data.length })}
              </div>
            )}
 
@@ -296,7 +298,7 @@ const GachaEffect: React.FC<GachaEffectProps> = ({ result, onClose }) => {
                     </div>
                     <h3 className="text-lg font-orbitron font-bold text-white mb-1 drop-shadow-lg leading-tight">{currentItem.name}</h3>
                     <div className="h-0.5 w-8 bg-white/30 mx-auto mb-2" />
-                    <p className="text-[9px] text-slate-300 font-bold tracking-widest uppercase">New Hero Unlocked</p>
+                    <p className="text-[9px] text-slate-300 font-bold tracking-widest uppercase">{t('gacha.new_hero')}</p>
                   </div>
                 </>
               ) : (
@@ -332,7 +334,7 @@ const GachaEffect: React.FC<GachaEffectProps> = ({ result, onClose }) => {
             className={`mt-8 px-12 py-3 bg-white text-slate-950 font-black rounded-xl hover:scale-105 active:scale-95 transition-all shadow-xl border-b-4 border-slate-300 z-50 ${isSpecialPull ? 'ring-4 ring-opacity-50' : ''}`}
             style={isSpecialPull ? { '--tw-ring-color': color } as React.CSSProperties : undefined}
           >
-            {isLastItem ? '素晴らしい！' : '次へ'}
+            {isLastItem ? t('gacha.excellent') : t('gacha.next')}
           </button>
         </div>
       )}

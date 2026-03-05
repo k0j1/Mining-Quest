@@ -119,6 +119,10 @@ const translations: Record<Language, Record<string, string>> = {
     'gacha.tap_to_close': 'TAP TO CLOSE',
     'gacha.single': '1x SUMMON',
     'gacha.multi': '10x SUMMON',
+    'gacha.next': 'Next',
+    'gacha.excellent': 'Excellent!',
+    'gacha.result_count': 'Result {current} / {total}',
+    'gacha.new_hero': 'New Hero Unlocked',
     
     // EquipmentSelector
     'equip.select_equip': 'Select Equipment',
@@ -393,6 +397,10 @@ const translations: Record<Language, Record<string, string>> = {
     'gacha.tap_to_close': 'タップして閉じる',
     'gacha.single': '1回召喚',
     'gacha.multi': '10回召喚',
+    'gacha.next': '次へ',
+    'gacha.excellent': '素晴らしい！',
+    'gacha.result_count': '結果 {current} / {total}',
+    'gacha.new_hero': '新ヒーロー獲得',
     
     // EquipmentSelector
     'equip.select_equip': '装備を選択',
