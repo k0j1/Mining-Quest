@@ -289,12 +289,11 @@ export const useGacha = ({ gameState, setGameState, showNotification, farcasterU
 
       playConfirm();
 
-      // 3. Roll Gacha
-      const results = await Promise.all([
-        rollGachaItem(tab, undefined, farcasterUser?.fid),
-        rollGachaItem(tab, undefined, farcasterUser?.fid),
-        rollGachaItem(tab, 'R', farcasterUser?.fid) // Guaranteed Slot
-      ]);
+      // 3. Roll Gacha (Sequential to avoid race conditions)
+      const results = [];
+      results.push(await rollGachaItem(tab, undefined, farcasterUser?.fid));
+      results.push(await rollGachaItem(tab, undefined, farcasterUser?.fid));
+      results.push(await rollGachaItem(tab, 'R', farcasterUser?.fid)); // Guaranteed Slot
 
       const persisted = await persistGachaResults(tab, results);
 

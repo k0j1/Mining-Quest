@@ -35,8 +35,8 @@ export const rollGachaItem = async (type: 'Hero' | 'Equipment', forceRarity?: Qu
     // If we have a user FID, run the logic on the DB side for security
     if (fid) {
         const { data, error } = await supabase.rpc('roll_hero_gacha', { 
-            p_fid: fid, 
-            p_min_rarity: forceRarity || null 
+            player_fid: fid, 
+            min_rarity: forceRarity || null 
         });
 
         if (error) {
@@ -55,7 +55,7 @@ export const rollGachaItem = async (type: 'Hero' | 'Equipment', forceRarity?: Qu
         const drMap: Record<string, number> = { C: 2, UC: 5, R: 10, E: 15, L: 20 };
 
         return {
-            id: result.res_id, // CHANGED: 'id' -> 'res_id' to match corrected RPC
+            id: (result.res_id || result.id || result.player_hid)?.toString(),
             name: result.name,
             species: result.species,
             rarity: result.rarity,
@@ -107,8 +107,8 @@ export const rollGachaItem = async (type: 'Hero' | 'Equipment', forceRarity?: Qu
   else {
     if (fid) {
         const { data, error } = await supabase.rpc('roll_equipment_gacha', { 
-            p_fid: fid, 
-            p_min_rarity: forceRarity || null 
+            player_fid: fid, 
+            min_rarity: forceRarity || null 
         });
 
         if (error) {
@@ -123,7 +123,7 @@ export const rollGachaItem = async (type: 'Hero' | 'Equipment', forceRarity?: Qu
         const result = data[0];
 
         return { 
-            id: result.res_id,
+            id: (result.res_id || result.id || result.player_eid)?.toString(),
             name: result.name, 
             type: result.type, 
             rarity: result.rarity, 
