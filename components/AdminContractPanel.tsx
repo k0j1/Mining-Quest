@@ -29,6 +29,8 @@ interface Transaction {
   to: string;
   value: string;
   blockNumber: bigint;
+  type: 'IN' | 'OUT' | 'EVENT';
+  eventName?: string;
 }
 
 const AdminContractPanel: React.FC = () => {
@@ -59,27 +61,65 @@ const AdminContractPanel: React.FC = () => {
   };
 
   const fetchHistory = async (contractAddress: string) => {
+    if (!contractAddress) return [];
     try {
-      const logs = await publicClient.getLogs({
-        address: CHH_TOKEN_ADDRESS,
-        event: TRANSFER_EVENT,
-        args: {
-          to: contractAddress as `0x${string}`
-        },
-        fromBlock: 'earliest',
-        toBlock: 'latest'
-      });
+      // Get current block to limit range if needed, but for now we try a reasonable range
+      const currentBlock = await publicClient.getBlockNumber();
+      const fromBlock = currentBlock - 200000n; // Last ~200k blocks (approx 2-3 days on Base)
 
-      // Sort by block number descending and take latest 5
-      const sortedLogs = logs.sort((a, b) => Number(b.blockNumber - a.blockNumber)).slice(0, 5);
-      
-      return sortedLogs.map(log => ({
-        hash: log.transactionHash as string,
-        from: log.args.from as string,
-        to: log.args.to as string,
-        value: formatUnits(log.args.value as bigint, 18),
-        blockNumber: log.blockNumber as bigint
-      }));
+      const [inLogs, outLogs, contractLogs] = await Promise.all([
+        publicClient.getLogs({
+          address: CHH_TOKEN_ADDRESS,
+          event: TRANSFER_EVENT,
+          args: { to: contractAddress as `0x${string}` },
+          fromBlock: fromBlock > 0n ? fromBlock : 0n,
+          toBlock: 'latest'
+        }),
+        publicClient.getLogs({
+          address: CHH_TOKEN_ADDRESS,
+          event: TRANSFER_EVENT,
+          args: { from: contractAddress as `0x${string}` },
+          fromBlock: fromBlock > 0n ? fromBlock : 0n,
+          toBlock: 'latest'
+        }),
+        publicClient.getLogs({
+          address: contractAddress as `0x${string}`,
+          fromBlock: fromBlock > 0n ? fromBlock : 0n,
+          toBlock: 'latest'
+        })
+      ]);
+
+      const allTransactions: Transaction[] = [
+        ...inLogs.map(log => ({
+          hash: log.transactionHash as string,
+          from: log.args.from as string,
+          to: log.args.to as string,
+          value: formatUnits(log.args.value as bigint, 18),
+          blockNumber: log.blockNumber as bigint,
+          type: 'IN' as const
+        })),
+        ...outLogs.map(log => ({
+          hash: log.transactionHash as string,
+          from: log.args.from as string,
+          to: log.args.to as string,
+          value: formatUnits(log.args.value as bigint, 18),
+          blockNumber: log.blockNumber as bigint,
+          type: 'OUT' as const
+        })),
+        ...contractLogs.map(log => ({
+          hash: log.transactionHash as string,
+          from: 'External',
+          to: contractAddress,
+          value: '0',
+          blockNumber: log.blockNumber as bigint,
+          type: 'EVENT' as const,
+          eventName: 'Contract Interaction'
+        }))
+      ];
+
+      // Remove duplicates (same hash) and sort
+      const uniqueTx = Array.from(new Map(allTransactions.map(tx => [tx.hash, tx])).values());
+      return uniqueTx.sort((a, b) => Number(b.blockNumber - a.blockNumber)).slice(0, 10);
     } catch (error) {
       console.error(`Error fetching history for ${contractAddress}:`, error);
       return [];
@@ -299,28 +339,45 @@ const AdminContractPanel: React.FC = () => {
       return <div className="text-center py-4 text-slate-500 text-xs animate-pulse">Fetching history...</div>;
     }
     if (transactions.length === 0) {
-      return <div className="text-center py-4 text-slate-600 text-xs italic">No recent payments found.</div>;
+      return <div className="text-center py-4 text-slate-600 text-xs italic">No recent transactions found.</div>;
     }
     return (
       <div className="mt-4 space-y-2">
-        <h4 className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Latest Payments</h4>
+        <h4 className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Recent Transactions</h4>
         <div className="space-y-1">
           {transactions.map((tx) => (
             <div key={tx.hash} className="flex justify-between items-center bg-slate-950/50 p-2 rounded border border-slate-800/50 text-[10px]">
               <div className="flex flex-col">
-                <span className="text-slate-400 font-mono">From: {tx.from.slice(0, 6)}...{tx.from.slice(-4)}</span>
+                <div className="flex items-center gap-2 mb-1">
+                  <span className={`px-1.5 py-0.5 rounded-[4px] font-bold text-[8px] ${
+                    tx.type === 'IN' ? 'bg-emerald-500/20 text-emerald-400' : 
+                    tx.type === 'OUT' ? 'bg-rose-500/20 text-rose-400' : 
+                    'bg-indigo-500/20 text-indigo-400'
+                  }`}>
+                    {tx.type}
+                  </span>
+                  <span className="text-slate-400 font-mono">
+                    {tx.type === 'IN' ? `From: ${tx.from.slice(0, 6)}...` : 
+                     tx.type === 'OUT' ? `To: ${tx.to.slice(0, 6)}...` : 
+                     tx.eventName}
+                  </span>
+                </div>
                 <a 
                   href={`https://basescan.org/tx/${tx.hash}`} 
                   target="_blank" 
                   rel="noopener noreferrer"
-                  className="text-indigo-400 hover:underline"
+                  className="text-slate-500 hover:text-indigo-400 transition-colors font-mono"
                 >
-                  TX: {tx.hash.slice(0, 10)}...
+                  {tx.hash.slice(0, 14)}...
                 </a>
               </div>
               <div className="text-right">
-                <div className="text-emerald-400 font-bold">{Number(tx.value).toLocaleString()} CHH</div>
-                <div className="text-slate-600">Block: {tx.blockNumber.toString()}</div>
+                {tx.type !== 'EVENT' && (
+                  <div className={`font-bold ${tx.type === 'IN' ? 'text-emerald-400' : 'text-rose-400'}`}>
+                    {tx.type === 'IN' ? '+' : '-'}{Number(tx.value).toLocaleString()} CHH
+                  </div>
+                )}
+                <div className="text-slate-600 text-[8px]">Block: {tx.blockNumber.toString()}</div>
               </div>
             </div>
           ))}
