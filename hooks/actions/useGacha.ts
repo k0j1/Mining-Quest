@@ -87,26 +87,6 @@ export const useGacha = ({ gameState, setGameState, showNotification, farcasterU
     return payHash;
   };
 
-  // Helper to verify payment on backend
-  const verifyPaymentOnBackend = async (txHash: string, tab: string, isTriple: boolean) => {
-    const response = await fetch('/api/gacha/verify', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        txHash,
-        fid: farcasterUser?.fid,
-        tab,
-        isTriple
-      })
-    });
-
-    if (!response.ok) {
-      const err = await response.json();
-      throw new Error(err.error || "Payment verification failed");
-    }
-    return response.json();
-  };
-
   // Helper to save to DB (Only used for Equipment or Local Fallback)
   const persistGachaResults = async (tab: 'Hero' | 'Equipment', items: any[]) => {
     if (!farcasterUser?.fid) return items; // Return as is if no user (local mode)
@@ -238,11 +218,8 @@ export const useGacha = ({ gameState, setGameState, showNotification, farcasterU
     try {
       // 1. On-chain Payment
       const amountBigInt = parseUnits(cost.toString(), 18);
-      const txHash = await handleOnChainPayment(tab === 'Hero' ? 'HERO_SINGLE' : 'EQUIP_SINGLE', amountBigInt);
+      await handleOnChainPayment(tab === 'Hero' ? 'HERO_SINGLE' : 'EQUIP_SINGLE', amountBigInt);
       
-      // 2. Verify on Backend
-      await verifyPaymentOnBackend(txHash, tab, false);
-
       playConfirm();
       
       // 3. Roll Gacha (RPC handles item grant)
@@ -282,11 +259,8 @@ export const useGacha = ({ gameState, setGameState, showNotification, farcasterU
     try {
       // 1. On-chain Payment
       const amountBigInt = parseUnits(cost.toString(), 18);
-      const txHash = await handleOnChainPayment(tab === 'Hero' ? 'HERO_TRIPLE' : 'EQUIP_TRIPLE', amountBigInt);
+      await handleOnChainPayment(tab === 'Hero' ? 'HERO_TRIPLE' : 'EQUIP_TRIPLE', amountBigInt);
       
-      // 2. Verify on Backend
-      await verifyPaymentOnBackend(txHash, tab, true);
-
       playConfirm();
 
       // 3. Roll Gacha (Sequential to avoid race conditions)

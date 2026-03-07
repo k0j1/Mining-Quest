@@ -34,42 +34,6 @@ async function startServer() {
     res.json({ status: "ok" });
   });
 
-  /**
-   * Verify Gacha Payment Transaction
-   * This endpoint verifies the on-chain payment.
-   */
-  app.post("/api/gacha/verify", async (req: express.Request, res: express.Response) => {
-    const { txHash, fid, tab, isTriple } = req.body;
-
-    if (!txHash || !fid || !tab) {
-      return res.status(400).json({ error: "Missing parameters" });
-    }
-
-    try {
-      console.log(`Verifying Gacha Payment: TX=${txHash}, FID=${fid}, Tab=${tab}`);
-
-      // 1. Verify Transaction Receipt
-      const receipt = await publicClient.waitForTransactionReceipt({ 
-        hash: txHash as `0x${string}` 
-      });
-      
-      if (receipt.status !== "success") {
-        return res.status(400).json({ error: "Transaction failed on-chain" });
-      }
-
-      // Note: We removed the gacha_payments table check as requested.
-      // In a production environment, you should still ensure a transaction hash 
-      // is only used once to prevent replay attacks.
-
-      // 2. Success Response
-      res.json({ success: true });
-
-    } catch (error: any) {
-      console.error("Gacha Verification Error:", error);
-      res.status(500).json({ error: error.message });
-    }
-  });
-
   // Vite middleware for development
   if (process.env.NODE_ENV !== "production") {
     const vite = await createViteServer({
