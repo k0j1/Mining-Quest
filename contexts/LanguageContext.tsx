@@ -74,6 +74,7 @@ const translations: Record<Language, Record<string, string>> = {
     'depart.insufficient_funds': 'Insufficient Funds',
     'depart.force_depart': 'Force Depart (DANGER)',
     'depart.depart_btn': 'Depart',
+    'depart.reduction': 'Reduction',
     
     // PartyView
     'party.title': 'PARTY',
@@ -167,6 +168,7 @@ const translations: Record<Language, Record<string, string>> = {
     'notify.elixir_purchased': 'Purchased {amount} Elixir(s)',
     'notify.wallet_not_connected': 'Wallet not connected',
     'notify.approving_tokens': 'Approving token usage...',
+    'notify.processing_payment': 'Processing payment...',
     'notify.approve_cancelled': 'Approve cancelled',
     'notify.purchasing_items': 'Purchasing items...',
     'notify.departing_quest': 'Departing for quest...',
@@ -368,6 +370,7 @@ const translations: Record<Language, Record<string, string>> = {
     'depart.insufficient_funds': '資金不足',
     'depart.force_depart': '強行突破する (DANGER)',
     'depart.depart_btn': '出発する',
+    'depart.reduction': '軽減',
     
     // PartyView
     'party.title': 'パーティ編成',
@@ -461,6 +464,7 @@ const translations: Record<Language, Record<string, string>> = {
     'notify.elixir_purchased': 'エリクサーを{amount}個購入しました',
     'notify.wallet_not_connected': 'ウォレットが接続されていません',
     'notify.approving_tokens': 'トークンの使用を承認しています...',
+    'notify.processing_payment': '支払いを処理しています...',
     'notify.approve_cancelled': 'Approveがキャンセルされました',
     'notify.purchasing_items': 'アイテムを購入しています...',
     'notify.departing_quest': 'クエストに出発しています...',

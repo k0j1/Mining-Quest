@@ -5,6 +5,19 @@ import { rollGachaItem } from '../../services/gachaService';
 import { playConfirm, playError } from '../../utils/sound';
 import { supabase } from '../../lib/supabase';
 import { getHeroImageUrl } from '../../utils/heroUtils';
+import { sdk } from '@farcaster/frame-sdk';
+import { createPublicClient, createWalletClient, custom, http, parseAbi, parseUnits } from 'viem';
+import { base } from 'viem/chains';
+import { CHH_CONTRACT_ADDRESS, GACHA_PAYMENT_CONTRACT_ADDRESS } from '../../constants';
+
+const GACHA_PAYMENT_ABI = parseAbi([
+  'function payForGacha(string memory gachaType, uint256 amount) external'
+]);
+
+const ERC20_ABI = parseAbi([
+  'function approve(address spender, uint256 amount) external returns (bool)',
+  'function allowance(address owner, address spender) external view returns (uint256)'
+]);
 
 interface UseGachaProps {
   gameState: GameState;
@@ -18,6 +31,81 @@ interface UseGachaProps {
 export const useGacha = ({ gameState, setGameState, showNotification, farcasterUser, refetchBalance, t }: UseGachaProps) => {
   const [gachaResult, setGachaResult] = useState<{ type: 'Hero' | 'Equipment'; data: any[] } | null>(null);
   const [isGachaRolling, setIsGachaRolling] = useState(false);
+
+  // Helper for on-chain payment
+  const handleOnChainPayment = async (gachaType: string, amount: bigint) => {
+    if (!farcasterUser?.address) {
+      throw new Error("Wallet not connected");
+    }
+
+    const provider = sdk.wallet.ethProvider;
+    if (!provider) throw new Error("No provider found");
+
+    const publicClient = createPublicClient({
+      chain: base,
+      transport: http("https://mainnet.base.org")
+    });
+
+    const walletClient = createWalletClient({
+      chain: base,
+      transport: custom(provider)
+    });
+
+    const userAddress = farcasterUser.address as `0x${string}`;
+
+    // 1. Check Allowance
+    const allowance = await publicClient.readContract({
+      address: CHH_CONTRACT_ADDRESS as `0x${string}`,
+      abi: ERC20_ABI,
+      functionName: 'allowance',
+      args: [userAddress, GACHA_PAYMENT_CONTRACT_ADDRESS as `0x${string}`]
+    });
+
+    if (allowance < amount) {
+      showNotification(t('notify.approving_tokens'), 'success');
+      const approveHash = await walletClient.writeContract({
+        address: CHH_CONTRACT_ADDRESS as `0x${string}`,
+        abi: ERC20_ABI,
+        functionName: 'approve',
+        args: [GACHA_PAYMENT_CONTRACT_ADDRESS as `0x${string}`, amount],
+        account: userAddress
+      });
+      await publicClient.waitForTransactionReceipt({ hash: approveHash });
+    }
+
+    // 2. Pay for Gacha
+    showNotification(t('notify.processing_payment'), 'success');
+    const payHash = await walletClient.writeContract({
+      address: GACHA_PAYMENT_CONTRACT_ADDRESS as `0x${string}`,
+      abi: GACHA_PAYMENT_ABI,
+      functionName: 'payForGacha',
+      args: [gachaType, amount],
+      account: userAddress
+    });
+
+    await publicClient.waitForTransactionReceipt({ hash: payHash });
+    return payHash;
+  };
+
+  // Helper to verify payment on backend
+  const verifyPaymentOnBackend = async (txHash: string, tab: string, isTriple: boolean) => {
+    const response = await fetch('/api/gacha/verify', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        txHash,
+        fid: farcasterUser?.fid,
+        tab,
+        isTriple
+      })
+    });
+
+    if (!response.ok) {
+      const err = await response.json();
+      throw new Error(err.error || "Payment verification failed");
+    }
+    return response.json();
+  };
 
   // Helper to save to DB (Only used for Equipment or Local Fallback)
   const persistGachaResults = async (tab: 'Hero' | 'Equipment', items: any[]) => {
@@ -145,20 +233,31 @@ export const useGacha = ({ gameState, setGameState, showNotification, farcasterU
       showNotification(t('notify.insufficient_tokens', { amount: cost.toLocaleString() }), 'error');
       return;
     }
-    playConfirm();
+    
     setIsGachaRolling(true);
     try {
-      // Pass FID to enable DB-side logic
+      // 1. On-chain Payment
+      const amountBigInt = parseUnits(cost.toString(), 18);
+      const txHash = await handleOnChainPayment(tab === 'Hero' ? 'HERO_SINGLE' : 'EQUIP_SINGLE', amountBigInt);
+      
+      // 2. Verify on Backend
+      await verifyPaymentOnBackend(txHash, tab, false);
+
+      playConfirm();
+      
+      // 3. Roll Gacha (RPC handles item grant)
+      // NOTE: We pass skipTokenCheck: true if we had a way to tell the RPC to skip it.
+      // For now, we assume the RPC might still check tokens, so we might need to update it.
       const result = await rollGachaItem(tab, undefined, farcasterUser?.fid);
       
       // Handle Persistence (Skip if RPC handled it)
       const persisted = await persistGachaResults(tab, [result]);
       
       setGachaResult({ type: tab, data: persisted });
-      setGameState(prev => ({ ...prev, tokens: prev.tokens - cost }));
+      // Tokens are updated by refetchBalance since they are on-chain
       processGachaItems(tab, persisted);
       
-      refetchBalance();
+      await refetchBalance();
 
     } catch (e: any) {
       console.error(e);
@@ -177,13 +276,20 @@ export const useGacha = ({ gameState, setGameState, showNotification, farcasterU
       showNotification(t('notify.insufficient_tokens', { amount: cost.toLocaleString() }), 'error');
       return;
     }
-    playConfirm();
+    
     setIsGachaRolling(true);
 
     try {
-      // Parallel execution is tricky if we want guaranteed sequence, but Promise.all is fine for independent rolls.
-      // NOTE: For Hero Triple, each call is an independent DB Transaction.
-      // This is acceptable, though a 'bulk_roll' RPC would be more efficient in future.
+      // 1. On-chain Payment
+      const amountBigInt = parseUnits(cost.toString(), 18);
+      const txHash = await handleOnChainPayment(tab === 'Hero' ? 'HERO_TRIPLE' : 'EQUIP_TRIPLE', amountBigInt);
+      
+      // 2. Verify on Backend
+      await verifyPaymentOnBackend(txHash, tab, true);
+
+      playConfirm();
+
+      // 3. Roll Gacha
       const results = await Promise.all([
         rollGachaItem(tab, undefined, farcasterUser?.fid),
         rollGachaItem(tab, undefined, farcasterUser?.fid),
@@ -193,10 +299,9 @@ export const useGacha = ({ gameState, setGameState, showNotification, farcasterU
       const persisted = await persistGachaResults(tab, results);
 
       setGachaResult({ type: tab, data: persisted });
-      setGameState(prev => ({ ...prev, tokens: prev.tokens - cost }));
       processGachaItems(tab, persisted);
       
-      refetchBalance();
+      await refetchBalance();
 
     } catch (e: any) {
       console.error(e);

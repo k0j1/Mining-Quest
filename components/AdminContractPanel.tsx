@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { createPublicClient, createWalletClient, custom, http, parseAbi, formatUnits, parseUnits } from 'viem';
+import { createPublicClient, createWalletClient, custom, http, parseAbi, formatUnits, parseUnits, parseAbiItem } from 'viem';
 import { base } from 'viem/chains';
 import { sdk } from '@farcaster/frame-sdk';
 import { playClick, playConfirm, playError } from '../utils/sound';
-import { ITEM_SHOP_CONTRACT_ADDRESS, QUEST_TREASURY_CONTRACT_ADDRESS, QUEST_MANAGER_CONTRACT_ADDRESS } from '../constants';
+import { ITEM_SHOP_CONTRACT_ADDRESS, QUEST_TREASURY_CONTRACT_ADDRESS, QUEST_MANAGER_CONTRACT_ADDRESS, GACHA_PAYMENT_CONTRACT_ADDRESS } from '../constants';
+import { THEME, themeClass } from '../theme';
 
 // Constants
 const REWARD_CONTRACT_ADDRESS = "0x193708bB0AC212E59fc44d6D6F3507F25Bc97fd4" as `0x${string}`;
@@ -20,6 +21,16 @@ const TREASURY_ABI = parseAbi([
   'function withdrawAll(address token, address to) external'
 ]);
 
+const TRANSFER_EVENT = parseAbiItem('event Transfer(address indexed from, address indexed to, uint256 value)');
+
+interface Transaction {
+  hash: string;
+  from: string;
+  to: string;
+  value: string;
+  blockNumber: bigint;
+}
+
 const AdminContractPanel: React.FC = () => {
   const [contractBalance, setContractBalance] = useState<string>('---');
   const [treasuryBalance, setTreasuryBalance] = useState<string>('---');
@@ -29,10 +40,68 @@ const AdminContractPanel: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [statusMsg, setStatusMsg] = useState('');
 
+  // History states
+  const [itemShopHistory, setItemShopHistory] = useState<Transaction[]>([]);
+  const [gachaHistory, setGachaHistory] = useState<Transaction[]>([]);
+  const [questManagerHistory, setQuestManagerHistory] = useState<Transaction[]>([]);
+  const [questTreasuryHistory, setQuestTreasuryHistory] = useState<Transaction[]>([]);
+  const [rewardPoolHistory, setRewardPoolHistory] = useState<Transaction[]>([]);
+  const [isFetchingHistory, setIsFetchingHistory] = useState(false);
+
   const publicClient = createPublicClient({
     chain: base,
     transport: http('https://mainnet.base.org')
   });
+
+  const handleCopy = (text: string) => {
+    navigator.clipboard.writeText(text);
+    playConfirm();
+  };
+
+  const fetchHistory = async (contractAddress: string) => {
+    try {
+      const logs = await publicClient.getLogs({
+        address: CHH_TOKEN_ADDRESS,
+        event: TRANSFER_EVENT,
+        args: {
+          to: contractAddress as `0x${string}`
+        },
+        fromBlock: 'earliest',
+        toBlock: 'latest'
+      });
+
+      // Sort by block number descending and take latest 5
+      const sortedLogs = logs.sort((a, b) => Number(b.blockNumber - a.blockNumber)).slice(0, 5);
+      
+      return sortedLogs.map(log => ({
+        hash: log.transactionHash as string,
+        from: log.args.from as string,
+        to: log.args.to as string,
+        value: formatUnits(log.args.value as bigint, 18),
+        blockNumber: log.blockNumber as bigint
+      }));
+    } catch (error) {
+      console.error(`Error fetching history for ${contractAddress}:`, error);
+      return [];
+    }
+  };
+
+  const fetchAllHistory = async () => {
+    setIsFetchingHistory(true);
+    const [shop, gacha, quest, treasury, reward] = await Promise.all([
+      fetchHistory(ITEM_SHOP_CONTRACT_ADDRESS),
+      fetchHistory(GACHA_PAYMENT_CONTRACT_ADDRESS),
+      fetchHistory(QUEST_MANAGER_CONTRACT_ADDRESS),
+      fetchHistory(QUEST_TREASURY_CONTRACT_ADDRESS),
+      fetchHistory(REWARD_CONTRACT_ADDRESS)
+    ]);
+    setItemShopHistory(shop);
+    setGachaHistory(gacha);
+    setQuestManagerHistory(quest);
+    setQuestTreasuryHistory(treasury);
+    setRewardPoolHistory(reward);
+    setIsFetchingHistory(false);
+  };
 
   const fetchBalances = async () => {
     setIsLoading(true);
@@ -93,6 +162,7 @@ const AdminContractPanel: React.FC = () => {
 
   useEffect(() => {
     fetchBalances();
+    fetchAllHistory();
   }, []);
 
   const handleDeposit = async () => {
@@ -142,6 +212,7 @@ const AdminContractPanel: React.FC = () => {
       // Wait a bit before refreshing balance
       setTimeout(() => {
         fetchBalances();
+        fetchAllHistory();
         setStatusMsg('');
       }, 5000);
 
@@ -204,6 +275,7 @@ const AdminContractPanel: React.FC = () => {
       
       setTimeout(() => {
         fetchBalances();
+        fetchAllHistory();
         setStatusMsg('');
       }, 5000);
 
@@ -222,9 +294,54 @@ const AdminContractPanel: React.FC = () => {
     alert("Copied!");
   };
 
+  const HistoryTable: React.FC<{ transactions: Transaction[] }> = ({ transactions }) => {
+    if (isFetchingHistory) {
+      return <div className="text-center py-4 text-slate-500 text-xs animate-pulse">Fetching history...</div>;
+    }
+    if (transactions.length === 0) {
+      return <div className="text-center py-4 text-slate-600 text-xs italic">No recent payments found.</div>;
+    }
+    return (
+      <div className="mt-4 space-y-2">
+        <h4 className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Latest Payments</h4>
+        <div className="space-y-1">
+          {transactions.map((tx) => (
+            <div key={tx.hash} className="flex justify-between items-center bg-slate-950/50 p-2 rounded border border-slate-800/50 text-[10px]">
+              <div className="flex flex-col">
+                <span className="text-slate-400 font-mono">From: {tx.from.slice(0, 6)}...{tx.from.slice(-4)}</span>
+                <a 
+                  href={`https://basescan.org/tx/${tx.hash}`} 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="text-indigo-400 hover:underline"
+                >
+                  TX: {tx.hash.slice(0, 10)}...
+                </a>
+              </div>
+              <div className="text-right">
+                <div className="text-emerald-400 font-bold">{Number(tx.value).toLocaleString()} CHH</div>
+                <div className="text-slate-600">Block: {tx.blockNumber.toString()}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className="flex-1 overflow-y-auto p-6 bg-slate-950 text-slate-200">
       <div className="max-w-2xl mx-auto space-y-8">
+        
+        <div className="flex justify-between items-center">
+          <h2 className="text-xl font-black text-white tracking-tighter">ADMIN CONTRACTS</h2>
+          <button 
+            onClick={() => { playClick(); fetchBalances(); fetchAllHistory(); }}
+            className="p-2 bg-slate-800 rounded-lg hover:bg-slate-700 transition-colors text-sm flex items-center gap-2"
+          >
+            <span>🔄</span> Refresh All
+          </button>
+        </div>
         
         {/* Info Card */}
         <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-lg">
@@ -260,6 +377,7 @@ const AdminContractPanel: React.FC = () => {
                  🔄
                </button>
             </div>
+            <HistoryTable transactions={rewardPoolHistory} />
           </div>
         </div>
 
@@ -280,6 +398,38 @@ const AdminContractPanel: React.FC = () => {
                 <span className="text-slate-600 group-hover:text-white text-xs">📋</span>
               </div>
             </div>
+            <HistoryTable transactions={itemShopHistory} />
+          </div>
+        </div>
+
+        {/* Gacha Payment Contract Info Card */}
+        <div className={themeClass.card}>
+          <div className="flex items-center gap-3 mb-6">
+            <div className={`w-10 h-10 rounded-xl bg-${THEME.colors.primary}/20 flex items-center justify-center border border-${THEME.colors.primary}/30`}>
+              <span className="text-xl">🎰</span>
+            </div>
+            <div>
+              <h3 className="text-sm font-bold text-white tracking-tight">Gacha Payment</h3>
+              <p className={themeClass.textMutedSmall}>Contract Address</p>
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            <div className={themeClass.cardSecondary}>
+              <div className="flex justify-between items-center mb-2">
+                <span className={`text-xs font-bold text-${THEME.colors.textMuted} tracking-widest uppercase`}>Contract Address</span>
+                <button 
+                  onClick={() => handleCopy(GACHA_PAYMENT_CONTRACT_ADDRESS)}
+                  className={`text-[10px] bg-slate-700 hover:bg-slate-600 px-2 py-1 rounded transition-colors`}
+                >
+                  COPY
+                </button>
+              </div>
+              <div className={themeClass.monoSmall}>
+                {GACHA_PAYMENT_CONTRACT_ADDRESS}
+              </div>
+            </div>
+            <HistoryTable transactions={gachaHistory} />
           </div>
         </div>
 
@@ -300,6 +450,7 @@ const AdminContractPanel: React.FC = () => {
                 <span className="text-slate-600 group-hover:text-white text-xs">📋</span>
               </div>
             </div>
+            <HistoryTable transactions={questManagerHistory} />
           </div>
         </div>
 
@@ -337,6 +488,7 @@ const AdminContractPanel: React.FC = () => {
                  🔄
                </button>
             </div>
+            <HistoryTable transactions={questTreasuryHistory} />
           </div>
         </div>
 
