@@ -63,62 +63,58 @@ const AdminContractPanel: React.FC = () => {
   const fetchHistory = async (contractAddress: string) => {
     if (!contractAddress) return [];
     try {
-      // Get current block to limit range if needed, but for now we try a reasonable range
-      const currentBlock = await publicClient.getBlockNumber();
-      const fromBlock = currentBlock - 200000n; // Last ~200k blocks (approx 2-3 days on Base)
+      const apiKey = 'IMA7R6P9XEA9YW6BFP7AZHFVAHV54YY1MP';
+      
+      // Fetch ERC20 Token Transfers (CHH)
+      const tokenTxUrl = `https://api.basescan.org/api?module=account&action=tokentx&contractaddress=${CHH_TOKEN_ADDRESS}&address=${contractAddress}&page=1&offset=15&sort=desc&apikey=${apiKey}`;
+      const tokenTxRes = await fetch(tokenTxUrl);
+      const tokenTxData = await tokenTxRes.json();
+      
+      // Fetch Normal Transactions (Contract Interactions)
+      const normalTxUrl = `https://api.basescan.org/api?module=account&action=txlist&address=${contractAddress}&page=1&offset=15&sort=desc&apikey=${apiKey}`;
+      const normalTxRes = await fetch(normalTxUrl);
+      const normalTxData = await normalTxRes.json();
 
-      const [inLogs, outLogs, contractLogs] = await Promise.all([
-        publicClient.getLogs({
-          address: CHH_TOKEN_ADDRESS,
-          event: TRANSFER_EVENT,
-          args: { to: contractAddress as `0x${string}` },
-          fromBlock: fromBlock > 0n ? fromBlock : 0n,
-          toBlock: 'latest'
-        }),
-        publicClient.getLogs({
-          address: CHH_TOKEN_ADDRESS,
-          event: TRANSFER_EVENT,
-          args: { from: contractAddress as `0x${string}` },
-          fromBlock: fromBlock > 0n ? fromBlock : 0n,
-          toBlock: 'latest'
-        }),
-        publicClient.getLogs({
-          address: contractAddress as `0x${string}`,
-          fromBlock: fromBlock > 0n ? fromBlock : 0n,
-          toBlock: 'latest'
-        })
-      ]);
+      const allTransactions: Transaction[] = [];
 
-      const allTransactions: Transaction[] = [
-        ...inLogs.map(log => ({
-          hash: log.transactionHash as string,
-          from: log.args.from as string,
-          to: log.args.to as string,
-          value: formatUnits(log.args.value as bigint, 18),
-          blockNumber: log.blockNumber as bigint,
-          type: 'IN' as const
-        })),
-        ...outLogs.map(log => ({
-          hash: log.transactionHash as string,
-          from: log.args.from as string,
-          to: log.args.to as string,
-          value: formatUnits(log.args.value as bigint, 18),
-          blockNumber: log.blockNumber as bigint,
-          type: 'OUT' as const
-        })),
-        ...contractLogs.map(log => ({
-          hash: log.transactionHash as string,
-          from: 'External',
-          to: contractAddress,
-          value: '0',
-          blockNumber: log.blockNumber as bigint,
-          type: 'EVENT' as const,
-          eventName: 'Contract Interaction'
-        }))
-      ];
+      if (tokenTxData.status === '1' && Array.isArray(tokenTxData.result)) {
+        tokenTxData.result.forEach((tx: any) => {
+          const isIncoming = tx.to.toLowerCase() === contractAddress.toLowerCase();
+          allTransactions.push({
+            hash: tx.hash,
+            from: tx.from,
+            to: tx.to,
+            value: formatUnits(BigInt(tx.value), 18),
+            blockNumber: BigInt(tx.blockNumber),
+            type: isIncoming ? 'IN' : 'OUT'
+          });
+        });
+      }
+
+      if (normalTxData.status === '1' && Array.isArray(normalTxData.result)) {
+        normalTxData.result.forEach((tx: any) => {
+          allTransactions.push({
+            hash: tx.hash,
+            from: tx.from,
+            to: tx.to,
+            value: '0',
+            blockNumber: BigInt(tx.blockNumber),
+            type: 'EVENT',
+            eventName: tx.functionName ? tx.functionName.split('(')[0] : 'Contract Interaction'
+          });
+        });
+      }
 
       // Remove duplicates (same hash) and sort
-      const uniqueTx = Array.from(new Map(allTransactions.map(tx => [tx.hash, tx])).values());
+      // Prioritize IN/OUT over EVENT if they have the same hash
+      const txMap = new Map<string, Transaction>();
+      allTransactions.forEach(tx => {
+        if (!txMap.has(tx.hash) || tx.type !== 'EVENT') {
+          txMap.set(tx.hash, tx);
+        }
+      });
+      
+      const uniqueTx = Array.from(txMap.values());
       return uniqueTx.sort((a, b) => Number(b.blockNumber - a.blockNumber)).slice(0, 10);
     } catch (error) {
       console.error(`Error fetching history for ${contractAddress}:`, error);
