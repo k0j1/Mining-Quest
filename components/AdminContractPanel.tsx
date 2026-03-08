@@ -67,17 +67,20 @@ const AdminContractPanel: React.FC = () => {
       
       // Fetch ERC20 Token Transfers (CHH)
       const tokenTxUrl = `https://api.basescan.org/api?module=account&action=tokentx&contractaddress=${CHH_TOKEN_ADDRESS}&address=${contractAddress}&page=1&offset=15&sort=desc&apikey=${apiKey}`;
+      console.info(`[Debug] Fetching Token TXs: ${tokenTxUrl}`);
       const tokenTxRes = await fetch(tokenTxUrl);
       const tokenTxData = await tokenTxRes.json();
       
       // Fetch Normal Transactions (Contract Interactions)
       const normalTxUrl = `https://api.basescan.org/api?module=account&action=txlist&address=${contractAddress}&page=1&offset=15&sort=desc&apikey=${apiKey}`;
+      console.info(`[Debug] Fetching Normal TXs: ${normalTxUrl}`);
       const normalTxRes = await fetch(normalTxUrl);
       const normalTxData = await normalTxRes.json();
 
       const allTransactions: Transaction[] = [];
 
       if (tokenTxData.status === '1' && Array.isArray(tokenTxData.result)) {
+        console.info(`[Debug] Found ${tokenTxData.result.length} token transactions.`);
         tokenTxData.result.forEach((tx: any) => {
           const isIncoming = tx.to.toLowerCase() === contractAddress.toLowerCase();
           allTransactions.push({
@@ -89,9 +92,12 @@ const AdminContractPanel: React.FC = () => {
             type: isIncoming ? 'IN' : 'OUT'
           });
         });
+      } else {
+        console.warn(`[Debug] No token transactions found or API error: ${tokenTxData.message}`);
       }
 
       if (normalTxData.status === '1' && Array.isArray(normalTxData.result)) {
+        console.info(`[Debug] Found ${normalTxData.result.length} normal transactions.`);
         normalTxData.result.forEach((tx: any) => {
           allTransactions.push({
             hash: tx.hash,
@@ -103,6 +109,8 @@ const AdminContractPanel: React.FC = () => {
             eventName: tx.functionName ? tx.functionName.split('(')[0] : 'Contract Interaction'
           });
         });
+      } else {
+        console.warn(`[Debug] No normal transactions found or API error: ${normalTxData.message}`);
       }
 
       // Remove duplicates (same hash) and sort
