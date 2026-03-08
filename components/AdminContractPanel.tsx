@@ -66,13 +66,13 @@ const AdminContractPanel: React.FC = () => {
       const apiKey = 'IMA7R6P9XEA9YW6BFP7AZHFVAHV54YY1MP';
       
       // Fetch ERC20 Token Transfers (CHH)
-      const tokenTxUrl = `https://api.basescan.org/api?module=account&action=tokentx&contractaddress=${CHH_TOKEN_ADDRESS}&address=${contractAddress}&page=1&offset=15&sort=desc&apikey=${apiKey}`;
+      const tokenTxUrl = `https://api.basescan.org/api/v2?module=account&action=tokentx&contractaddress=${CHH_TOKEN_ADDRESS}&address=${contractAddress}&page=1&offset=15&sort=desc&apikey=${apiKey}`;
       console.info(`[Debug] Fetching Token TXs: ${tokenTxUrl}`);
       const tokenTxRes = await fetch(tokenTxUrl);
       const tokenTxData = await tokenTxRes.json();
       
       // Fetch Normal Transactions (Contract Interactions)
-      const normalTxUrl = `https://api.basescan.org/api?module=account&action=txlist&address=${contractAddress}&page=1&offset=15&sort=desc&apikey=${apiKey}`;
+      const normalTxUrl = `https://api.basescan.org/api/v2?module=account&action=txlist&address=${contractAddress}&page=1&offset=15&sort=desc&apikey=${apiKey}`;
       console.info(`[Debug] Fetching Normal TXs: ${normalTxUrl}`);
       const normalTxRes = await fetch(normalTxUrl);
       const normalTxData = await normalTxRes.json();
