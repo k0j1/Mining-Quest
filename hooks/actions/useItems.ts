@@ -41,9 +41,10 @@ interface UseItemsProps {
   farcasterUser?: any;
   refetchBalance: () => Promise<void>;
   t: (key: string, params?: any) => string;
+  setTransactionResult?: Dispatch<SetStateAction<{ hash: string, type: 'deposit' | 'withdraw' | 'buy' | 'depart' } | null>>;
 }
 
-export const useItems = ({ gameState, setGameState, showNotification, farcasterUser, refetchBalance, t }: UseItemsProps) => {
+export const useItems = ({ gameState, setGameState, showNotification, farcasterUser, refetchBalance, t, setTransactionResult }: UseItemsProps) => {
 
   const updateHeroHpDB = async (heroId: string, newHp: number) => {
     if (!farcasterUser?.fid) return;
@@ -211,6 +212,10 @@ export const useItems = ({ gameState, setGameState, showNotification, farcasterU
       if (potionAmount > 0) msg.push(t('item.potion') + `x${potionAmount}`);
       if (elixirAmount > 0) msg.push(t('item.elixir') + `x${elixirAmount}`);
       showNotification(t('notify.items_purchased', { items: msg.join(', ') }), 'success');
+
+      if (setTransactionResult) {
+        setTransactionResult({ hash: txHash, type: 'buy' });
+      }
 
     } catch (error: any) {
       console.error("Transaction failed:", error);

@@ -18,6 +18,8 @@ import { supabase, isSupabaseConfigured } from './lib/supabase';
 import { useLanguage } from './contexts/LanguageContext';
 import gsap from 'gsap';
 
+import TransactionResult from './components/TransactionResult';
+
 // Views
 import PartyView from './components/views/PartyView';
 import DepartView from './components/views/DepartView';
@@ -419,6 +421,14 @@ const App: React.FC = () => {
             setCurrentView(View.RETURN);
           }}
           onConfirm={actions.confirmQuestReturn} // Pass commit action
+        />
+      )}
+
+      {ui.transactionResult && (
+        <TransactionResult 
+          hash={ui.transactionResult.hash} 
+          type={ui.transactionResult.type} 
+          onClose={() => ui.setTransactionResult(null)} 
         />
       )}
 

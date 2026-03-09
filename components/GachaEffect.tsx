@@ -6,7 +6,7 @@ import gsap from 'gsap';
 import { useLanguage } from '../contexts/LanguageContext';
 
 interface GachaEffectProps {
-  result: { type: 'Hero' | 'Equipment'; data: any[] } | null;
+  result: { type: 'Hero' | 'Equipment'; data: any[]; txHash?: string } | null;
   onClose: () => void;
 }
 
@@ -336,6 +336,31 @@ const GachaEffect: React.FC<GachaEffectProps> = ({ result, onClose }) => {
           >
             {isLastItem ? t('gacha.excellent') : t('gacha.next')}
           </button>
+
+          {isLastItem && result.txHash && (
+            <div className="mt-4 flex flex-col items-center gap-2 z-50">
+              <a 
+                href={`https://basescan.org/tx/${result.txHash}`} 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="flex items-center justify-center gap-1 text-[10px] text-indigo-400 hover:text-indigo-300 transition-colors bg-indigo-900/40 py-2 px-4 rounded-full border border-indigo-500/30"
+              >
+                  <span>🔗</span> トランザクションを確認
+              </a>
+              <button 
+                onClick={() => {
+                    const shareText = `ガチャで${result.type === 'Hero' ? 'ヒーロー' : '装備'}をゲットしました！\nTx: https://basescan.org/tx/${result.txHash}\n\n#RunningChihuahua #CHH`;
+                    const url = `https://warpcast.com/~/compose?text=${encodeURIComponent(shareText)}`;
+                    import('@farcaster/frame-sdk').then(({ sdk }) => {
+                      sdk.actions.openUrl(url);
+                    });
+                }}
+                className="flex items-center justify-center gap-1 text-[10px] text-white hover:text-indigo-100 transition-colors bg-indigo-600 py-2 px-4 rounded-full border border-indigo-500/30"
+              >
+                  <span>🚀</span> Farcasterで共有
+              </button>
+            </div>
+          )}
         </div>
       )}
     </div>

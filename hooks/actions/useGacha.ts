@@ -29,7 +29,7 @@ interface UseGachaProps {
 }
 
 export const useGacha = ({ gameState, setGameState, showNotification, farcasterUser, refetchBalance, t }: UseGachaProps) => {
-  const [gachaResult, setGachaResult] = useState<{ type: 'Hero' | 'Equipment'; data: any[] } | null>(null);
+  const [gachaResult, setGachaResult] = useState<{ type: 'Hero' | 'Equipment'; data: any[]; txHash?: string } | null>(null);
   const [isGachaRolling, setIsGachaRolling] = useState(false);
 
   // Helper for on-chain payment
@@ -218,7 +218,7 @@ export const useGacha = ({ gameState, setGameState, showNotification, farcasterU
     try {
       // 1. On-chain Payment
       const amountBigInt = parseUnits(cost.toString(), 18);
-      await handleOnChainPayment(tab === 'Hero' ? 'HERO_SINGLE' : 'EQUIP_SINGLE', amountBigInt);
+      const txHash = await handleOnChainPayment(tab === 'Hero' ? 'HERO_SINGLE' : 'EQUIP_SINGLE', amountBigInt);
       
       playConfirm();
       
@@ -230,7 +230,7 @@ export const useGacha = ({ gameState, setGameState, showNotification, farcasterU
       // Handle Persistence (Skip if RPC handled it)
       const persisted = await persistGachaResults(tab, [result]);
       
-      setGachaResult({ type: tab, data: persisted });
+      setGachaResult({ type: tab, data: persisted, txHash });
       // Tokens are updated by refetchBalance since they are on-chain
       processGachaItems(tab, persisted);
       
@@ -259,7 +259,7 @@ export const useGacha = ({ gameState, setGameState, showNotification, farcasterU
     try {
       // 1. On-chain Payment
       const amountBigInt = parseUnits(cost.toString(), 18);
-      await handleOnChainPayment(tab === 'Hero' ? 'HERO_TRIPLE' : 'EQUIP_TRIPLE', amountBigInt);
+      const txHash = await handleOnChainPayment(tab === 'Hero' ? 'HERO_TRIPLE' : 'EQUIP_TRIPLE', amountBigInt);
       
       playConfirm();
 
@@ -271,7 +271,7 @@ export const useGacha = ({ gameState, setGameState, showNotification, farcasterU
 
       const persisted = await persistGachaResults(tab, results);
 
-      setGachaResult({ type: tab, data: persisted });
+      setGachaResult({ type: tab, data: persisted, txHash });
       processGachaItems(tab, persisted);
       
       await refetchBalance();

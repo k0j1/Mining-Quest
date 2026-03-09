@@ -5,6 +5,7 @@ import { sdk } from '@farcaster/frame-sdk';
 import { playClick, playConfirm, playError } from '../utils/sound';
 import { ITEM_SHOP_CONTRACT_ADDRESS, QUEST_TREASURY_CONTRACT_ADDRESS, QUEST_MANAGER_CONTRACT_ADDRESS, GACHA_PAYMENT_CONTRACT_ADDRESS } from '../constants';
 import { THEME, themeClass } from '../theme';
+import TransactionResult from './TransactionResult';
 
 // Constants
 const REWARD_CONTRACT_ADDRESS = "0x193708bB0AC212E59fc44d6D6F3507F25Bc97fd4" as `0x${string}`;
@@ -41,6 +42,7 @@ const AdminContractPanel: React.FC = () => {
   const [withdrawAmount, setWithdrawAmount] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [statusMsg, setStatusMsg] = useState('');
+  const [result, setResult] = useState<{ hash: string, type: 'deposit' | 'withdraw' } | null>(null);
 
   // History states
   const [itemShopHistory, setItemShopHistory] = useState<Transaction[]>([]);
@@ -252,6 +254,7 @@ const AdminContractPanel: React.FC = () => {
       playConfirm();
       setStatusMsg('Success! Updating balance...');
       setDepositAmount('');
+      setResult({ hash, type: 'deposit' });
       
       // Wait a bit before refreshing balance
       setTimeout(() => {
@@ -316,6 +319,7 @@ const AdminContractPanel: React.FC = () => {
       playConfirm();
       setStatusMsg('Success! Updating balance...');
       setWithdrawAmount('');
+      setResult({ hash, type: 'withdraw' });
       
       setTimeout(() => {
         fetchBalances();
@@ -394,6 +398,14 @@ const AdminContractPanel: React.FC = () => {
     <div className="flex-1 overflow-y-auto p-6 bg-slate-950 text-slate-200">
       <div className="max-w-2xl mx-auto space-y-8">
         
+        {result && (
+          <TransactionResult 
+            hash={result.hash} 
+            type={result.type} 
+            onClose={() => setResult(null)} 
+          />
+        )}
+
         <div className="flex justify-between items-center">
           <h2 className="text-xl font-black text-white tracking-tighter">ADMIN CONTRACTS</h2>
           <button 

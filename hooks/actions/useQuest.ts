@@ -43,9 +43,10 @@ interface UseQuestProps {
   farcasterUser?: any;
   refetchBalance: () => Promise<void>;
   t: (key: string, params?: any) => string;
+  setTransactionResult?: Dispatch<SetStateAction<{ hash: string, type: 'deposit' | 'withdraw' | 'buy' | 'depart' } | null>>;
 }
 
-export const useQuest = ({ gameState, setGameState, showNotification, setReturnResult, farcasterUser, refetchBalance, t }: UseQuestProps) => {
+export const useQuest = ({ gameState, setGameState, showNotification, setReturnResult, farcasterUser, refetchBalance, t, setTransactionResult }: UseQuestProps) => {
   
   // Exposed Helper: Calculate Prediction for UI
   const getQuestPrediction = (config: QuestConfig, partyHeroes: Hero[]) => {
@@ -281,6 +282,10 @@ export const useQuest = ({ gameState, setGameState, showNotification, setReturnR
         }
 
         await publicClient.waitForTransactionReceipt({ hash: txHash });
+
+        if (setTransactionResult) {
+          setTransactionResult({ hash: txHash, type: 'depart' });
+        }
 
       } catch (error: any) {
         console.error("Transaction failed:", error);

@@ -17,7 +17,7 @@ interface GachaViewProps {
   onRollGacha: (tab: 'Hero' | 'Equipment') => void;
   onRollGachaTriple?: (tab: 'Hero' | 'Equipment') => void;
   isGachaRolling: boolean;
-  gachaResult: { type: 'Hero' | 'Equipment'; data: any[] } | null;
+  gachaResult: { type: 'Hero' | 'Equipment'; data: any[]; txHash?: string } | null;
   onCloseResult: () => void;
   isSoundOn: boolean;
   onToggleSound: () => void;

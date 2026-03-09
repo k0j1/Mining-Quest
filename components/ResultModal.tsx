@@ -281,14 +281,28 @@ const ResultModal: React.FC<ResultModalProps> = ({ results, totalTokens, onClose
                       </div>
                       
                       {txHash && (
-                          <a 
-                            href={`https://basescan.org/tx/${txHash}`} 
-                            target="_blank" 
-                            rel="noopener noreferrer"
-                            className="flex items-center justify-center gap-1 mb-8 text-[10px] text-indigo-400 hover:text-indigo-300 transition-colors bg-indigo-900/20 py-2 px-4 rounded-full border border-indigo-500/30"
-                          >
-                              <span>🔗</span> {t('result.view_tx')}
-                          </a>
+                          <div className="flex flex-col gap-2 w-full mb-8">
+                            <a 
+                              href={`https://basescan.org/tx/${txHash}`} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              className="flex items-center justify-center gap-1 text-[10px] text-indigo-400 hover:text-indigo-300 transition-colors bg-indigo-900/20 py-2 px-4 rounded-full border border-indigo-500/30"
+                            >
+                                <span>🔗</span> {t('result.view_tx')}
+                            </a>
+                            <button 
+                              onClick={() => {
+                                  const shareText = `クエスト報酬で${totalTokens.toLocaleString()} $CHHを受け取りました！\nTx: https://basescan.org/tx/${txHash}\n\n#RunningChihuahua #CHH`;
+                                  const url = `https://warpcast.com/~/compose?text=${encodeURIComponent(shareText)}`;
+                                  import('@farcaster/frame-sdk').then(({ sdk }) => {
+                                    sdk.actions.openUrl(url);
+                                  });
+                              }}
+                              className="flex items-center justify-center gap-1 text-[10px] text-white hover:text-indigo-100 transition-colors bg-indigo-600 py-2 px-4 rounded-full border border-indigo-500/30"
+                            >
+                                <span>🚀</span> Farcasterで共有
+                            </button>
+                          </div>
                       )}
 
                       <button 
