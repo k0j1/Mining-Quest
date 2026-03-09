@@ -292,8 +292,8 @@ const ResultModal: React.FC<ResultModalProps> = ({ results, totalTokens, onClose
                             </a>
                             <button 
                               onClick={() => {
-                                  const shareText = `クエスト報酬で${totalTokens.toLocaleString()} $CHHを受け取りました！\nTx: https://basescan.org/tx/${txHash}\n\n#MiningQuest #CHH`;
-                                  const url = `https://warpcast.com/~/compose?text=${encodeURIComponent(shareText)}&embeds[]=${encodeURIComponent('https://k0j1.github.io/Mining-Quest/')}`;
+                                  const shareText = `I received ${totalTokens.toLocaleString()} $CHH as a quest reward!\nTx: https://basescan.org/tx/${txHash}\n\n#MiningQuest #CHH`;
+                                  const url = `https://warpcast.com/~/compose?text=${encodeURIComponent(shareText)}&embeds[]=${encodeURIComponent('https://farcaster.xyz/miniapps/MR1ItBAqMlzR/mining-quest')}`;
                                   import('@farcaster/frame-sdk').then(({ sdk }) => {
                                     sdk.actions.openUrl(url);
                                   });

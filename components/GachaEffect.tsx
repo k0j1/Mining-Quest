@@ -349,8 +349,8 @@ const GachaEffect: React.FC<GachaEffectProps> = ({ result, onClose }) => {
               </a>
               <button 
                 onClick={() => {
-                    const shareText = `ガチャで${result.type === 'Hero' ? 'ヒーロー' : '装備'}をゲットしました！\nTx: https://basescan.org/tx/${result.txHash}\n\n#MiningQuest #CHH`;
-                    const url = `https://warpcast.com/~/compose?text=${encodeURIComponent(shareText)}&embeds[]=${encodeURIComponent('https://k0j1.github.io/Mining-Quest/')}`;
+                    const shareText = `I got a new ${result.type === 'Hero' ? 'Hero' : 'Equipment'} from the Gacha!\nTx: https://basescan.org/tx/${result.txHash}\n\n#MiningQuest #CHH`;
+                    const url = `https://warpcast.com/~/compose?text=${encodeURIComponent(shareText)}&embeds[]=${encodeURIComponent('https://farcaster.xyz/miniapps/MR1ItBAqMlzR/mining-quest')}`;
                     import('@farcaster/frame-sdk').then(({ sdk }) => {
                       sdk.actions.openUrl(url);
                     });
