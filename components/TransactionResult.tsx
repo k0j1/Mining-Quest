@@ -10,7 +10,7 @@ const TransactionResult: React.FC<TransactionResultProps> = ({ hash, type, onClo
   const shareText = `スマートコントラクトで${type === 'deposit' ? '入金' : type === 'withdraw' ? '出金' : type === 'buy' ? 'アイテム購入' : 'クエスト出発'}が完了しました！\nTx: https://basescan.org/tx/${hash}\n\n#RunningChihuahua #CHH`;
 
   const shareOnFarcaster = () => {
-    const url = `https://warpcast.com/~/compose?text=${encodeURIComponent(shareText)}`;
+    const url = `https://warpcast.com/~/compose?text=${encodeURIComponent(shareText)}&embeds[]=${encodeURIComponent('https://k0j1.github.io/Mining-Quest/')}`;
     import('@farcaster/frame-sdk').then(({ sdk }) => {
       sdk.actions.openUrl(url);
     });
