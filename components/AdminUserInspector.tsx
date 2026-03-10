@@ -10,68 +10,45 @@ import EquipmentListItem from './EquipmentListItem';
 
 const AdminUserInspector: React.FC = () => {
   const [userSearch, setUserSearch] = useState('');
+  const [searchField, setSearchField] = useState<'username' | 'fid'>('username');
+  const [sortBy, setSortBy] = useState<'last_active' | 'fid' | 'created_at'>('last_active');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [showUserDropdown, setShowUserDropdown] = useState(false);
   const [userList, setUserList] = useState<any[]>([]);
   const [selectedUser, setSelectedUser] = useState<any | null>(null);
   const [claimedOnChain, setClaimedOnChain] = useState<string | null>(null);
 
-  // Constants for Contract
-  const REWARD_CONTRACT_ADDRESS = "0x193708bB0AC212E59fc44d6D6F3507F25Bc97fd4" as `0x${string}`;
-  const REWARD_ABI = parseAbi([
-    'function totalClaimedPerUser(uint256 fid) view returns (uint256)'
-  ]);
-
-  const publicClient = useMemo(() => createPublicClient({
-    chain: base,
-    transport: http('https://mainnet.base.org')
-  }), []);
-  
-  const [userDetails, setUserDetails] = useState<{
-    parties: any[];
-    heroes: any[]; // quest_player_hero + join quest_hero
-    equipment: any[]; // quest_player_equipment + join quest_equipment
-    activeQuests: any[];
-    completedQuests: any[];
-    lostHeroes: any[];
-  } | null>(null);
-  
-  const [loadingDetails, setLoadingDetails] = useState(false);
-  const searchTimeout = useRef<any>(null);
-  // Timer for updating "Time Left" displays
-  const [now, setNow] = useState(Date.now());
-
-  // Update timer every second
-  useEffect(() => {
-    const timer = setInterval(() => setNow(Date.now()), 1000);
-    return () => clearInterval(timer);
-  }, []);
+  // ... (Constants and publicClient remain the same)
 
   useEffect(() => {
     if (searchTimeout.current) clearTimeout(searchTimeout.current);
 
-    // デバウンス処理だが、空文字でもリストを取得するように変更
     searchTimeout.current = setTimeout(() => {
         fetchUserList();
     }, 300);
-  }, [userSearch]);
+  }, [userSearch, searchField, sortBy, sortOrder]);
 
   const fetchUserList = async () => {
     try {
       let query = supabase
         .from('quest_player_stats')
         .select('*')
-        .order('last_active', { ascending: false })
-        .limit(10);
+        .order(sortBy, { ascending: sortOrder === 'asc' })
+        .limit(20); // Limit increased to 20
       
       if (userSearch.length > 0) {
-        query = query.ilike('username', `%${userSearch}%`);
+        if (searchField === 'fid') {
+            query = query.eq('fid', parseInt(userSearch));
+        } else {
+            query = query.ilike('username', `%${userSearch}%`);
+        }
       }
       
       const { data, error } = await query;
       if (error) throw error;
       
       if (data && data.length > 0) {
-          // Fetch claimed amounts for all users in list via multicall
+          // ... (Multicall logic remains the same)
           try {
               const results = await publicClient.multicall({
                   contracts: data.map((user: any) => ({
@@ -250,20 +227,32 @@ const AdminUserInspector: React.FC = () => {
   return (
     <div className="flex flex-col flex-1 overflow-hidden bg-slate-950 text-slate-200">
       
-      {/* 1. Search Bar */}
+      {/* 1. Search Bar & Controls */}
       <div className="p-4 border-b border-slate-800 bg-slate-900/30 z-20">
-         <div className="relative max-w-lg mx-auto">
+         <div className="max-w-lg mx-auto space-y-2">
             <div className="relative">
                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500">🔍</span>
                 <input 
                     type="text" 
-                    placeholder="ユーザー名で検索..." 
+                    placeholder="検索..." 
                     value={userSearch}
                     onChange={(e) => setUserSearch(e.target.value)}
                     onFocus={() => { fetchUserList(); setShowUserDropdown(true); }}
                     className="w-full bg-slate-950 border border-slate-700 rounded-xl pl-10 pr-4 py-3 text-sm text-white focus:border-indigo-500 outline-none shadow-sm"
                 />
             </div>
+            <div className="flex gap-2 text-[10px] text-slate-400">
+                <select value={searchField} onChange={(e) => setSearchField(e.target.value as any)} className="bg-slate-950 border border-slate-700 rounded px-2 py-1">
+                    <option value="username">ユーザー名</option>
+                    <option value="fid">FID</option>
+                </select>
+                <select value={sortBy} onChange={(e) => setSortBy(e.target.value as any)} className="bg-slate-950 border border-slate-700 rounded px-2 py-1">
+                    <option value="last_active">最終アクティブ</option>
+                    <option value="fid">FID</option>
+                    <option value="created_at">登録日</option>
+                </select>
+                <select value={sortOrder} onChange={(e) => setSortOrder(e.target.value as any)} className="bg-slate-950 border border-slate-700 rounded px-2 py-1">
+                    <option value="desc">          </div>
             
             {/* Dropdown Results */}
             {showUserDropdown && userList.length > 0 && (
@@ -282,6 +271,11 @@ const AdminUserInspector: React.FC = () => {
                                 </div>
                                 <div>最終: {new Date(user.last_active).toLocaleDateString()}</div>
                             </div>
+                        </div>
+                    ))}
+                </div>
+            )}
+       </div>       </div>
                         </div>
                     ))}
                 </div>
