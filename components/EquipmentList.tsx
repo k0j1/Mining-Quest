@@ -189,6 +189,7 @@ const EquipmentList: React.FC<EquipmentListProps> = ({ equipment, heroes, onMerg
                        <div className="absolute -top-2 -right-2 bg-amber-500 text-black text-[9px] font-black px-1.5 rounded-full border border-white">+{baseItem.level || 0}</div>
                      </div>
                      <div className="mt-1 text-[8px] text-amber-200 font-bold truncate max-w-[90%]">{baseItem.name}</div>
+                     <div className="text-[8px] text-amber-400 font-bold">Dur: {baseItem.durability}</div>
                    </>
                  ) : (
                    <>
@@ -222,6 +223,7 @@ const EquipmentList: React.FC<EquipmentListProps> = ({ equipment, heroes, onMerg
                        <div className="absolute -top-2 -right-2 bg-slate-600 text-white text-[9px] font-black px-1.5 rounded-full">+{materialItem.level || 0}</div>
                      </div>
                      <div className="mt-1 text-[8px] text-slate-400 font-bold truncate max-w-[90%]">{materialItem.name}</div>
+                     <div className="text-[8px] text-slate-500 font-bold">Dur: {materialItem.durability}</div>
                    </>
                  ) : (
                    <>

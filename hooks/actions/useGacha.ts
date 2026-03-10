@@ -198,7 +198,8 @@ export const useGacha = ({ gameState, setGameState, showNotification, farcasterU
             type: result.type,
             bonus: result.bonus,
             rarity: result.rarity,
-            level: 0
+            level: 0,
+            durability: result.durability || 100 // Default durability for new items
         }));
         next.equipment = [...prev.equipment, ...newEquipment];
       }

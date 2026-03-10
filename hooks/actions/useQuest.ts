@@ -206,6 +206,21 @@ export const useQuest = ({ gameState, setGameState, showNotification, setReturnR
       return false;
     }
 
+    // Check equipment durability
+    const hasBrokenEquipment = partyHeroes.some(h => 
+      h.equipmentIds.some(eid => {
+        if (!eid) return false;
+        const eq = gameState.equipment.find(e => e.id === eid);
+        return eq && eq.durability <= 0;
+      })
+    );
+
+    if (hasBrokenEquipment) {
+      playError();
+      showNotification('耐久値がゼロの装備品があるため出発できません', 'error');
+      return false;
+    }
+
     if (gameState.tokens < config.burnCost) {
       playError();
       showNotification(t('notify.insufficient_tokens', { amount: config.burnCost.toLocaleString() }), 'error');
@@ -424,6 +439,7 @@ export const useQuest = ({ gameState, setGameState, showNotification, setReturnR
       let survivors = 0;
       const heroUpdates: { id: string, hp: number, isDead: boolean, damage: number }[] = [];
       const deadHeroIds: string[] = [];
+      const equipmentUpdates: { id: string, durability: number }[] = [];
 
       questHeroes.forEach(hero => {
         let isDead = false;
@@ -458,6 +474,19 @@ export const useQuest = ({ gameState, setGameState, showNotification, setReturnR
             isDead: isDead,
             damage: damageTaken
         });
+
+        // Decrease durability for equipped items
+        hero.equipmentIds.forEach(eid => {
+          if (eid) {
+            const eq = gameState.equipment.find(e => e.id === eid);
+            if (eq) {
+              equipmentUpdates.push({
+                id: eq.id,
+                durability: Math.max(0, eq.durability - 1)
+              });
+            }
+          }
+        });
       });
 
       if (survivors === 0 && questHeroes.length > 0) {
@@ -485,7 +514,8 @@ export const useQuest = ({ gameState, setGameState, showNotification, setReturnR
             questMasterId: questMasterId || 0,
             finalReward: finalReward,
             heroUpdates: heroUpdates,
-            deadHeroIds: deadHeroIds
+            deadHeroIds: deadHeroIds,
+            equipmentUpdates: equipmentUpdates
         }
       });
     }
@@ -563,6 +593,16 @@ export const useQuest = ({ gameState, setGameState, showNotification, setReturnR
                     }
                 }
 
+                // 5. Update Equipment Durability in DB
+                const { equipmentUpdates } = res.pendingUpdates;
+                if (equipmentUpdates) {
+                    for (const update of equipmentUpdates) {
+                        await supabase.from('quest_player_equipment')
+                            .update({ durability: update.durability })
+                            .eq('player_eid', parseInt(update.id));
+                    }
+                }
+
                 processedQuestPids.push(questPid.toString());
                 allDeadHeroIds.push(...deadHeroIds);
                 accumulatedTotalReward += finalReward;
@@ -625,10 +665,24 @@ export const useQuest = ({ gameState, setGameState, showNotification, setReturnR
 
     // Commit to State
     if (processedQuestPids.length > 0) {
+        let newEquipment = [...gameState.equipment];
+        results.forEach(res => {
+            const { equipmentUpdates } = res.pendingUpdates;
+            if (equipmentUpdates) {
+                equipmentUpdates.forEach(update => {
+                    const idx = newEquipment.findIndex(e => e.id === update.id);
+                    if (idx !== -1) {
+                        newEquipment[idx] = { ...newEquipment[idx], durability: update.durability };
+                    }
+                });
+            }
+        });
+
         setGameState(prev => ({
           ...prev,
           tokens: prev.tokens + accumulatedTotalReward,
           heroes: newHeroes.filter(h => !allDeadHeroIds.includes(h.id)),
+          equipment: newEquipment,
           activeQuests: prev.activeQuests.filter(q => !processedQuestPids.includes(q.id)),
           partyPresets: prev.partyPresets.map(p => p.map(id => (id && allDeadHeroIds.includes(id)) ? null : id))
         }));

@@ -74,7 +74,7 @@ const AdminUserInspector: React.FC = () => {
           // Fetch claimed amounts for all users in list via multicall
           try {
               const results = await publicClient.multicall({
-                  contracts: data.map(user => ({
+                  contracts: data.map((user: any) => ({
                       address: REWARD_CONTRACT_ADDRESS,
                       abi: REWARD_ABI,
                       functionName: 'totalClaimedPerUser',
@@ -83,7 +83,7 @@ const AdminUserInspector: React.FC = () => {
                   allowFailure: true
               });
               
-              const updatedData = data.map((user, i) => ({
+              const updatedData = data.map((user: any, i: number) => ({
                   ...user,
                   claimedOnChain: results[i].status === 'success' ? (results[i].result as bigint).toString() : '0'
               }));

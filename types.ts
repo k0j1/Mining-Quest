@@ -40,6 +40,7 @@ export interface Equipment {
   bonus: number;
   rarity: QuestRank; // C, UC, R, E, L
   level: number; // Enhancement level (+0, +1, ...)
+  durability: number; // Durability
 }
 
 export interface Quest {
@@ -95,6 +96,7 @@ export interface QuestResult {
       finalReward: number;
       heroUpdates: { id: string; hp: number; isDead: boolean; damage: number }[];
       deadHeroIds: string[];
+      equipmentUpdates: { id: string; durability: number }[];
   };
 }
 

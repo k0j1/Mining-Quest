@@ -143,7 +143,8 @@ export const useGameLogic = () => {
             // Calculate bonus based on level: Base + (level * 0.1)
             bonus: base.bonus + ((e.level || 0) * 0.1),
             rarity: base.rarity,
-            level: e.level || 0
+            level: e.level || 0,
+            durability: e.durability || 0
           });
           return acc;
         }, []);

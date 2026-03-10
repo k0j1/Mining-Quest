@@ -311,6 +311,7 @@ export const useItems = ({ gameState, setGameState, showNotification, farcasterU
 
     // Optimistic Update
     const newLevel = baseItem.level + 1;
+    const newDurability = baseItem.durability + materialItem.durability;
     // Recalculate bonus: Base + (newLevel * 0.1)
     // We derive Base from Current: Base = Current - (currentLevel * 0.1)
     
@@ -321,7 +322,7 @@ export const useItems = ({ gameState, setGameState, showNotification, farcasterU
     setGameState(prev => ({
       ...prev,
       equipment: prev.equipment
-        .map(e => e.id === baseId ? { ...e, level: newLevel, bonus: newBonus } : e)
+        .map(e => e.id === baseId ? { ...e, level: newLevel, bonus: newBonus, durability: newDurability } : e)
         .filter(e => e.id !== materialId)
     }));
 
@@ -334,7 +335,7 @@ export const useItems = ({ gameState, setGameState, showNotification, farcasterU
       // For now, we stick to 'level' property mapping to 'level' column as per previous working code.
       const { error: updateError } = await supabase
         .from('quest_player_equipment')
-        .update({ level: newLevel })
+        .update({ level: newLevel, durability: newDurability })
         .eq('player_eid', parseInt(baseId));
 
       if (updateError) {

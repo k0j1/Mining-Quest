@@ -64,7 +64,7 @@ const EquipmentListItem: React.FC<EquipmentListItemProps> = ({
         <span className={`${layout === 'grid' ? 'text-[10px]' : 'text-sm'} font-bold truncate ${rarityColors[item.rarity]}`}>{item.name}</span>
         <span className={`${layout === 'grid' ? 'text-[8px]' : 'text-[10px] ml-2'} text-slate-500 font-black uppercase`}>{item.rarity}</span>
       </div>
-      <div className={`${layout === 'grid' ? 'text-[9px]' : 'text-[10px]'} text-slate-400 flex items-center gap-1`}>
+      <div className={`${layout === 'grid' ? 'text-[9px]' : 'text-[10px]'} text-slate-400 flex items-center gap-1 flex-wrap`}>
         <span className="truncate">
           {item.type === 'Pickaxe' ? `Rew ${effectiveBonus >= 0 ? '+' : ''}${effectiveBonus.toFixed(1)}%` : 
            item.type === 'Helmet' ? `Def ${effectiveBonus >= 0 ? '+' : ''}${effectiveBonus.toFixed(1)}%` : 
@@ -77,8 +77,12 @@ const EquipmentListItem: React.FC<EquipmentListItemProps> = ({
           </span>
         )}
 
+        <span className={`shrink-0 ml-1 ${item.durability <= 0 ? 'text-red-400 font-bold' : 'text-slate-300'}`}>
+          Dur: {item.durability}
+        </span>
+
         {equippedBy && (
-          <span className="text-[8px] bg-indigo-600 text-white px-1 rounded-sm border border-indigo-500 font-bold shadow-sm shrink-0">
+          <span className="text-[8px] bg-indigo-600 text-white px-1 rounded-sm border border-indigo-500 font-bold shadow-sm shrink-0 ml-auto">
               E
           </span>
         )}

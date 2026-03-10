@@ -327,6 +327,16 @@ const HeroCard: React.FC<HeroCardProps> = ({
               ) : equipId && (
                  <div className="absolute top-0.5 right-0.5 w-1.5 h-1.5 bg-emerald-500 rounded-full shadow-[0_0_4px_#10b981] z-20"></div>
               )}
+
+              {equippedItem && (
+                 <div className={`absolute -bottom-1.5 left-1/2 -translate-x-1/2 text-[7px] font-black px-1 rounded-sm border shadow-sm z-20 ${
+                    equippedItem.durability <= 0 
+                      ? 'bg-red-500 text-white border-red-700' 
+                      : 'bg-slate-800 text-slate-300 border-slate-600'
+                 }`}>
+                    {equippedItem.durability}
+                 </div>
+              )}
             </button>
           )})}
         </div>

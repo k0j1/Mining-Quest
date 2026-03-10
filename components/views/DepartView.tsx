@@ -181,6 +181,14 @@ const DepartView: React.FC<DepartViewProps> = ({
   let prediction: PredictionResult | null = null;
   let riskLevel = 0; // 0: Safe, 1-2: Warning, 3: Danger (Wipeout)
 
+  const hasBrokenEquipment = mainParty.some(h => 
+    h.equipmentIds.some(eid => {
+      if (!eid) return false;
+      const eq = gameState.equipment.find(e => e.id === eid);
+      return eq && eq.durability <= 0;
+    })
+  );
+
   if (currentRankConfig && isPartyFull && getQuestPrediction) {
       prediction = getQuestPrediction(currentRankConfig, mainParty);
       
@@ -533,6 +541,11 @@ const DepartView: React.FC<DepartViewProps> = ({
                      {t('depart.dead_hero_warning')}
                    </p>
                  )}
+                 {hasBrokenEquipment && (
+                   <p className="text-rose-400 text-xs text-center mt-4 font-bold">
+                     耐久値がゼロの装備品があるため出発できません
+                   </p>
+                 )}
                </div>
              </div>
 
@@ -545,9 +558,9 @@ const DepartView: React.FC<DepartViewProps> = ({
                </button>
                <button 
                  onClick={handleConfirm}
-                 disabled={!isPartyFull || isProcessing || isCurrentPartyQuesting || hasDeadHeroes}
+                 disabled={!isPartyFull || isProcessing || isCurrentPartyQuesting || hasDeadHeroes || hasBrokenEquipment}
                  className={`flex-1 py-3 text-white rounded-xl font-bold shadow-md transition-all text-sm ${
-                    !isPartyFull || isProcessing || isCurrentPartyQuesting || hasDeadHeroes
+                    !isPartyFull || isProcessing || isCurrentPartyQuesting || hasDeadHeroes || hasBrokenEquipment
                       ? 'bg-slate-700 opacity-50 cursor-not-allowed'
                       : !canAfford 
                         ? 'bg-rose-600 hover:bg-rose-500' // Red for unaffordable but clickable
@@ -556,7 +569,7 @@ const DepartView: React.FC<DepartViewProps> = ({
                         : 'bg-indigo-600 hover:bg-indigo-500'
                  }`}
                >
-                 {isProcessing ? t('depart.processing') : !isPartyFull ? t('depart.not_enough_members') : isCurrentPartyQuesting ? t('depart.questing') : (!canAfford ? t('depart.insufficient_funds') : isDanger ? t('depart.force_depart') : t('depart.depart_btn'))}
+                 {isProcessing ? t('depart.processing') : !isPartyFull ? t('depart.not_enough_members') : isCurrentPartyQuesting ? t('depart.questing') : hasBrokenEquipment ? '装備破損' : (!canAfford ? t('depart.insufficient_funds') : isDanger ? t('depart.force_depart') : t('depart.depart_btn'))}
                </button>
              </div>
            </div>
