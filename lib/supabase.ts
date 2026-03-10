@@ -22,4 +22,15 @@ const finalKey = envKey || localKey || 'placeholder';
 // We assume URL is always configured via hardcoded value
 export const isSupabaseConfigured = !!(finalKey && finalKey !== 'placeholder');
 
-export const supabase = createClient(finalUrl, finalKey);
+// 修正：初期化を遅延させる
+const client = isSupabaseConfigured ? createClient(finalUrl, finalKey) : null;
+
+// プロキシを作成して、supabaseクライアントのメソッドを呼んだ時に、設定されていなければエラーを投げる
+export const supabase = new Proxy({} as any, {
+  get: (target, prop) => {
+    if (!client) {
+      throw new Error('Supabase is not configured. Please set VITE_SUPABASE_ANON_KEY.');
+    }
+    return (client as any)[prop];
+  }
+});
