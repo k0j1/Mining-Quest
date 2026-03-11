@@ -124,11 +124,6 @@ const RecoveryView: React.FC<RecoveryViewProps> = ({
                 alt={hero.name} 
               />
               
-              {/* Rarity Badge */}
-              <div className={`absolute top-1 left-1 z-20 px-1.5 py-0.5 rounded text-[8px] font-black shadow-sm border border-white/10 ${rarityColors[hero.rarity]}`}>
-                  {hero.rarity}
-              </div>
-
               {/* HP Badge */}
               <div className="absolute top-1 right-1 bg-black/60 px-1 rounded backdrop-blur-sm border border-white/10 z-10">
                   <span className={`text-[8px] font-bold ${hero.hp < hero.maxHp * 0.3 ? 'text-rose-400 animate-pulse' : 'text-emerald-400'}`}>
