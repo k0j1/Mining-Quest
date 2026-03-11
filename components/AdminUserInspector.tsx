@@ -18,7 +18,20 @@ const AdminUserInspector: React.FC = () => {
   const [selectedUser, setSelectedUser] = useState<any | null>(null);
   const [claimedOnChain, setClaimedOnChain] = useState<string | null>(null);
 
-  // ... (Constants and publicClient remain the same)
+  const [loadingDetails, setLoadingDetails] = useState(false);
+  const [userDetails, setUserDetails] = useState<any | null>(null);
+  const searchTimeout = useRef<NodeJS.Timeout | null>(null);
+  const now = new Date();
+
+  const REWARD_CONTRACT_ADDRESS = "0x193708bB0AC212E59fc44d6D6F3507F25Bc97fd4" as `0x${string}`;
+  const REWARD_ABI = parseAbi([
+    'function totalClaimedPerUser(uint256 fid) view returns (uint256)'
+  ]);
+
+  const publicClient = createPublicClient({
+    chain: base,
+    transport: http()
+  });
 
   useEffect(() => {
     if (searchTimeout.current) clearTimeout(searchTimeout.current);
@@ -252,7 +265,10 @@ const AdminUserInspector: React.FC = () => {
                     <option value="created_at">登録日</option>
                 </select>
                 <select value={sortOrder} onChange={(e) => setSortOrder(e.target.value as any)} className="bg-slate-950 border border-slate-700 rounded px-2 py-1">
-                    <option value="desc">          </div>
+                    <option value="desc">降順</option>
+                    <option value="asc">昇順</option>
+                </select>
+            </div>
             
             {/* Dropdown Results */}
             {showUserDropdown && userList.length > 0 && (
@@ -271,11 +287,6 @@ const AdminUserInspector: React.FC = () => {
                                 </div>
                                 <div>最終: {new Date(user.last_active).toLocaleDateString()}</div>
                             </div>
-                        </div>
-                    ))}
-                </div>
-            )}
-       </div>       </div>
                         </div>
                     ))}
                 </div>
@@ -405,7 +416,7 @@ const AdminUserInspector: React.FC = () => {
                         <div className="space-y-2">
                             {userDetails.activeQuests.map((q: any) => {
                                 const endTime = new Date(q.end_time).getTime();
-                                const timeLeftMs = Math.max(0, endTime - now);
+                                const timeLeftMs = Math.max(0, endTime - now.getTime());
                                 const minutes = Math.floor(timeLeftMs / 60000);
                                 const seconds = Math.floor((timeLeftMs % 60000) / 1000);
                                 
