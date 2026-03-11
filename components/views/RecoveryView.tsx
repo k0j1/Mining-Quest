@@ -255,7 +255,13 @@ const RecoveryView: React.FC<RecoveryViewProps> = ({
               
               {/* Durability Badge */}
               <div className="absolute top-1 right-1 bg-black/60 px-1 rounded backdrop-blur-sm border border-white/10 z-10">
-                  <span className={`text-[8px] font-bold ${eq.durability < 30 ? 'text-rose-400 animate-pulse' : 'text-amber-400'}`}>
+                  <span className={`text-[8px] font-bold ${
+                    eq.durability === 0 
+                      ? 'text-rose-500 animate-pulse font-black' 
+                      : eq.durability < 10 
+                        ? 'text-amber-400' 
+                        : 'text-emerald-400'
+                  }`}>
                       Dur {eq.durability}
                   </span>
               </div>
