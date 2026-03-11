@@ -45,9 +45,6 @@ const AdminContractPanel: React.FC = () => {
   const [result, setResult] = useState<{ hash: string, type: 'deposit' | 'withdraw' } | null>(null);
 
   // History states
-  const [itemShopHistory, setItemShopHistory] = useState<Transaction[]>([]);
-  const [gachaHistory, setGachaHistory] = useState<Transaction[]>([]);
-  const [questManagerHistory, setQuestManagerHistory] = useState<Transaction[]>([]);
   const [questTreasuryHistory, setQuestTreasuryHistory] = useState<Transaction[]>([]);
   const [rewardPoolHistory, setRewardPoolHistory] = useState<Transaction[]>([]);
   const [isFetchingHistory, setIsFetchingHistory] = useState(false);
@@ -134,16 +131,10 @@ const AdminContractPanel: React.FC = () => {
 
   const fetchAllHistory = async () => {
     setIsFetchingHistory(true);
-    const [shop, gacha, quest, treasury, reward] = await Promise.all([
-      fetchHistory(ITEM_SHOP_CONTRACT_ADDRESS),
-      fetchHistory(GACHA_PAYMENT_CONTRACT_ADDRESS),
-      fetchHistory(QUEST_MANAGER_CONTRACT_ADDRESS),
+    const [treasury, reward] = await Promise.all([
       fetchHistory(QUEST_TREASURY_CONTRACT_ADDRESS),
       fetchHistory(REWARD_CONTRACT_ADDRESS)
     ]);
-    setItemShopHistory(shop);
-    setGachaHistory(gacha);
-    setQuestManagerHistory(quest);
     setQuestTreasuryHistory(treasury);
     setRewardPoolHistory(reward);
     setIsFetchingHistory(false);
@@ -471,7 +462,6 @@ const AdminContractPanel: React.FC = () => {
                 <span className="text-slate-600 group-hover:text-white text-xs">📋</span>
               </div>
             </div>
-            <HistoryTable transactions={itemShopHistory} />
           </div>
         </div>
 
@@ -502,7 +492,6 @@ const AdminContractPanel: React.FC = () => {
                 {GACHA_PAYMENT_CONTRACT_ADDRESS}
               </div>
             </div>
-            <HistoryTable transactions={gachaHistory} />
           </div>
         </div>
 
@@ -523,7 +512,6 @@ const AdminContractPanel: React.FC = () => {
                 <span className="text-slate-600 group-hover:text-white text-xs">📋</span>
               </div>
             </div>
-            <HistoryTable transactions={questManagerHistory} />
           </div>
         </div>
 
