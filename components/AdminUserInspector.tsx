@@ -12,6 +12,18 @@ const AdminUserInspector: React.FC = () => {
   const [userSearch, setUserSearch] = useState('');
   const [showUserDropdown, setShowUserDropdown] = useState(false);
   const [userList, setUserList] = useState<any[]>([]);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setShowUserDropdown(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
   const [selectedUser, setSelectedUser] = useState<any | null>(null);
   const [claimedOnChain, setClaimedOnChain] = useState<string | null>(null);
 
@@ -240,7 +252,7 @@ const AdminUserInspector: React.FC = () => {
       
       {/* 1. Search Bar & Controls */}
       <div className="p-4 border-b border-slate-800 bg-slate-900/30 z-20">
-         <div className="max-w-lg mx-auto space-y-2">
+         <div className="max-w-lg mx-auto space-y-2 relative" ref={dropdownRef}>
             <div className="relative">
                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500">🔍</span>
                 <input 
@@ -255,7 +267,12 @@ const AdminUserInspector: React.FC = () => {
             
             {/* Dropdown Results */}
             {showUserDropdown && userList.length > 0 && (
-                <div className="absolute top-full left-0 right-0 mt-1 bg-slate-900 border border-slate-700 rounded-xl shadow-2xl max-h-60 overflow-y-auto z-50">
+                <div className="absolute top-full left-0 right-0 mt-1 bg-slate-900 border border-slate-700 rounded-xl shadow-2xl max-h-60 overflow-y-auto z-50 py-1">
+                    {userSearch.length === 0 && (
+                        <div className="px-3 py-2 text-[10px] font-black text-indigo-400 uppercase tracking-widest border-b border-slate-800 bg-slate-900/50 sticky top-0 z-10">
+                            直近のアクティブユーザー
+                        </div>
+                    )}
                     {userList.map(user => (
                         <div 
                             key={user.fid}
