@@ -490,30 +490,20 @@ const AdminContractPanel: React.FC = () => {
         </div>
 
         {/* Gacha Payment Contract Info Card */}
-        <div className={themeClass.card}>
-          <div className="flex items-center gap-3 mb-6">
-            <div className={`w-10 h-10 rounded-xl bg-${THEME.colors.primary}/20 flex items-center justify-center border border-${THEME.colors.primary}/30`}>
-              <span className="text-xl">🎰</span>
-            </div>
-            <div>
-              <h3 className="text-sm font-bold text-white tracking-tight">Gacha Payment</h3>
-              <p className={themeClass.textMutedSmall}>Contract Address</p>
-            </div>
-          </div>
-
+        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-lg">
+          <h3 className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-4 border-b border-slate-800 pb-2">
+            ガチャ支払いコントラクト情報
+          </h3>
+          
           <div className="space-y-4">
-            <div className={themeClass.cardSecondary}>
-              <div className="flex justify-between items-center mb-2">
-                <span className={`text-xs font-bold text-${THEME.colors.textMuted} tracking-widest uppercase`}>Contract Address</span>
-                <button 
-                  onClick={() => handleCopy(GACHA_PAYMENT_CONTRACT_ADDRESS)}
-                  className={`text-[10px] bg-slate-700 hover:bg-slate-600 px-2 py-1 rounded transition-colors`}
-                >
-                  COPY
-                </button>
-              </div>
-              <div className={themeClass.monoSmall}>
-                {GACHA_PAYMENT_CONTRACT_ADDRESS}
+            <div>
+              <label className="text-[10px] text-slate-500 font-bold block mb-1">コントラクトアドレス</label>
+              <div 
+                onClick={() => copyToClipboard(GACHA_PAYMENT_CONTRACT_ADDRESS)}
+                className="flex items-center justify-between bg-slate-950 p-3 rounded-xl border border-slate-800 cursor-pointer hover:border-indigo-500 transition-colors group"
+              >
+                <code className="text-xs font-mono text-indigo-300 break-all">{GACHA_PAYMENT_CONTRACT_ADDRESS}</code>
+                <span className="text-slate-600 group-hover:text-white text-xs">📋</span>
               </div>
             </div>
           </div>
