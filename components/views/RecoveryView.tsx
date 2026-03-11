@@ -287,7 +287,7 @@ const RecoveryView: React.FC<RecoveryViewProps> = ({
                           ? 'bg-slate-900 border-slate-800 opacity-30 cursor-not-allowed grayscale' 
                           : 'bg-slate-700 border-slate-600 hover:bg-slate-600 hover:border-slate-500'
                     }`}
-                    title="Whetstone (+1 Durability, Max 10)"
+                    title={t('recovery.whetstone')}
                   >
                       <Hammer size={14} className="text-slate-300" />
                       <span className={`text-[8px] font-bold leading-tight ${hasWhetstone ? 'text-slate-300' : 'text-rose-500'}`}>{t('recovery.use')}</span>
@@ -361,8 +361,8 @@ const RecoveryView: React.FC<RecoveryViewProps> = ({
                 {/* Whetstone (Not Purchasable) */}
                 <div className="bg-slate-900/80 rounded-xl p-3 border border-slate-700 flex flex-col items-center">
                     <div className="mb-1 flex items-center justify-center h-8"><Hammer size={24} className="text-slate-400" /></div>
-                    <div className="text-[10px] font-bold text-slate-300 mb-1">{t('recovery.whetstone') || 'Whetstone'}</div>
-                    <div className="text-[10px] text-slate-500 mb-2">Not for sale</div>
+                    <div className="text-[10px] font-bold text-slate-300 mb-1">{t('recovery.whetstone_item')}</div>
+                    <div className="text-[10px] text-slate-500 mb-2">{t('recovery.not_for_sale')}</div>
                     <div className="text-xs font-black text-slate-400 mb-2">{t('recovery.owned')} {gameState.items.item03}</div>
                     
                     <div className="flex items-center gap-2 w-full justify-center opacity-50">

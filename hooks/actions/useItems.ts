@@ -289,7 +289,7 @@ export const useItems = ({ gameState, setGameState, showNotification, farcasterU
   const useWhetstone = async (equipmentId: string) => {
     if (gameState.items.item03 <= 0) {
       playError();
-      showNotification(t('notify.no_whetstone') || 'No Whetstone', 'error');
+      showNotification(t('notify.no_whetstone'), 'error');
       return;
     }
     const equipment = gameState.equipment.find(e => e.id === equipmentId);
@@ -297,7 +297,7 @@ export const useItems = ({ gameState, setGameState, showNotification, farcasterU
     
     if (equipment.durability >= 10) {
       playError();
-      showNotification(t('notify.whetstone_limit') || 'Durability is already high enough', 'error');
+      showNotification(t('notify.whetstone_limit'), 'error');
       return;
     }
 
