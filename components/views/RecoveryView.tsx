@@ -2,6 +2,7 @@
 import React from 'react';
 import { GameState, Hero, Equipment } from '../../types';
 import Header from '../Header';
+import EquipmentIcon from '../EquipmentIcon';
 import { playClick } from '../../utils/sound';
 import { FlaskConical, TestTube, Hammer } from 'lucide-react';
 import { useLanguage } from '../../contexts/LanguageContext';
@@ -87,6 +88,8 @@ const RecoveryView: React.FC<RecoveryViewProps> = ({
     const hasPotion = gameState.items.item01 > 0;
     const hasElixir = gameState.items.item02 > 0;
 
+    const partyIndex = gameState.partyPresets.findIndex(ids => ids.includes(hero.id));
+
     return (
       <div key={hero.id} className={`min-w-[140px] w-[140px] snap-center bg-slate-800/80 rounded-xl border flex flex-col relative overflow-hidden transition-all group ${
           isQuesting 
@@ -95,6 +98,15 @@ const RecoveryView: React.FC<RecoveryViewProps> = ({
                 ? 'border-indigo-500/30 shadow-sm' 
                 : 'border-slate-700'
       }`}>
+          {/* Party Label */}
+          {partyIndex !== -1 && (
+            <div className="absolute top-1 left-1 z-30">
+              <span className="bg-indigo-600 text-white text-[7px] font-black px-1.5 py-0.5 rounded-full border border-indigo-400 shadow-sm uppercase tracking-tighter">
+                Party 0{partyIndex + 1}
+              </span>
+            </div>
+          )}
+
           {/* Questing Overlay */}
           {isQuesting && (
             <div className="absolute inset-0 bg-slate-950/70 z-20 flex items-center justify-center backdrop-blur-[1px]">
@@ -176,6 +188,24 @@ const RecoveryView: React.FC<RecoveryViewProps> = ({
     // Find if the hero equipping this is on a quest
     const heroEquipping = allHeroesInOrder.find(h => h.equipmentIds.includes(eq.id));
     const isQuesting = heroEquipping ? activeQuestHeroIds.includes(heroEquipping.id) : false;
+    const partyIndex = heroEquipping ? gameState.partyPresets.findIndex(ids => ids.includes(heroEquipping.id)) : -1;
+
+    // Rarity styles matching HeroCard slots
+    const slotBgColors: Record<string, string> = {
+      C: 'bg-slate-900/80 border-slate-700',
+      UC: 'bg-emerald-900/40 border-emerald-700/50',
+      R: 'bg-indigo-900/40 border-indigo-700/50',
+      E: 'bg-fuchsia-900/40 border-fuchsia-700/50',
+      L: 'bg-amber-900/40 border-amber-700/50'
+    };
+
+    const textColors: Record<string, string> = {
+      C: 'text-slate-700',
+      UC: 'text-emerald-500',
+      R: 'text-indigo-500',
+      E: 'text-fuchsia-500',
+      L: 'text-amber-500'
+    };
 
     return (
       <div key={eq.id} className={`min-w-[140px] w-[140px] snap-center bg-slate-800/80 rounded-xl border flex flex-col relative overflow-hidden transition-all group ${
@@ -185,6 +215,15 @@ const RecoveryView: React.FC<RecoveryViewProps> = ({
                 ? 'border-amber-500/30 shadow-sm' 
                 : 'border-slate-700'
       }`}>
+          {/* Party Label */}
+          {partyIndex !== -1 && (
+            <div className="absolute top-1 left-1 z-30">
+              <span className="bg-amber-600 text-white text-[7px] font-black px-1.5 py-0.5 rounded-full border border-amber-400 shadow-sm uppercase tracking-tighter">
+                Party 0{partyIndex + 1}
+              </span>
+            </div>
+          )}
+
           {/* Questing Overlay */}
           {isQuesting && (
             <div className="absolute inset-0 bg-slate-950/70 z-20 flex items-center justify-center backdrop-blur-[1px]">
@@ -195,8 +234,19 @@ const RecoveryView: React.FC<RecoveryViewProps> = ({
           )}
 
           {/* Top: Image & Status */}
-          <div className="relative aspect-square w-full bg-slate-900 flex items-center justify-center">
-              <span className="text-4xl">{eq.type === 'Pickaxe' ? '⛏️' : eq.type === 'Helmet' ? '🪖' : '👢'}</span>
+          <div className={`relative aspect-square w-full flex items-center justify-center overflow-hidden ${slotBgColors[eq.rarity] || slotBgColors.C}`}>
+              {/* Rarity Background Text */}
+              <div className="absolute inset-0 flex items-center justify-center opacity-10 font-black text-6xl -rotate-12 select-none pointer-events-none">
+                <span className={textColors[eq.rarity] || textColors.C}>{eq.rarity}</span>
+              </div>
+
+              <div className="relative z-10 transform scale-150 drop-shadow-2xl">
+                <EquipmentIcon 
+                  type={eq.type} 
+                  rarity={eq.rarity} 
+                  size="2.5em" 
+                />
+              </div>
               
               {/* Durability Badge */}
               <div className="absolute top-1 right-1 bg-black/60 px-1 rounded backdrop-blur-sm border border-white/10 z-10">
