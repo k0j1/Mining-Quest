@@ -65,67 +65,67 @@ const AdminContractPanel: React.FC = () => {
   const fetchHistory = async (contractAddress: string) => {
     if (!contractAddress) return [];
     try {
-      const apiKey = 'IMA7R6P9XEA9YW6BFP7AZHFVAHV54YY1MP';
+      const alchemyUrl = 'https://base-mainnet.g.alchemy.com/v2/Av3SeC2d2fsTlvEdsT9RI';
       
-      // Fetch ERC20 Token Transfers (CHH)
-      const tokenTxUrl = `https://api.basescan.org/api?module=account&action=tokentx&contractaddress=${CHH_TOKEN_ADDRESS}&address=${contractAddress}&page=1&offset=15&sort=desc&apikey=${apiKey}&chainid=8453`;
-      console.info(`[Debug] Fetching Token TXs: ${tokenTxUrl}`);
-      const tokenTxRes = await fetch(tokenTxUrl);
-      const tokenTxData = await tokenTxRes.json();
+      const fetchTransfers = async (isTo: boolean) => {
+        const response = await fetch(alchemyUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            jsonrpc: '2.0',
+            id: 1,
+            method: 'alchemy_getAssetTransfers',
+            params: [
+              {
+                fromBlock: '0x0',
+                toBlock: 'latest',
+                [isTo ? 'toAddress' : 'fromAddress']: contractAddress,
+                category: ['external', 'erc20'],
+                withMetadata: true,
+                excludeZeroValue: true,
+                maxCount: '0x14', // 20
+                order: 'desc'
+              }
+            ]
+          })
+        });
+        const data = await response.json();
+        return data.result?.transfers || [];
+      };
+
+      const [toTransfers, fromTransfers] = await Promise.all([
+        fetchTransfers(true),
+        fetchTransfers(false)
+      ]);
+
+      const allTransfers = [...toTransfers, ...fromTransfers];
       
-      // Fetch Normal Transactions (Contract Interactions)
-      const normalTxUrl = `https://api.basescan.org/api?module=account&action=txlist&address=${contractAddress}&page=1&offset=15&sort=desc&apikey=${apiKey}&chainid=8453`;
-      console.info(`[Debug] Fetching Normal TXs: ${normalTxUrl}`);
-      const normalTxRes = await fetch(normalTxUrl);
-      const normalTxData = await normalTxRes.json();
+      const transactions: Transaction[] = allTransfers.map((tx: any) => {
+        const isIncoming = tx.to?.toLowerCase() === contractAddress.toLowerCase();
+        const isCHH = tx.rawContract?.address?.toLowerCase() === CHH_TOKEN_ADDRESS.toLowerCase();
+        
+        return {
+          hash: tx.hash,
+          from: tx.from,
+          to: tx.to || '0x0000000000000000000000000000000000000000',
+          value: tx.value ? tx.value.toString() : '0',
+          blockNumber: BigInt(parseInt(tx.blockNum, 16)),
+          type: isIncoming ? 'IN' : 'OUT',
+          eventName: !isCHH && tx.category === 'external' ? 'External Transfer' : (isCHH ? 'CHH Transfer' : 'Contract Interaction')
+        };
+      });
 
-      const allTransactions: Transaction[] = [];
-
-      if (tokenTxData.status === '1' && Array.isArray(tokenTxData.result)) {
-        console.info(`[Debug] Found ${tokenTxData.result.length} token transactions.`);
-        tokenTxData.result.forEach((tx: any) => {
-          const isIncoming = tx.to.toLowerCase() === contractAddress.toLowerCase();
-          allTransactions.push({
-            hash: tx.hash,
-            from: tx.from,
-            to: tx.to,
-            value: formatUnits(BigInt(tx.value), 18),
-            blockNumber: BigInt(tx.blockNumber),
-            type: isIncoming ? 'IN' : 'OUT'
-          });
-        });
-      } else {
-        console.warn(`[Debug] No token transactions found or API error: ${tokenTxData.message}`);
-      }
-
-      if (normalTxData.status === '1' && Array.isArray(normalTxData.result)) {
-        console.info(`[Debug] Found ${normalTxData.result.length} normal transactions.`);
-        normalTxData.result.forEach((tx: any) => {
-          allTransactions.push({
-            hash: tx.hash,
-            from: tx.from,
-            to: tx.to,
-            value: '0',
-            blockNumber: BigInt(tx.blockNumber),
-            type: 'EVENT',
-            eventName: tx.functionName ? tx.functionName.split('(')[0] : 'Contract Interaction'
-          });
-        });
-      } else {
-        console.warn(`[Debug] No normal transactions found or API error: ${normalTxData.message}`);
-      }
-
-      // Remove duplicates (same hash) and sort
-      // Prioritize IN/OUT over EVENT if they have the same hash
+      // Remove duplicates and sort
       const txMap = new Map<string, Transaction>();
-      allTransactions.forEach(tx => {
-        if (!txMap.has(tx.hash) || tx.type !== 'EVENT') {
+      transactions.forEach(tx => {
+        if (!txMap.has(tx.hash)) {
           txMap.set(tx.hash, tx);
         }
       });
       
-      const uniqueTx = Array.from(txMap.values());
-      return uniqueTx.sort((a, b) => Number(b.blockNumber - a.blockNumber)).slice(0, 10);
+      return Array.from(txMap.values())
+        .sort((a, b) => Number(b.blockNumber - a.blockNumber))
+        .slice(0, 10);
     } catch (error) {
       console.error(`Error fetching history for ${contractAddress}:`, error);
       return [];
