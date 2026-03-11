@@ -37,6 +37,15 @@ const RecoveryView: React.FC<RecoveryViewProps> = ({
   const { t } = useLanguage();
   const [potionAmount, setPotionAmount] = React.useState(0);
   const [elixirAmount, setElixirAmount] = React.useState(0);
+
+  const rarityColors: Record<string, string> = {
+    C: 'bg-slate-600 text-slate-100',
+    UC: 'bg-emerald-600 text-emerald-50',
+    R: 'bg-indigo-600 text-indigo-50',
+    E: 'bg-fuchsia-600 text-fuchsia-50',
+    L: 'bg-amber-600 text-amber-50'
+  };
+
   // Get list of heroes currently on quests
   const activeQuestHeroIds = gameState.activeQuests.flatMap(q => q.heroIds);
   
@@ -98,15 +107,6 @@ const RecoveryView: React.FC<RecoveryViewProps> = ({
                 ? 'border-indigo-500/30 shadow-sm' 
                 : 'border-slate-700'
       }`}>
-          {/* Party Label */}
-          {partyIndex !== -1 && (
-            <div className="absolute top-1 left-1 z-30">
-              <span className="bg-indigo-600 text-white text-[7px] font-black px-1.5 py-0.5 rounded-full border border-indigo-400 shadow-sm uppercase tracking-tighter">
-                Party 0{partyIndex + 1}
-              </span>
-            </div>
-          )}
-
           {/* Questing Overlay */}
           {isQuesting && (
             <div className="absolute inset-0 bg-slate-950/70 z-20 flex items-center justify-center backdrop-blur-[1px]">
@@ -124,12 +124,26 @@ const RecoveryView: React.FC<RecoveryViewProps> = ({
                 alt={hero.name} 
               />
               
+              {/* Rarity Badge */}
+              <div className={`absolute top-1 left-1 z-20 px-1.5 py-0.5 rounded text-[8px] font-black shadow-sm border border-white/10 ${rarityColors[hero.rarity]}`}>
+                  {hero.rarity}
+              </div>
+
               {/* HP Badge */}
               <div className="absolute top-1 right-1 bg-black/60 px-1 rounded backdrop-blur-sm border border-white/10 z-10">
                   <span className={`text-[8px] font-bold ${hero.hp < hero.maxHp * 0.3 ? 'text-rose-400 animate-pulse' : 'text-emerald-400'}`}>
                       HP {hero.hp}
                   </span>
               </div>
+
+              {/* Party Label */}
+              {partyIndex !== -1 && (
+                <div className="absolute bottom-1 right-1 z-30">
+                  <span className="bg-indigo-600 text-white text-[7px] font-black px-1.5 py-0.5 rounded-full border border-indigo-400 shadow-sm uppercase tracking-tighter">
+                    Party 0{partyIndex + 1}
+                  </span>
+                </div>
+              )}
           </div>
 
           {/* Bottom: Info & Actions */}
@@ -215,15 +229,6 @@ const RecoveryView: React.FC<RecoveryViewProps> = ({
                 ? 'border-amber-500/30 shadow-sm' 
                 : 'border-slate-700'
       }`}>
-          {/* Party Label */}
-          {partyIndex !== -1 && (
-            <div className="absolute top-1 left-1 z-30">
-              <span className="bg-amber-600 text-white text-[7px] font-black px-1.5 py-0.5 rounded-full border border-amber-400 shadow-sm uppercase tracking-tighter">
-                Party 0{partyIndex + 1}
-              </span>
-            </div>
-          )}
-
           {/* Questing Overlay */}
           {isQuesting && (
             <div className="absolute inset-0 bg-slate-950/70 z-20 flex items-center justify-center backdrop-blur-[1px]">
@@ -247,6 +252,11 @@ const RecoveryView: React.FC<RecoveryViewProps> = ({
                   size="2.5em" 
                 />
               </div>
+
+              {/* Rarity Badge */}
+              <div className={`absolute top-1 left-1 z-20 px-1.5 py-0.5 rounded text-[8px] font-black shadow-sm border border-white/10 ${rarityColors[eq.rarity]}`}>
+                  {eq.rarity}
+              </div>
               
               {/* Durability Badge */}
               <div className="absolute top-1 right-1 bg-black/60 px-1 rounded backdrop-blur-sm border border-white/10 z-10">
@@ -254,6 +264,15 @@ const RecoveryView: React.FC<RecoveryViewProps> = ({
                       Dur {eq.durability}
                   </span>
               </div>
+
+              {/* Party Label */}
+              {partyIndex !== -1 && (
+                <div className="absolute bottom-1 right-1 z-30">
+                  <span className="bg-amber-600 text-white text-[7px] font-black px-1.5 py-0.5 rounded-full border border-amber-400 shadow-sm uppercase tracking-tighter">
+                    Party 0{partyIndex + 1}
+                  </span>
+                </div>
+              )}
           </div>
 
           {/* Bottom: Info & Actions */}
