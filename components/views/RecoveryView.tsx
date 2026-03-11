@@ -191,7 +191,7 @@ const RecoveryView: React.FC<RecoveryViewProps> = ({
   };
 
   const renderEquipmentCard = (eq: Equipment) => {
-    const isFull = eq.durability >= 100;
+    const isLimit = eq.durability >= 10;
     const hasWhetstone = gameState.items.item03 > 0;
     const isEquipped = equippedIds.includes(eq.id);
     // Find if the hero equipping this is on a quest
@@ -281,13 +281,13 @@ const RecoveryView: React.FC<RecoveryViewProps> = ({
                   {/* Whetstone Button */}
                   <button 
                     onClick={() => onWhetstone(eq.id)}
-                    disabled={isFull || isQuesting || !hasWhetstone} 
+                    disabled={isLimit || isQuesting || !hasWhetstone} 
                     className={`w-full h-8 rounded-lg flex items-center justify-center gap-1 border transition-all active:scale-95 ${
-                        isFull || isQuesting || !hasWhetstone
+                        isLimit || isQuesting || !hasWhetstone
                           ? 'bg-slate-900 border-slate-800 opacity-30 cursor-not-allowed grayscale' 
                           : 'bg-slate-700 border-slate-600 hover:bg-slate-600 hover:border-slate-500'
                     }`}
-                    title="Whetstone (Full Durability)"
+                    title="Whetstone (+1 Durability, Max 10)"
                   >
                       <Hammer size={14} className="text-slate-300" />
                       <span className={`text-[8px] font-bold leading-tight ${hasWhetstone ? 'text-slate-300' : 'text-rose-500'}`}>{t('recovery.use')}</span>

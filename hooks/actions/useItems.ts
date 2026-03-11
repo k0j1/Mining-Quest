@@ -293,9 +293,15 @@ export const useItems = ({ gameState, setGameState, showNotification, farcasterU
       return;
     }
     const equipment = gameState.equipment.find(e => e.id === equipmentId);
-    if (!equipment || equipment.durability >= 100) return;
+    if (!equipment) return;
+    
+    if (equipment.durability >= 10) {
+      playError();
+      showNotification(t('notify.whetstone_limit') || 'Durability is already high enough', 'error');
+      return;
+    }
 
-    const newDurability = 100; // Full recovery
+    const newDurability = Math.min(100, equipment.durability + 1);
     playConfirm();
     setGameState(prev => ({
       ...prev,
