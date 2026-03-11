@@ -35,15 +35,34 @@ const AdminDbBrowser: React.FC = () => {
   const [editingRow, setEditingRow] = useState<any | null>(null);
   const [editJson, setEditJson] = useState('');
 
+  // Search & Sort State
+  const [searchField, setSearchField] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [sortBy, setSortBy] = useState('');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+
   const fetchData = async (table: string) => {
     setLoading(true);
     setError(null);
     try {
-      const { data: rows, error: err } = await supabase
+      const pk = getPKey(table);
+      const currentSortBy = sortBy || pk;
+
+      let query = supabase
         .from(table)
         .select('*')
         .limit(50)
-        .order(getPKey(table), { ascending: false });
+        .order(currentSortBy, { ascending: sortOrder === 'asc' });
+
+      if (searchField && searchQuery) {
+        if (/^\d+$/.test(searchQuery)) {
+           query = query.eq(searchField, parseInt(searchQuery));
+        } else {
+           query = query.ilike(searchField, `%${searchQuery}%`);
+        }
+      }
+
+      const { data: rows, error: err } = await query;
 
       if (err) throw err;
       setData(rows || []);
@@ -55,6 +74,11 @@ const AdminDbBrowser: React.FC = () => {
   };
 
   useEffect(() => {
+    // Reset search/sort when table changes
+    setSearchField('');
+    setSearchQuery('');
+    setSortBy('');
+    setSortOrder('desc');
     fetchData(activeTable);
   }, [activeTable]);
 
@@ -115,6 +139,57 @@ const AdminDbBrowser: React.FC = () => {
             {table}
           </button>
         ))}
+      </div>
+
+      {/* Search & Sort Controls */}
+      <div className="p-3 bg-slate-900 border-b border-slate-800 flex flex-wrap gap-3 items-center text-xs shrink-0">
+        <div className="flex items-center gap-2">
+          <span className="text-slate-400">検索:</span>
+          <input 
+            type="text" 
+            placeholder="カラム名 (例: fid)" 
+            value={searchField}
+            onChange={e => setSearchField(e.target.value)}
+            className="bg-slate-950 border border-slate-700 rounded px-2 py-1.5 text-white w-32 focus:border-indigo-500 outline-none"
+          />
+          <input 
+            type="text" 
+            placeholder="値" 
+            value={searchQuery}
+            onChange={e => setSearchQuery(e.target.value)}
+            onKeyDown={e => e.key === 'Enter' && fetchData(activeTable)}
+            className="bg-slate-950 border border-slate-700 rounded px-2 py-1.5 text-white w-40 focus:border-indigo-500 outline-none"
+          />
+        </div>
+        
+        <span className="text-slate-700">|</span>
+        
+        <div className="flex items-center gap-2">
+          <span className="text-slate-400">ソート:</span>
+          <input 
+            type="text" 
+            placeholder={`カラム名 (空なら ${getPKey(activeTable)})`} 
+            value={sortBy}
+            onChange={e => setSortBy(e.target.value)}
+            onKeyDown={e => e.key === 'Enter' && fetchData(activeTable)}
+            className="bg-slate-950 border border-slate-700 rounded px-2 py-1.5 text-white w-48 focus:border-indigo-500 outline-none"
+          />
+          <select 
+            value={sortOrder} 
+            onChange={e => setSortOrder(e.target.value as any)}
+            className="bg-slate-950 border border-slate-700 rounded px-2 py-1.5 text-white focus:border-indigo-500 outline-none"
+          >
+            <option value="desc">降順</option>
+            <option value="asc">昇順</option>
+          </select>
+        </div>
+
+        <button 
+          onClick={() => fetchData(activeTable)}
+          className="px-4 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded font-bold transition-colors ml-auto shadow-sm active:scale-95"
+        >
+          適用
+        </button>
       </div>
 
       <div className="flex-1 overflow-auto p-4 bg-slate-950 text-xs font-mono">

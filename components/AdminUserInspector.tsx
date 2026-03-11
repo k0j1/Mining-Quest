@@ -10,9 +10,6 @@ import EquipmentListItem from './EquipmentListItem';
 
 const AdminUserInspector: React.FC = () => {
   const [userSearch, setUserSearch] = useState('');
-  const [searchField, setSearchField] = useState<'username' | 'fid'>('username');
-  const [sortBy, setSortBy] = useState<'last_active' | 'fid' | 'created_at'>('last_active');
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [showUserDropdown, setShowUserDropdown] = useState(false);
   const [userList, setUserList] = useState<any[]>([]);
   const [selectedUser, setSelectedUser] = useState<any | null>(null);
@@ -39,18 +36,19 @@ const AdminUserInspector: React.FC = () => {
     searchTimeout.current = setTimeout(() => {
         fetchUserList();
     }, 300);
-  }, [userSearch, searchField, sortBy, sortOrder]);
+  }, [userSearch]);
 
   const fetchUserList = async () => {
     try {
       let query = supabase
         .from('quest_player_stats')
         .select('*')
-        .order(sortBy, { ascending: sortOrder === 'asc' })
+        .order('last_active', { ascending: false })
         .limit(20); // Limit increased to 20
       
       if (userSearch.length > 0) {
-        if (searchField === 'fid') {
+        // Try exact FID match first if it looks like a number, otherwise search username
+        if (/^\d+$/.test(userSearch)) {
             query = query.eq('fid', parseInt(userSearch));
         } else {
             query = query.ilike('username', `%${userSearch}%`);
@@ -247,27 +245,12 @@ const AdminUserInspector: React.FC = () => {
                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500">🔍</span>
                 <input 
                     type="text" 
-                    placeholder="検索..." 
+                    placeholder="ユーザー名またはFIDで検索..." 
                     value={userSearch}
                     onChange={(e) => setUserSearch(e.target.value)}
                     onFocus={() => { fetchUserList(); setShowUserDropdown(true); }}
                     className="w-full bg-slate-950 border border-slate-700 rounded-xl pl-10 pr-4 py-3 text-sm text-white focus:border-indigo-500 outline-none shadow-sm"
                 />
-            </div>
-            <div className="flex gap-2 text-[10px] text-slate-400">
-                <select value={searchField} onChange={(e) => setSearchField(e.target.value as any)} className="bg-slate-950 border border-slate-700 rounded px-2 py-1">
-                    <option value="username">ユーザー名</option>
-                    <option value="fid">FID</option>
-                </select>
-                <select value={sortBy} onChange={(e) => setSortBy(e.target.value as any)} className="bg-slate-950 border border-slate-700 rounded px-2 py-1">
-                    <option value="last_active">最終アクティブ</option>
-                    <option value="fid">FID</option>
-                    <option value="created_at">登録日</option>
-                </select>
-                <select value={sortOrder} onChange={(e) => setSortOrder(e.target.value as any)} className="bg-slate-950 border border-slate-700 rounded px-2 py-1">
-                    <option value="desc">降順</option>
-                    <option value="asc">昇順</option>
-                </select>
             </div>
             
             {/* Dropdown Results */}
