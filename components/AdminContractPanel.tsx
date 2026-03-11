@@ -32,6 +32,7 @@ interface Transaction {
   blockNumber: bigint;
   type: 'IN' | 'OUT' | 'EVENT';
   eventName?: string;
+  timestamp?: string;
 }
 
 const AdminContractPanel: React.FC = () => {
@@ -108,7 +109,8 @@ const AdminContractPanel: React.FC = () => {
           value: tx.value ? tx.value.toString() : '0',
           blockNumber: BigInt(parseInt(tx.blockNum, 16)),
           type: isIncoming ? 'IN' : 'OUT',
-          eventName: !isCHH && tx.category === 'external' ? 'External Transfer' : (isCHH ? 'CHH Transfer' : 'Contract Interaction')
+          eventName: !isCHH && tx.category === 'external' ? 'External Transfer' : (isCHH ? 'CHH Transfer' : 'Contract Interaction'),
+          timestamp: tx.metadata?.blockTimestamp
         };
       });
 
@@ -334,6 +336,23 @@ const AdminContractPanel: React.FC = () => {
   };
 
   const HistoryTable: React.FC<{ transactions: Transaction[] }> = ({ transactions }) => {
+    const formatJST = (timestamp?: string) => {
+      if (!timestamp) return '---';
+      try {
+        return new Date(timestamp).toLocaleString('ja-JP', {
+          timeZone: 'Asia/Tokyo',
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit',
+          hour: '2-digit',
+          minute: '2-digit',
+          second: '2-digit'
+        });
+      } catch (e) {
+        return timestamp;
+      }
+    };
+
     if (isFetchingHistory) {
       return <div className="text-center py-4 text-slate-500 text-xs animate-pulse">Fetching history...</div>;
     }
@@ -369,6 +388,11 @@ const AdminContractPanel: React.FC = () => {
                 >
                   {tx.hash.slice(0, 14)}...
                 </a>
+                {tx.timestamp && (
+                  <div className="text-slate-600 text-[8px] mt-0.5">
+                    {formatJST(tx.timestamp)}
+                  </div>
+                )}
               </div>
               <div className="text-right">
                 {tx.type !== 'EVENT' && (
