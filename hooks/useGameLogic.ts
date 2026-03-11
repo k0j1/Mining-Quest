@@ -31,7 +31,8 @@ export const useGameLogic = () => {
     ],
     items: {
       item01: 0,
-      item02: 0
+      item02: 0,
+      item03: 0
     }
   });
 
@@ -295,7 +296,7 @@ export const useGameLogic = () => {
         // --- 5. Load Player Stats (Items) ---
         const { data: statsData, error: statsError } = await supabase
           .from('quest_player_stats')
-          .select('item01, item02')
+          .select('item01, item02, item03')
           .eq('fid', fid)
           .single();
           
@@ -312,7 +313,8 @@ export const useGameLogic = () => {
             activeQuests: loadedQuests,
             items: {
                 item01: statsData?.item01 || 0,
-                item02: statsData?.item02 || 0
+                item02: statsData?.item02 || 0,
+                item03: statsData?.item03 || 0
             }
         }));
         
@@ -345,7 +347,7 @@ export const useGameLogic = () => {
   });
 
   // Item Logic
-  const { buyPotion, buyElixir, buyItems, usePotion, useElixir, mergeEquipment } = useItems({
+  const { buyPotion, buyElixir, buyItems, usePotion, useElixir, useWhetstone, mergeEquipment } = useItems({
     gameState, setGameState, showNotification, farcasterUser, refetchBalance, t, setTransactionResult
   });
 
@@ -385,6 +387,7 @@ export const useGameLogic = () => {
       buyItems,
       usePotion, 
       useElixir,
+      useWhetstone,
       mergeEquipment,
       debugCompleteQuest,
       debugAddTokens,

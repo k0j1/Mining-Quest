@@ -113,5 +113,6 @@ export interface GameState {
   items: {
     item01: number; // Potion
     item02: number; // Elixir
+    item03: number; // Whetstone
   };
 }

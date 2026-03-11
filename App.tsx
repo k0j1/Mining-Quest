@@ -295,6 +295,7 @@ const App: React.FC = () => {
             onBuyItems={actions.buyItems}
             onPotion={actions.usePotion}
             onElixir={actions.useElixir}
+            onWhetstone={actions.useWhetstone}
             {...commonProps}
           />
         );

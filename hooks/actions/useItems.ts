@@ -286,6 +286,40 @@ export const useItems = ({ gameState, setGameState, showNotification, farcasterU
     showNotification(t('notify.hero_fully_recovered', { name: hero.name }), 'success');
   };
 
+  const useWhetstone = async (equipmentId: string) => {
+    if (gameState.items.item03 <= 0) {
+      playError();
+      showNotification(t('notify.no_whetstone') || 'No Whetstone', 'error');
+      return;
+    }
+    const equipment = gameState.equipment.find(e => e.id === equipmentId);
+    if (!equipment || equipment.durability >= 100) return;
+
+    const newDurability = 100; // Full recovery
+    playConfirm();
+    setGameState(prev => ({
+      ...prev,
+      equipment: prev.equipment.map(e => e.id === equipmentId ? { ...e, durability: newDurability } : e),
+      items: { ...prev.items, item03: prev.items.item03 - 1 }
+    }));
+
+    if (farcasterUser?.fid) {
+      // Update item03 count
+      const { data: currentStats } = await supabase.from('quest_player_stats').select('item03').eq('fid', farcasterUser.fid).single();
+      if (currentStats && currentStats.item03 > 0) {
+          await supabase.from('quest_player_stats')
+              .update({ item03: currentStats.item03 - 1 })
+              .eq('fid', farcasterUser.fid);
+      }
+      // Update equipment durability
+      await supabase.from('quest_player_equipment')
+          .update({ durability: newDurability })
+          .eq('player_eid', parseInt(equipmentId));
+    }
+
+    showNotification(t('notify.equipment_recovered', { name: equipment.name }) || `${equipment.name} recovered!`, 'success');
+  };
+
   const mergeEquipment = async (baseId: string, materialId: string) => {
     const baseItem = gameState.equipment.find(e => e.id === baseId);
     const materialItem = gameState.equipment.find(e => e.id === materialId);
@@ -364,5 +398,5 @@ export const useItems = ({ gameState, setGameState, showNotification, farcasterU
     }
   };
 
-  return { buyPotion, buyElixir, buyItems, usePotion, useElixir, mergeEquipment };
+  return { buyPotion, buyElixir, buyItems, usePotion, useElixir, useWhetstone, mergeEquipment };
 };
