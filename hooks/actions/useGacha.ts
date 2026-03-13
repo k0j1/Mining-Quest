@@ -26,9 +26,10 @@ interface UseGachaProps {
   farcasterUser?: any;
   refetchBalance: () => Promise<void>;
   t: (key: string, params?: any) => string;
+  setTransactionError: (error: string | null) => void;
 }
 
-export const useGacha = ({ gameState, setGameState, showNotification, farcasterUser, refetchBalance, t }: UseGachaProps) => {
+export const useGacha = ({ gameState, setGameState, showNotification, farcasterUser, refetchBalance, t, setTransactionError }: UseGachaProps) => {
   const [gachaResult, setGachaResult] = useState<{ type: 'Hero' | 'Equipment'; data: any[]; txHash?: string } | null>(null);
   const [isGachaRolling, setIsGachaRolling] = useState(false);
 
@@ -240,7 +241,7 @@ export const useGacha = ({ gameState, setGameState, showNotification, farcasterU
 
     } catch (e: any) {
       console.error(e);
-      showNotification(t('notify.gacha_error', { message: e.message }), 'error');
+      setTransactionError(e.shortMessage || e.message || t('error.unknown'));
     } finally {
       setIsGachaRolling(false);
     }
@@ -280,7 +281,7 @@ export const useGacha = ({ gameState, setGameState, showNotification, farcasterU
 
     } catch (e: any) {
       console.error(e);
-      showNotification(t('notify.gacha_error', { message: e.message }), 'error');
+      setTransactionError(e.shortMessage || e.message || t('error.unknown'));
     } finally {
       setIsGachaRolling(false);
     }

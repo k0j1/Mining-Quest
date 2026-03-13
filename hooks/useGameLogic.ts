@@ -339,7 +339,7 @@ export const useGameLogic = () => {
 
   // Gacha Logic
   const { gachaResult, setGachaResult, isGachaRolling, rollGacha, rollGachaTriple } = useGacha({
-    gameState, setGameState, showNotification, farcasterUser, refetchBalance, t
+    gameState, setGameState, showNotification, farcasterUser, refetchBalance, t, setTransactionError
   });
 
   // Party Logic

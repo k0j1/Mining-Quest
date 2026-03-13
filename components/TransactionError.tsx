@@ -12,6 +12,12 @@ const TransactionError: React.FC<TransactionErrorProps> = ({ message, onClose })
         <h3 className="text-lg font-bold text-red-500 mb-4">トランザクションエラー</h3>
         <p className="text-sm text-slate-300 mb-6">{message}</p>
         <button 
+          onClick={() => navigator.clipboard.writeText(message)}
+          className="w-full py-2 mb-2 bg-slate-700 text-white rounded-lg text-xs font-bold hover:bg-slate-600"
+        >
+          エラー内容をコピー
+        </button>
+        <button 
           onClick={onClose} 
           className="w-full py-3 bg-red-600 text-white rounded-lg text-sm font-bold hover:bg-red-500"
         >
