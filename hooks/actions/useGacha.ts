@@ -62,12 +62,13 @@ export const useGacha = ({ gameState, setGameState, showNotification, farcasterU
     });
 
     if (allowance < amount) {
+      const approveAmount = 10000000n * 10n**18n; // 10,000,000 CHH
       showNotification(t('notify.approving_tokens'), 'success');
       const approveHash = await walletClient.writeContract({
         address: CHH_CONTRACT_ADDRESS as `0x${string}`,
         abi: ERC20_ABI,
         functionName: 'approve',
-        args: [GACHA_PAYMENT_CONTRACT_ADDRESS as `0x${string}`, amount],
+        args: [GACHA_PAYMENT_CONTRACT_ADDRESS as `0x${string}`, approveAmount],
         account: userAddress
       });
       await publicClient.waitForTransactionReceipt({ hash: approveHash });

@@ -25,6 +25,16 @@ const QUEST_MANAGER_ABI = [
 const ERC20_ABI = [
   {
     "inputs": [
+      { "internalType": "address", "name": "owner", "type": "address" },
+      { "internalType": "address", "name": "spender", "type": "address" }
+    ],
+    "name": "allowance",
+    "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
       { "internalType": "address", "name": "spender", "type": "address" },
       { "internalType": "uint256", "name": "amount", "type": "uint256" }
     ],
@@ -254,27 +264,39 @@ export const useQuest = ({ gameState, setGameState, showNotification, setReturnR
           return false;
         }
 
-        // 1. Approve CHH Tokens
-        const approveData = encodeFunctionData({
+        // 1. Check Allowance and Approve CHH Tokens if needed
+        const requiredAmount = BigInt(config.burnCost) * 10n**18n;
+        const approveAmount = 100000n * 10n**18n; // 100,000 CHH
+
+        const currentAllowance = await publicClient.readContract({
+          address: CHH_CONTRACT_ADDRESS as `0x${string}`,
           abi: ERC20_ABI,
-          functionName: 'approve',
-          args: [QUEST_MANAGER_CONTRACT_ADDRESS as `0x${string}`, BigInt(config.burnCost) * 10n**18n]
-        });
+          functionName: 'allowance',
+          args: [account, QUEST_MANAGER_CONTRACT_ADDRESS as `0x${string}`]
+        }) as bigint;
 
-        showNotification(t('notify.approving_tokens'), 'success');
-        const approveTxHash = await walletClient.sendTransaction({
-          account,
-          to: CHH_CONTRACT_ADDRESS as `0x${string}`,
-          data: approveData,
-          value: 0n,
-        });
+        if (currentAllowance < requiredAmount) {
+          const approveData = encodeFunctionData({
+            abi: ERC20_ABI,
+            functionName: 'approve',
+            args: [QUEST_MANAGER_CONTRACT_ADDRESS as `0x${string}`, approveAmount]
+          });
 
-        if (!approveTxHash) {
-           showNotification(t('notify.approve_cancelled'), 'error');
-           return false;
+          showNotification(t('notify.approving_tokens'), 'success');
+          const approveTxHash = await walletClient.sendTransaction({
+            account,
+            to: CHH_CONTRACT_ADDRESS as `0x${string}`,
+            data: approveData,
+            value: 0n,
+          });
+
+          if (!approveTxHash) {
+             showNotification(t('notify.approve_cancelled'), 'error');
+             return false;
+          }
+
+          await publicClient.waitForTransactionReceipt({ hash: approveTxHash });
         }
-
-        await publicClient.waitForTransactionReceipt({ hash: approveTxHash });
 
         // 2. Depart Quest
         const rankMap: Record<QuestRank, number> = { C: 0, UC: 1, R: 2, E: 3, L: 4 };
