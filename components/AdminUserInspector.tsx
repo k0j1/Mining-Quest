@@ -604,7 +604,8 @@ const AdminUserInspector: React.FC = () => {
                                type: baseItem.type,
                                rarity: rarity,
                                bonus: totalBonus,
-                               level: level
+                               level: level,
+                               durability: e.durability || 0
                            };
 
                            return (

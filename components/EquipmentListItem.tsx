@@ -1,6 +1,6 @@
 import React from 'react';
 import { Equipment } from '../types';
-import EquipmentIcon from './EquipmentIcon';
+import EquipmentDisplay from './EquipmentDisplay';
 import { calculateEquipmentBaseBonus } from '../utils/mechanics';
 import { useLanguage } from '../contexts/LanguageContext';
 
@@ -47,8 +47,13 @@ const EquipmentListItem: React.FC<EquipmentListItemProps> = ({
 
   // Common Icon Component
   const IconSection = () => (
-    <div className={`${layout === 'grid' ? 'w-10 h-10' : 'w-12 h-12'} bg-slate-950 rounded-lg flex items-center justify-center border border-slate-800 shrink-0 relative`}>
-      <EquipmentIcon type={item.type} rarity={item.rarity} size={layout === 'grid' ? "1.8em" : "2em"} />
+    <div className="relative shrink-0">
+      <EquipmentDisplay 
+          equipment={item} 
+          type={item.type}
+          size={layout === 'grid' ? "2.5rem" : "3rem"} 
+          className="border-slate-800"
+      />
       {level > 0 && (
         <div className="absolute -top-1.5 -right-1.5 bg-amber-500 text-black text-[9px] font-black w-4 h-4 flex items-center justify-center rounded-full border border-slate-900 shadow-sm z-10">
           +{level}

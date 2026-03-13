@@ -1,9 +1,9 @@
 
 import React, { useState, useEffect } from 'react';
+import EquipmentDisplay from './EquipmentDisplay';
 import { Hero, Equipment } from '../types';
 import { useLongPress } from '../hooks/useLongPress';
 import { calculateHeroDamageReduction } from '../utils/mechanics';
-import EquipmentIcon from './EquipmentIcon';
 
 interface HeroCardProps {
   hero: Hero;
@@ -149,24 +149,13 @@ const HeroCard: React.FC<HeroCardProps> = ({
                  const item = equipId && equipment ? equipment.find(e => e.id === equipId) : null;
                  const type = slotTypes[slotIdx];
                  
-                 // Icons for compact view
-                 const Icon = () => {
-                    if (type === 'Pickaxe') return <span className="text-[10px] leading-none">⛏️</span>;
-                    if (type === 'Helmet') return <span className="text-[10px] leading-none">🪖</span>;
-                    return <span className="text-[10px] leading-none">👢</span>;
-                 };
-
                  return (
                    <div 
                      key={slotIdx}
-                     className={`w-5 h-5 rounded flex items-center justify-center border transition-all ${
-                       item 
-                         ? 'bg-slate-700 border-slate-600 text-white shadow-sm' 
-                         : 'bg-slate-900 border-slate-800 text-slate-700 opacity-50'
-                     }`}
+                     className="w-5 h-5"
                      title={item ? item.name : 'Empty'}
                    >
-                      <Icon />
+                      <EquipmentDisplay equipment={item} type={type} size="1.25rem" />
                    </div>
                  );
                })}
@@ -260,7 +249,6 @@ const HeroCard: React.FC<HeroCardProps> = ({
         {/* Bottom: Equipment Slots */}
         <div 
           className="h-12 bg-slate-950 border-t border-slate-800 p-1.5 flex gap-1.5 justify-between items-center relative z-20"
-          // Stop propagation of all interaction events to prevent parent Card's longPress/click handlers
           onMouseDown={(e) => e.stopPropagation()}
           onMouseUp={(e) => e.stopPropagation()}
           onTouchStart={(e) => e.stopPropagation()}
@@ -270,75 +258,36 @@ const HeroCard: React.FC<HeroCardProps> = ({
           {[0, 1, 2].map(i => {
             const equipId = hero.equipmentIds[i];
             const equippedItem = equipment?.find(e => e.id === equipId);
-            const rarity = equippedItem ? equippedItem.rarity : 'C';
-
-            // Define rarity background colors for the slot
-            const slotBgColors: Record<string, string> = {
-              C: 'bg-slate-800/80 border-slate-600',
-              UC: 'bg-emerald-900/40 border-emerald-700/50',
-              R: 'bg-indigo-900/40 border-indigo-700/50',
-              E: 'bg-fuchsia-900/40 border-fuchsia-700/50',
-              L: 'bg-amber-900/40 border-amber-700/50'
-            };
-
-            const textColors: Record<string, string> = {
-              C: 'text-slate-500',
-              UC: 'text-emerald-500',
-              R: 'text-indigo-500',
-              E: 'text-fuchsia-500',
-              L: 'text-amber-500'
-            };
 
             return (
-            <button 
-              key={i} 
-              onClick={(e) => {
-                e.stopPropagation();
-                // We use standard onClick for equipment
-                onEquipClick && onEquipClick(hero.id, i);
-              }}
-              disabled={isLocked}
-              className={`flex-1 h-full rounded-lg flex items-center justify-center transition-all relative group/slot ${
-                equipId 
-                  ? `${slotBgColors[rarity]} border shadow-inner` 
-                  : 'bg-slate-900/40 border border-slate-800 border-dashed hover:bg-slate-800 hover:border-slate-600'
-              } ${isLocked ? 'opacity-50 cursor-not-allowed' : ''}`}
-            >
-              {equipId && (
-                 <div className="absolute inset-0 overflow-hidden rounded-lg pointer-events-none">
-                   <div className={`absolute inset-0 flex items-center justify-center opacity-20 font-black text-2xl -rotate-12 select-none ${textColors[rarity]}`}>
-                      {rarity}
-                   </div>
-                 </div>
-              )}
-              
-              <div className={`transform transition-transform relative z-10 ${equipId ? 'scale-110 drop-shadow-lg' : 'opacity-20 grayscale scale-75'}`}>
-                 <EquipmentIcon 
-                    type={slotTypes[i]} 
-                    rarity={equipId ? rarity : 'C'} 
-                    size="1.4em" 
-                 />
-              </div>
-              
-              {equippedItem && (equippedItem.level || 0) > 0 ? (
-                 <div className="absolute -top-1.5 -right-1.5 bg-amber-500 text-black text-[8px] font-black w-4 h-4 flex items-center justify-center rounded-full border border-slate-900 shadow-sm z-20">
+              <div key={i} className="flex-1 h-full relative">
+                <EquipmentDisplay 
+                  equipment={equippedItem} 
+                  type={slotTypes[i]} 
+                  size="100%" 
+                  onClick={() => onEquipClick && onEquipClick(hero.id, i)}
+                  disabled={isLocked}
+                />
+                {equippedItem && (equippedItem.level || 0) > 0 ? (
+                  <div className="absolute -top-1.5 -right-1.5 bg-amber-500 text-black text-[8px] font-black w-4 h-4 flex items-center justify-center rounded-full border border-slate-900 shadow-sm z-20">
                     +{equippedItem.level}
-                 </div>
-              ) : equipId && (
-                 <div className="absolute top-0.5 right-0.5 w-1.5 h-1.5 bg-emerald-500 rounded-full shadow-[0_0_4px_#10b981] z-20"></div>
-              )}
+                  </div>
+                ) : equipId && (
+                  <div className="absolute top-0.5 right-0.5 w-1.5 h-1.5 bg-emerald-500 rounded-full shadow-[0_0_4px_#10b981] z-20"></div>
+                )}
 
-              {equippedItem && (
-                 <div className={`absolute -bottom-1.5 left-1/2 -translate-x-1/2 text-[7px] font-black px-1 rounded-sm border shadow-sm z-20 ${
+                {equippedItem && (
+                  <div className={`absolute -bottom-1.5 left-1/2 -translate-x-1/2 text-[7px] font-black px-1 rounded-sm border shadow-sm z-20 ${
                     equippedItem.durability <= 0 
                       ? 'bg-red-500 text-white border-red-700' 
                       : 'bg-slate-800 text-slate-300 border-slate-600'
-                 }`}>
+                  }`}>
                     {equippedItem.durability}
-                 </div>
-              )}
-            </button>
-          )})}
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
 
       </div>
