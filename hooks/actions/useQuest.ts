@@ -298,9 +298,7 @@ export const useQuest = ({ gameState, setGameState, showNotification, setReturnR
 
         await publicClient.waitForTransactionReceipt({ hash: txHash });
 
-        if (setTransactionResult) {
-          setTransactionResult({ hash: txHash, type: 'depart' });
-        }
+        showNotification(t('notify.quest_departed'), 'success');
 
       } catch (error: any) {
         console.error("Transaction failed:", error);
