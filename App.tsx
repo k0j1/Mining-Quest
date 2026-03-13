@@ -19,6 +19,7 @@ import { useLanguage } from './contexts/LanguageContext';
 import gsap from 'gsap';
 
 import TransactionResult from './components/TransactionResult';
+import TransactionError from './components/TransactionError';
 
 // Views
 import PartyView from './components/views/PartyView';
@@ -430,6 +431,12 @@ const App: React.FC = () => {
           hash={ui.transactionResult.hash} 
           type={ui.transactionResult.type} 
           onClose={() => ui.setTransactionResult(null)} 
+        />
+      )}
+      {ui.transactionError && (
+        <TransactionError 
+          message={ui.transactionError} 
+          onClose={() => ui.setTransactionError(null)} 
         />
       )}
 

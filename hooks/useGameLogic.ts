@@ -40,6 +40,7 @@ export const useGameLogic = () => {
   const [returnResult, setReturnResult] = useState<{ results: QuestResult[], totalTokens: number } | null>(null);
   const [notification, setNotification] = useState<{ message: string; type: 'error' | 'success' } | null>(null);
   const [transactionResult, setTransactionResult] = useState<{ hash: string, type: 'deposit' | 'withdraw' | 'buy' | 'depart' } | null>(null);
+  const [transactionError, setTransactionError] = useState<string | null>(null);
   const [isBlocked, setIsBlocked] = useState(false);
 
   // Helper for notification
@@ -333,7 +334,7 @@ export const useGameLogic = () => {
   
   // Quest Logic
   const { depart, returnFromQuest, debugCompleteQuest, getQuestPrediction, confirmQuestReturn } = useQuest({
-    gameState, setGameState, showNotification, setReturnResult, farcasterUser, refetchBalance, t, setTransactionResult
+    gameState, setGameState, showNotification, setReturnResult, farcasterUser, refetchBalance, t, setTransactionResult, setTransactionError
   });
 
   // Gacha Logic
@@ -348,7 +349,7 @@ export const useGameLogic = () => {
 
   // Item Logic
   const { buyPotion, buyElixir, buyItems, usePotion, useElixir, useWhetstone, mergeEquipment } = useItems({
-    gameState, setGameState, showNotification, farcasterUser, refetchBalance, t, setTransactionResult
+    gameState, setGameState, showNotification, farcasterUser, refetchBalance, t, setTransactionResult, setTransactionError
   });
 
   // Debug Actions
@@ -369,7 +370,8 @@ export const useGameLogic = () => {
       isGachaRolling, 
       returnResult, setReturnResult,
       notification, setNotification,
-      transactionResult, setTransactionResult
+      transactionResult, setTransactionResult,
+      transactionError, setTransactionError
     },
     actions: { 
       depart, 

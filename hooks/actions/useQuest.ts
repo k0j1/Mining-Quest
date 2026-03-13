@@ -44,9 +44,10 @@ interface UseQuestProps {
   refetchBalance: () => Promise<void>;
   t: (key: string, params?: any) => string;
   setTransactionResult?: Dispatch<SetStateAction<{ hash: string, type: 'deposit' | 'withdraw' | 'buy' | 'depart' } | null>>;
+  setTransactionError: (error: string | null) => void;
 }
 
-export const useQuest = ({ gameState, setGameState, showNotification, setReturnResult, farcasterUser, refetchBalance, t, setTransactionResult }: UseQuestProps) => {
+export const useQuest = ({ gameState, setGameState, showNotification, setReturnResult, farcasterUser, refetchBalance, t, setTransactionResult, setTransactionError }: UseQuestProps) => {
   
   // Exposed Helper: Calculate Prediction for UI
   const getQuestPrediction = (config: QuestConfig, partyHeroes: Hero[]) => {
@@ -303,7 +304,7 @@ export const useQuest = ({ gameState, setGameState, showNotification, setReturnR
       } catch (error: any) {
         console.error("Transaction failed:", error);
         playError();
-        showNotification(t('notify.tx_failed', { message: error.shortMessage || error.message || t('error.unknown') }), 'error');
+        setTransactionError(error.shortMessage || error.message || t('error.unknown'));
         return false;
       }
     }
