@@ -38,6 +38,8 @@ const RecoveryView: React.FC<RecoveryViewProps> = ({
   const [potionAmount, setPotionAmount] = React.useState(0);
   const [elixirAmount, setElixirAmount] = React.useState(0);
 
+  const [activeTab, setActiveTab] = React.useState<'heroes' | 'equipment'>('heroes');
+
   const rarityColors: Record<string, string> = {
     C: 'bg-slate-600 text-slate-100',
     UC: 'bg-emerald-600 text-emerald-50',
@@ -100,7 +102,7 @@ const RecoveryView: React.FC<RecoveryViewProps> = ({
     const partyIndex = gameState.partyPresets.findIndex(ids => ids.includes(hero.id));
 
     return (
-      <div key={hero.id} className={`min-w-[140px] w-[140px] snap-center bg-slate-800/80 rounded-xl border flex flex-col relative overflow-hidden transition-all group ${
+      <div key={hero.id} className={`w-full bg-slate-800/80 rounded-xl border flex flex-col relative overflow-hidden transition-all group ${
           isQuesting 
             ? 'border-slate-800 opacity-60' 
             : isAssigned 
@@ -142,7 +144,7 @@ const RecoveryView: React.FC<RecoveryViewProps> = ({
           </div>
 
           {/* Bottom: Info & Actions */}
-          <div className="p-2 flex flex-col gap-1.5 bg-slate-800/90">
+          <div className="p-1.5 flex flex-col gap-1.5 bg-slate-800/90">
               <div className="flex flex-col gap-0.5">
                   <h3 className="font-bold text-[9px] text-slate-200 truncate">{hero.name}</h3>
                   {/* HP Bar */}
@@ -166,8 +168,8 @@ const RecoveryView: React.FC<RecoveryViewProps> = ({
                     }`}
                     title="Potion (+10 HP)"
                   >
-                      <span className="flex items-center justify-center h-4"><FlaskConical size={14} className="text-emerald-400" /></span>
-                      <span className={`text-[8px] font-bold leading-tight ${hasPotion ? 'text-slate-300' : 'text-rose-500'}`}>{t('recovery.use')}</span>
+                      <span className="flex items-center justify-center h-4"><FlaskConical size={12} className="text-emerald-400" /></span>
+                      <span className={`text-[7px] font-bold leading-tight ${hasPotion ? 'text-slate-300' : 'text-rose-500'}`}>{t('recovery.use')}</span>
                   </button>
                   
                   {/* Elixir Button */}
@@ -181,8 +183,8 @@ const RecoveryView: React.FC<RecoveryViewProps> = ({
                       }`}
                       title="Elixir (Full Heal)"
                   >
-                      <span className="flex items-center justify-center h-4"><TestTube size={14} className="text-indigo-400" /></span>
-                      <span className={`text-[8px] font-bold leading-tight ${hasElixir ? 'text-indigo-300' : 'text-rose-500'}`}>{t('recovery.use')}</span>
+                      <span className="flex items-center justify-center h-4"><TestTube size={12} className="text-indigo-400" /></span>
+                      <span className={`text-[7px] font-bold leading-tight ${hasElixir ? 'text-indigo-300' : 'text-rose-500'}`}>{t('recovery.use')}</span>
                   </button>
               </div>
           </div>
@@ -217,7 +219,7 @@ const RecoveryView: React.FC<RecoveryViewProps> = ({
     };
 
     return (
-      <div key={eq.id} className={`min-w-[140px] w-[140px] snap-center bg-slate-800/80 rounded-xl border flex flex-col relative overflow-hidden transition-all group ${
+      <div key={eq.id} className={`w-full bg-slate-800/80 rounded-xl border flex flex-col relative overflow-hidden transition-all group ${
           isQuesting 
             ? 'border-slate-800 opacity-60' 
             : isEquipped 
@@ -277,7 +279,7 @@ const RecoveryView: React.FC<RecoveryViewProps> = ({
           </div>
 
           {/* Bottom: Info & Actions */}
-          <div className="p-2 flex flex-col gap-1.5 bg-slate-800/90 flex-1 justify-between">
+          <div className="p-1.5 flex flex-col gap-1.5 bg-slate-800/90 flex-1 justify-between">
               <div className="flex flex-col gap-0.5">
                   <h3 className="font-bold text-[9px] text-slate-200 truncate">{eq.name}</h3>
                   <div className="text-[8px] text-slate-400">Lv.{eq.level} / {eq.rarity}</div>
@@ -295,8 +297,8 @@ const RecoveryView: React.FC<RecoveryViewProps> = ({
                     }`}
                     title={t('recovery.whetstone')}
                   >
-                      <Hammer size={14} className="text-slate-300" />
-                      <span className={`text-[8px] font-bold leading-tight ${hasWhetstone ? 'text-slate-300' : 'text-rose-500'}`}>{t('recovery.use')}</span>
+                      <Hammer size={12} className="text-slate-300" />
+                      <span className={`text-[7px] font-bold leading-tight ${hasWhetstone ? 'text-slate-300' : 'text-rose-500'}`}>{t('recovery.use')}</span>
                   </button>
               </div>
           </div>
@@ -397,40 +399,55 @@ const RecoveryView: React.FC<RecoveryViewProps> = ({
             </button>
           </div>
 
-          {/* Section: Heroes List (Horizontal Scroll) */}
-          <div className="mb-6">
-              <div className="flex items-center gap-2 mb-2 px-1">
-                  <span className="w-1.5 h-4 bg-indigo-500 rounded-full"></span>
-                  <h2 className="text-xs font-bold text-slate-400 uppercase tracking-widest">
-                      Heroes
-                  </h2>
-              </div>
-              <div className="flex overflow-x-auto gap-3 pb-4 snap-x custom-scrollbar">
-                  {allHeroesInOrder.map(renderHeroCard)}
-                  {allHeroesInOrder.length === 0 && (
-                      <div className="p-8 w-full text-center border border-dashed border-slate-800 rounded-xl text-slate-600 text-xs font-bold">
-                          {t('recovery.no_heroes')}
-                      </div>
-                  )}
-              </div>
+          {/* Tabs */}
+          <div className="flex gap-2 mb-4">
+            <button 
+              onClick={() => { playClick(); setActiveTab('heroes'); }}
+              className={`flex-1 py-2 px-4 rounded-t-lg border-b-2 font-bold text-xs tracking-widest uppercase transition-colors flex items-center justify-center gap-2 ${
+                activeTab === 'heroes' 
+                  ? 'border-indigo-500 text-indigo-400 bg-slate-800/50' 
+                  : 'border-transparent text-slate-500 hover:text-slate-400 hover:bg-slate-800/30'
+              }`}
+            >
+              <span className={`w-1.5 h-4 rounded-full ${activeTab === 'heroes' ? 'bg-indigo-500' : 'bg-slate-600'}`}></span>
+              Heroes
+            </button>
+            <button 
+              onClick={() => { playClick(); setActiveTab('equipment'); }}
+              className={`flex-1 py-2 px-4 rounded-t-lg border-b-2 font-bold text-xs tracking-widest uppercase transition-colors flex items-center justify-center gap-2 ${
+                activeTab === 'equipment' 
+                  ? 'border-amber-500 text-amber-400 bg-slate-800/50' 
+                  : 'border-transparent text-slate-500 hover:text-slate-400 hover:bg-slate-800/30'
+              }`}
+            >
+              <span className={`w-1.5 h-4 rounded-full ${activeTab === 'equipment' ? 'bg-amber-500' : 'bg-slate-600'}`}></span>
+              Equipment
+            </button>
           </div>
 
-          {/* Section: Equipment List (Horizontal Scroll) */}
-          <div className="mb-6">
-              <div className="flex items-center gap-2 mb-2 px-1">
-                  <span className="w-1.5 h-4 bg-amber-500 rounded-full"></span>
-                  <h2 className="text-xs font-bold text-slate-400 uppercase tracking-widest">
-                      Equipment
-                  </h2>
-              </div>
-              <div className="flex overflow-x-auto gap-3 pb-4 snap-x custom-scrollbar">
-                  {allEquipmentInOrder.map(renderEquipmentCard)}
-                  {allEquipmentInOrder.length === 0 && (
-                      <div className="p-8 w-full text-center border border-dashed border-slate-800 rounded-xl text-slate-600 text-xs font-bold">
-                          No Equipment
-                      </div>
-                  )}
-              </div>
+          {/* Content Grid */}
+          <div className="grid grid-cols-3 gap-2 pb-4">
+            {activeTab === 'heroes' && (
+              <>
+                {allHeroesInOrder.map(renderHeroCard)}
+                {allHeroesInOrder.length === 0 && (
+                  <div className="col-span-3 p-8 text-center border border-dashed border-slate-800 rounded-xl text-slate-600 text-xs font-bold">
+                    {t('recovery.no_heroes')}
+                  </div>
+                )}
+              </>
+            )}
+            
+            {activeTab === 'equipment' && (
+              <>
+                {allEquipmentInOrder.map(renderEquipmentCard)}
+                {allEquipmentInOrder.length === 0 && (
+                  <div className="col-span-3 p-8 text-center border border-dashed border-slate-800 rounded-xl text-slate-600 text-xs font-bold">
+                    No Equipment
+                  </div>
+                )}
+              </>
+            )}
           </div>
 
        </div>
