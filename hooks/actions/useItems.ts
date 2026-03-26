@@ -12,7 +12,8 @@ const ITEM_SHOP_ABI = [
   {
     "inputs": [
       { "internalType": "uint256", "name": "potionAmount", "type": "uint256" },
-      { "internalType": "uint256", "name": "elixirAmount", "type": "uint256" }
+      { "internalType": "uint256", "name": "elixirAmount", "type": "uint256" },
+      { "internalType": "uint256", "name": "whetstoneAmount", "type": "uint256" }
     ],
     "name": "buyItems",
     "outputs": [],
@@ -122,8 +123,8 @@ export const useItems = ({ gameState, setGameState, showNotification, farcasterU
     showNotification(t('notify.elixir_purchased', { amount }), 'success');
   };
 
-  const buyItems = async (potionAmount: number, elixirAmount: number) => {
-    const totalCost = (100 * potionAmount) + (500 * elixirAmount);
+  const buyItems = async (potionAmount: number, elixirAmount: number, whetstoneAmount: number = 0) => {
+    const totalCost = (100 * potionAmount) + (500 * elixirAmount) + (100 * whetstoneAmount);
     
     if (totalCost === 0) return;
 
@@ -189,7 +190,7 @@ export const useItems = ({ gameState, setGameState, showNotification, farcasterU
       const buyData = encodeFunctionData({
         abi: ITEM_SHOP_ABI,
         functionName: 'buyItems',
-        args: [BigInt(potionAmount), BigInt(elixirAmount)]
+        args: [BigInt(potionAmount), BigInt(elixirAmount), BigInt(whetstoneAmount)]
       });
 
       showNotification(t('notify.purchasing_items'), 'success');
@@ -215,16 +216,18 @@ export const useItems = ({ gameState, setGameState, showNotification, farcasterU
         items: { 
             ...prev.items, 
             item01: prev.items.item01 + potionAmount,
-            item02: prev.items.item02 + elixirAmount
+            item02: prev.items.item02 + elixirAmount,
+            item03: prev.items.item03 + whetstoneAmount
         }
       }));
 
       if (farcasterUser?.fid) {
-        const { data: currentStats } = await supabase.from('quest_player_stats').select('item01, item02').eq('fid', farcasterUser.fid).single();
+        const { data: currentStats } = await supabase.from('quest_player_stats').select('item01, item02, item03').eq('fid', farcasterUser.fid).single();
         await supabase.from('quest_player_stats')
             .update({ 
                 item01: (currentStats?.item01 || 0) + potionAmount,
-                item02: (currentStats?.item02 || 0) + elixirAmount
+                item02: (currentStats?.item02 || 0) + elixirAmount,
+                item03: (currentStats?.item03 || 0) + whetstoneAmount
             })
             .eq('fid', farcasterUser.fid);
       }
@@ -234,6 +237,7 @@ export const useItems = ({ gameState, setGameState, showNotification, farcasterU
       let msg = [];
       if (potionAmount > 0) msg.push(t('item.potion') + `x${potionAmount}`);
       if (elixirAmount > 0) msg.push(t('item.elixir') + `x${elixirAmount}`);
+      if (whetstoneAmount > 0) msg.push(t('recovery.whetstone_item') + `x${whetstoneAmount}`);
       showNotification(t('notify.items_purchased', { items: msg.join(', ') }), 'success');
 
     } catch (error: any) {

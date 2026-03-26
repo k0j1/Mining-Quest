@@ -9,7 +9,7 @@ import { useLanguage } from '../../contexts/LanguageContext';
 
 interface RecoveryViewProps {
   gameState: GameState;
-  onBuyItems: (potionAmount: number, elixirAmount: number) => void;
+  onBuyItems: (potionAmount: number, elixirAmount: number, whetstoneAmount: number) => void;
   onPotion: (heroId: string) => void;
   onElixir: (heroId: string) => void;
   onWhetstone: (equipmentId: string) => void;
@@ -37,6 +37,7 @@ const RecoveryView: React.FC<RecoveryViewProps> = ({
   const { t } = useLanguage();
   const [potionAmount, setPotionAmount] = React.useState(0);
   const [elixirAmount, setElixirAmount] = React.useState(0);
+  const [whetstoneAmount, setWhetstoneAmount] = React.useState(0);
 
   const [activeTab, setActiveTab] = React.useState<'heroes' | 'equipment'>('heroes');
 
@@ -86,7 +87,7 @@ const RecoveryView: React.FC<RecoveryViewProps> = ({
   const unequippedEquipment = gameState.equipment.filter(e => !equippedIds.includes(e.id));
   allEquipmentInOrder.push(...unequippedEquipment);
 
-  const totalCost = (potionAmount * 100) + (elixirAmount * 500);
+  const totalCost = (potionAmount * 100) + (elixirAmount * 500) + (whetstoneAmount * 100);
   const canBuy = totalCost > 0 && gameState.tokens >= totalCost;
 
   // Render Helper for Hero Card
@@ -366,17 +367,23 @@ const RecoveryView: React.FC<RecoveryViewProps> = ({
                         >+</button>
                     </div>
                 </div>
-                {/* Whetstone (Not Purchasable) */}
+                {/* Whetstone */}
                 <div className="bg-slate-900/80 rounded-xl p-3 border border-slate-700 flex flex-col items-center">
                     <div className="mb-1 flex items-center justify-center h-8"><Hammer size={24} className="text-slate-400" /></div>
                     <div className="text-[10px] font-bold text-slate-300 mb-1">{t('recovery.whetstone_item')}</div>
-                    <div className="text-[10px] text-slate-500 mb-2">{t('recovery.not_for_sale')}</div>
+                    <div className="text-[10px] text-slate-400 mb-2">100 $CHH</div>
                     <div className="text-xs font-black text-slate-400 mb-2">{t('recovery.owned')} {gameState.items.item03}</div>
                     
-                    <div className="flex items-center gap-2 w-full justify-center opacity-50">
-                        <button disabled className="w-6 h-6 rounded bg-slate-800 text-slate-600 flex items-center justify-center font-bold cursor-not-allowed">-</button>
-                        <span className="text-sm font-bold w-6 text-center text-slate-600">0</span>
-                        <button disabled className="w-6 h-6 rounded bg-slate-800 text-slate-600 flex items-center justify-center font-bold cursor-not-allowed">+</button>
+                    <div className="flex items-center gap-2 w-full justify-center">
+                        <button 
+                            onClick={() => { playClick(); setWhetstoneAmount(Math.max(0, whetstoneAmount - 1)); }}
+                            className="w-6 h-6 rounded bg-slate-800 text-slate-400 hover:text-white hover:bg-slate-700 flex items-center justify-center font-bold"
+                        >-</button>
+                        <span className="text-sm font-bold w-6 text-center">{whetstoneAmount}</span>
+                        <button 
+                            onClick={() => { playClick(); setWhetstoneAmount(Math.min(99, whetstoneAmount + 1)); }}
+                            className="w-6 h-6 rounded bg-slate-800 text-slate-400 hover:text-white hover:bg-slate-700 flex items-center justify-center font-bold"
+                        >+</button>
                     </div>
                 </div>
             </div>
@@ -384,9 +391,10 @@ const RecoveryView: React.FC<RecoveryViewProps> = ({
             <button 
                 onClick={() => { 
                     playClick(); 
-                    onBuyItems(potionAmount, elixirAmount); 
+                    onBuyItems(potionAmount, elixirAmount, whetstoneAmount); 
                     setPotionAmount(0);
                     setElixirAmount(0);
+                    setWhetstoneAmount(0);
                 }}
                 disabled={!canBuy}
                 className={`w-full py-3 rounded-xl text-sm font-bold transition-all shadow-lg border-b-4 ${
