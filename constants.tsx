@@ -8,10 +8,10 @@ import { getHeroImageUrl } from './utils/heroUtils';
 export const IS_TEST_MODE = true;
 
 // App Version
-export const APP_VERSION = '0.3.04';
+export const APP_VERSION = '0.3.05';
 
 // Item Shop Contract (Base Sepolia / Base Mainnet)
-export const ITEM_SHOP_CONTRACT_ADDRESS = "0x29521909C3b09Bd7861fAD32A49d12414C296c5A"; // TODO: Replace with actual deployed address
+export const ITEM_SHOP_CONTRACT_ADDRESS = "0xB0748f58befa009A42306c91E01ED9DD3378eb01"; // TODO: Replace with actual deployed address
 export const QUEST_MANAGER_CONTRACT_ADDRESS = "0xDdE103F5bbf19f0F5d177BE983C76e2a16D36416";
 export const QUEST_TREASURY_CONTRACT_ADDRESS = "0x5F07A1992Cb9A652b262dead336E4202349B77F5";
 export const GACHA_PAYMENT_CONTRACT_ADDRESS = "0xaDe81D78B1380b3153BBC1c16116b890FcE41d00";
