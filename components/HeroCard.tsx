@@ -77,7 +77,6 @@ const HeroCard: React.FC<HeroCardProps> = ({
   // Calculate Total Damage Reduction (Skill + Helmet)
   const individualDamageReduction = calculateHeroDamageReduction(hero, equipment || [], 0);
   const teamDef = teamDefBonus || 0;
-  const hasAnyDefense = individualDamageReduction !== 0 || teamDef !== 0;
 
   // Determine font size and padding based on name length more aggressively
   const getNameStyles = (name: string) => {
@@ -219,19 +218,18 @@ const HeroCard: React.FC<HeroCardProps> = ({
                     HP {hero.hp}
                  </span>
 
-                 {hasAnyDefense ? (
-                    <span className={`text-[7px] font-bold px-1 py-0.5 rounded backdrop-blur-sm border whitespace-nowrap flex items-center ${individualDamageReduction > 0 || teamDef > 0 ? 'text-indigo-200 bg-indigo-900/80 border-indigo-500/30' : 'text-rose-200 bg-rose-900/80 border-rose-500/30'}`}>
-                        <span className="mr-0.5">🛡️</span>
-                        {individualDamageReduction !== 0 && (
-                          <span>{individualDamageReduction > 0 ? '+' : ''}{individualDamageReduction.toFixed(1)}%</span>
-                        )}
-                        {teamDef !== 0 && (
-                          <span className={`ml-0.5 ${teamDef > 0 ? 'text-amber-300' : 'text-rose-300'}`}>
-                            {teamDef > 0 ? '+' : ''}{teamDef.toFixed(1)}%
-                          </span>
-                        )}
-                    </span>
-                 ) : <span></span>}
+                 <div className="flex flex-col items-end gap-0.5">
+                   {teamDef !== 0 && (
+                      <span className={`text-[7px] font-bold px-1 py-0.5 rounded backdrop-blur-sm border whitespace-nowrap flex items-center shadow-lg ${teamDef > 0 ? 'text-cyan-100 bg-cyan-900/90 border-cyan-400/50' : 'text-rose-100 bg-rose-900/90 border-rose-500/50'} animate-pulse`}>
+                          <span className="mr-0.5">🛡️</span>Team {teamDef > 0 ? '+' : ''}{teamDef.toFixed(1)}%
+                      </span>
+                   )}
+                   {individualDamageReduction !== 0 && (
+                      <span className={`text-[7px] font-bold px-1 py-0.5 rounded backdrop-blur-sm border whitespace-nowrap flex items-center ${individualDamageReduction > 0 ? 'text-indigo-200 bg-indigo-900/80 border-indigo-500/30' : 'text-rose-200 bg-rose-900/80 border-rose-500/30'}`}>
+                          <span className="mr-0.5">🛡️</span>{individualDamageReduction > 0 ? '+' : ''}{individualDamageReduction.toFixed(1)}%
+                      </span>
+                   )}
+                 </div>
               </div>
 
               <div className="w-full bg-slate-900/80 h-1.5 rounded-full overflow-hidden border border-white/10 shadow-sm mb-1.5">
