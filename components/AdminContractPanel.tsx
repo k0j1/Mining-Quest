@@ -15,7 +15,9 @@ const CHH_TOKEN_ADDRESS = "0xb0525542E3D818460546332e76E511562dFf9B07" as `0x${s
 const REWARD_MANAGER_ABI = parseAbi([
   'function setKoharuAddress(address _koharu) external',
   'function setTestUsers(address[] calldata _users, bool _status) external',
-  'function getUserAssets(address _user) view returns ((uint256 chhBalance, uint256 heroCommon, uint256 heroUncommon, uint256 heroRare, uint256 equipCommon, uint256 equipUncommon, uint256 equipRare, uint256 itemPotion, uint256 itemElixir, uint256 itemWhetstone))'
+  'function koharuAddress() view returns (address)',
+  'function checkIsTestUser(address _user) view returns (bool)',
+  'function getClaimStatus(address _user) view returns (bool)'
 ]);
 
 const TOKEN_ABI = parseAbi([
@@ -60,9 +62,9 @@ const AdminContractPanel: React.FC = () => {
   const [koharuAddress, setKoharuAddress] = useState('');
   const [testUsers, setTestUsers] = useState('');
   const [targetUser, setTargetUser] = useState('');
-  const [userAssets, setUserAssets] = useState<any>(null);
+  const [targetUserStatus, setTargetUserStatus] = useState<any>(null);
 
-  const executeRewardManagerAction = async (functionName: 'setKoharuAddress' | 'setTestUsers' | 'getUserAssets', args: any[]) => {
+  const executeRewardManagerAction = async (functionName: 'setKoharuAddress' | 'setTestUsers' | 'checkStatus', args: any[]) => {
     setIsLoading(true);
     setStatusMsg(`Executing ${functionName}...`);
     try {
@@ -70,15 +72,23 @@ const AdminContractPanel: React.FC = () => {
       const walletClient = createWalletClient({ chain: base, transport: custom(sdk.wallet.ethProvider) });
       const [account] = await walletClient.requestAddresses();
       
-      if (functionName === 'getUserAssets') {
-        const assets = await publicClient.readContract({
-          address: REWARD_MANAGER_ADDRESS,
-          abi: REWARD_MANAGER_ABI,
-          functionName,
-          args: [args[0] as `0x${string}`]
-        });
-        setUserAssets(assets);
-        setStatusMsg(`Fetched assets for ${args[0]}`);
+      if (functionName === 'checkStatus') {
+        const [isTest, hasClaimed] = await Promise.all([
+            publicClient.readContract({
+                address: REWARD_MANAGER_ADDRESS,
+                abi: REWARD_MANAGER_ABI,
+                functionName: 'checkIsTestUser',
+                args: [args[0] as `0x${string}`]
+            }),
+            publicClient.readContract({
+                address: REWARD_MANAGER_ADDRESS,
+                abi: REWARD_MANAGER_ABI,
+                functionName: 'getClaimStatus',
+                args: [args[0] as `0x${string}`]
+            })
+        ]);
+        setTargetUserStatus({ isTest, hasClaimed });
+        setStatusMsg(`Fetched status for ${args[0]}`);
       } else if (functionName === 'setKoharuAddress') {
         const hash = await walletClient.writeContract({
           account,
@@ -746,14 +756,15 @@ const AdminContractPanel: React.FC = () => {
               <button onClick={() => executeRewardManagerAction('setTestUsers', [testUsers.split(','), true])} className="w-full py-2 bg-purple-600 hover:bg-purple-500 text-white rounded-lg font-bold text-xs">Set</button>
             </div>
             <div className="bg-purple-950/10 p-4 rounded-xl border border-purple-500/20">
-              <label className="text-[10px] text-slate-500 font-bold block mb-1">Get User Assets</label>
+              <label className="text-[10px] text-slate-500 font-bold block mb-1">Check User Status</label>
               <input type="text" value={targetUser} onChange={(e) => setTargetUser(e.target.value)} className="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-sm text-white mb-2" placeholder="0x..." />
-              <button onClick={() => executeRewardManagerAction('getUserAssets', [targetUser])} className="w-full py-2 bg-purple-600 hover:bg-purple-500 text-white rounded-lg font-bold text-xs">Get</button>
+              <button onClick={() => executeRewardManagerAction('checkStatus', [targetUser])} className="w-full py-2 bg-purple-600 hover:bg-purple-500 text-white rounded-lg font-bold text-xs">Check</button>
             </div>
           </div>
-          {userAssets && (
+          {targetUserStatus && (
             <div className="mt-4 p-4 bg-slate-950 rounded-xl text-[10px] text-slate-300 font-mono">
-              <pre>{JSON.stringify(userAssets, null, 2)}</pre>
+              <p>Is Test User: {targetUserStatus.isTest ? 'Yes' : 'No'}</p>
+              <p>Has Claimed: {targetUserStatus.hasClaimed ? 'Yes' : 'No'}</p>
             </div>
           )}
           <div className="mt-4 text-xs text-slate-400 font-bold">{statusMsg}</div>

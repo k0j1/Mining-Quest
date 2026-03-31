@@ -134,22 +134,28 @@ const StatusBoard: React.FC<StatusBoardProps> = ({
   state, actionButtonLabel, onAction, title, view, isSoundOn, onToggleSound, onDebugAddTokens, farcasterUser, onChainBalance, onAccountClick, onShowLightpaper, onDebugCompleteQuest, onToggleDebug, onNavigate, isFrameAdded, onAddApp, onClaimSuccess
 }) => {
   const { t } = useLanguage();
-  const { isClaiming, checkHasClaimed, claimReward } = useReward();
-  const [hasClaimed, setHasClaimed] = useState(true); // Default to true to prevent flicker
+  const { isClaiming, checkHasClaimed, getPreviewClaimAmount, claimReward } = useReward();
+  const [hasClaimed, setHasClaimed] = useState(true);
+  const [previewAssets, setPreviewAssets] = useState<any>(null);
 
   useEffect(() => {
     if (farcasterUser?.address) {
       checkHasClaimed(farcasterUser.address).then(claimed => {
         setHasClaimed(claimed);
+        if (!claimed) {
+            getPreviewClaimAmount(farcasterUser.address).then(assets => {
+                setPreviewAssets(assets);
+            });
+        }
       });
     }
-  }, [farcasterUser?.address, checkHasClaimed]);
+  }, [farcasterUser?.address, checkHasClaimed, getPreviewClaimAmount]);
 
   const handleClaim = async () => {
     if (!farcasterUser?.address || !farcasterUser?.fid || isClaiming) return;
     
     const result = await claimReward(farcasterUser.address, farcasterUser.fid);
-    if (result.success && result.assets) {
+    if (result.success) {
       setHasClaimed(true);
       alert('Rewards claimed successfully! The page will now reload to update your assets.');
       if (onClaimSuccess) {
@@ -172,11 +178,15 @@ const StatusBoard: React.FC<StatusBoardProps> = ({
         farcasterUser={farcasterUser} onChainBalance={onChainBalance} onAccountClick={onAccountClick}
       />
 
-      {farcasterUser?.address && !hasClaimed && (
+      {farcasterUser?.address && !hasClaimed && previewAssets && (
         <div className="mx-4 mt-4 p-4 bg-gradient-to-r from-indigo-900/50 to-purple-900/50 rounded-2xl border border-indigo-500/50 shadow-lg flex items-center justify-between z-20 relative">
           <div>
             <h3 className="text-white font-bold text-sm">Welcome Reward!</h3>
-            <p className="text-indigo-200 text-xs">Claim your free heroes, equipment, and items.</p>
+            <p className="text-indigo-200 text-xs">
+                {Number(previewAssets.chhBalance) / 10**18} CHH, 
+                {Number(previewAssets.heroCommon)} Common Heroes, 
+                {Number(previewAssets.itemPotion)} Potions
+            </p>
           </div>
           <button
             onClick={handleClaim}
