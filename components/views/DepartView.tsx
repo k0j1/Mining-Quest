@@ -1,6 +1,7 @@
 
 import React, { useState } from 'react';
 import { GameState, QuestRank, QuestConfig, Hero } from '../../types';
+import { calculatePartyStats } from '../../utils/mechanics';
 import PartySlotGrid from '../PartySlotGrid';
 import { playClick, playError } from '../../utils/sound';
 import Header from '../Header';
@@ -166,6 +167,8 @@ const DepartView: React.FC<DepartViewProps> = ({
   const mainParty = activePresetIds
     .map(id => gameState.heroes.find(h => h.id === id))
     .filter((h): h is Hero => !!h);
+
+  const partyStats = calculatePartyStats(mainParty, gameState.equipment);
 
   const isPartyFull = mainParty.length === 3;
   const currentRankConfig = selectedRank ? gameState.questConfigs.find(q => q.rank === selectedRank) : null;
@@ -524,16 +527,26 @@ const DepartView: React.FC<DepartViewProps> = ({
                       <p className="text-xs text-emerald-300/70 mt-1">{t('depart.select_another_party')}</p>
                     </div>
                  ) : (
-                    <div className="pointer-events-none transform scale-95">
-                      <PartySlotGrid
-                        heroIds={activePresetIds}
-                        heroes={gameState.heroes}
-                        readOnly={true}
-                        showSlotLabels={false}
-                        className="grid grid-cols-3 gap-3"
-                        compactEmpty={true}
-                        equipment={gameState.equipment}
-                      />
+                    <div className={`relative ${partyStats.teamDamageReduction > 0 ? 'rounded-xl ring-2 ring-cyan-400/80 shadow-[0_0_40px_rgba(34,211,238,0.6)]' : ''}`}>
+                      {partyStats.teamDamageReduction > 0 && (
+                        <>
+                          <div className="absolute -inset-2 bg-gradient-to-r from-cyan-500/30 via-blue-500/30 to-purple-500/30 rounded-xl blur-xl z-0 animate-pulse pointer-events-none"></div>
+                          <div className="absolute -inset-0.5 bg-gradient-to-r from-cyan-400/20 via-blue-400/20 to-purple-400/20 rounded-xl blur-md z-0 animate-pulse pointer-events-none" style={{ animationDuration: '2s' }}></div>
+                          <div className="absolute inset-0 rounded-xl border border-cyan-300/50 z-10 pointer-events-none mix-blend-overlay"></div>
+                        </>
+                      )}
+                      <div className="pointer-events-none transform scale-95 relative z-10">
+                        <PartySlotGrid
+                          heroIds={activePresetIds}
+                          heroes={gameState.heroes}
+                          readOnly={true}
+                          showSlotLabels={false}
+                          className="grid grid-cols-3 gap-3"
+                          compactEmpty={true}
+                          equipment={gameState.equipment}
+                          teamDefBonus={partyStats.teamDamageReduction}
+                        />
+                      </div>
                     </div>
                  )}
                  {hasDeadHeroes && (

@@ -332,9 +332,13 @@ const PartyView: React.FC<PartyViewProps> = ({
                     })}
                 </div>
 
-                <div className={`relative ${partyStats.teamDefBonus > 0 ? 'ring-2 ring-indigo-500/50 rounded-xl shadow-[0_0_15px_rgba(99,102,241,0.3)]' : ''}`}>
+                <div className={`relative ${partyStats.teamDefBonus > 0 ? 'rounded-xl ring-2 ring-cyan-400/80 shadow-[0_0_40px_rgba(34,211,238,0.6)]' : ''}`}>
                   {partyStats.teamDefBonus > 0 && (
-                    <div className="absolute -inset-1 bg-indigo-500/10 rounded-xl blur-sm z-0 animate-pulse pointer-events-none"></div>
+                    <>
+                      <div className="absolute -inset-2 bg-gradient-to-r from-cyan-500/30 via-blue-500/30 to-purple-500/30 rounded-xl blur-xl z-0 animate-pulse pointer-events-none"></div>
+                      <div className="absolute -inset-0.5 bg-gradient-to-r from-cyan-400/20 via-blue-400/20 to-purple-400/20 rounded-xl blur-md z-0 animate-pulse pointer-events-none" style={{ animationDuration: '2s' }}></div>
+                      <div className="absolute inset-0 rounded-xl border border-cyan-300/50 z-10 pointer-events-none mix-blend-overlay"></div>
+                    </>
                   )}
                   <PartySlotGrid
                       heroIds={currentPreset}
