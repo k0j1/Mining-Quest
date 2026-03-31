@@ -18,6 +18,7 @@ interface PartySlotGridProps {
   className?: string;
   compactEmpty?: boolean;
   equipment?: Equipment[];
+  teamDefBonus?: number;
 }
 
 const PartySlotGrid: React.FC<PartySlotGridProps> = ({
@@ -34,7 +35,8 @@ const PartySlotGrid: React.FC<PartySlotGridProps> = ({
   onLongPress,
   className = "grid grid-cols-3 gap-4",
   compactEmpty = false,
-  equipment
+  equipment,
+  teamDefBonus
 }) => {
   return (
     <div className={className}>
@@ -72,6 +74,7 @@ const PartySlotGrid: React.FC<PartySlotGridProps> = ({
                   onEquipClick={!readOnly ? onEquipClick : undefined}
                   isMainSlot
                   equipment={equipment}
+                  teamDefBonus={teamDefBonus}
                 />
                 {!readOnly && !isLocked && onRemoveClick && (
                   <button 

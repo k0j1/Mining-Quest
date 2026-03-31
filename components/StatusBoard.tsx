@@ -5,6 +5,7 @@ import { playClick } from '../utils/sound';
 import Header from './Header';
 import PartySlotGrid from './PartySlotGrid';
 import { IS_TEST_MODE, APP_VERSION } from '../constants';
+import { calculatePartyStats } from '../utils/mechanics';
 import { useLanguage } from '../contexts/LanguageContext';
 
 interface StatusBoardProps {
@@ -261,15 +262,19 @@ const StatusBoard: React.FC<StatusBoardProps> = ({
                   const partyHeroes = presetIds.map(id => state.heroes.find(h => h.id === id)).filter((h): h is any => !!h);
                   const isActive = state.activePartyIndex === partyIndex;
                   const isQuesting = partyHeroes.some(h => state.activeQuests.some(q => q.heroIds.includes(h.id)));
+                  const partyStats = calculatePartyStats(partyHeroes, state.equipment);
 
                   return (
                     <div key={partyIndex} className={`relative p-6 pt-10 rounded-3xl border transition-all ${
                       isActive 
                         ? 'bg-slate-800/80 border-indigo-500/40 shadow-sm' 
                         : 'bg-slate-800/40 border-slate-700 opacity-90'
-                    }`}>
+                    } ${partyStats.teamDamageReduction > 0 ? 'ring-2 ring-indigo-500/30 shadow-[0_0_15px_rgba(99,102,241,0.2)]' : ''}`}>
+                      {partyStats.teamDamageReduction > 0 && (
+                        <div className="absolute -inset-1 bg-indigo-500/5 rounded-3xl blur-sm z-0 animate-pulse pointer-events-none"></div>
+                      )}
                       {/* Unit Header Label */}
-                      <div className="absolute -top-4 left-6 flex items-center gap-3">
+                      <div className="absolute -top-4 left-6 flex items-center gap-3 z-10">
                         <div className={`px-4 py-1.5 rounded-full border font-bold text-[10px] tracking-wider shadow-sm ${
                             isActive ? 'bg-indigo-600 text-white border-indigo-500' : 'bg-slate-700 text-slate-400 border-slate-600'
                         }`}>
@@ -289,8 +294,9 @@ const StatusBoard: React.FC<StatusBoardProps> = ({
                         activeQuestHeroIds={state.activeQuests.flatMap(q => q.heroIds)}
                         readOnly={true}
                         showSlotLabels={true}
-                        className="grid grid-cols-3 gap-4"
+                        className="grid grid-cols-3 gap-4 relative z-10"
                         equipment={state.equipment}
+                        teamDefBonus={partyStats.teamDamageReduction}
                       />
                     </div>
                   );

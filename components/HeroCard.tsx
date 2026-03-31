@@ -16,6 +16,7 @@ interface HeroCardProps {
   onEquipClick?: (heroId: string, slotIndex: number) => void;
   isMainSlot?: boolean;
   equipment?: Equipment[];
+  teamDefBonus?: number;
 }
 
 const HeroCard: React.FC<HeroCardProps> = ({ 
@@ -28,7 +29,8 @@ const HeroCard: React.FC<HeroCardProps> = ({
   onLongPress,
   onEquipClick,
   isMainSlot,
-  equipment
+  equipment,
+  teamDefBonus
 }) => {
   const [hasError, setHasError] = useState(false);
 
@@ -73,7 +75,9 @@ const HeroCard: React.FC<HeroCardProps> = ({
   const slotTypes = ['Pickaxe', 'Helmet', 'Boots'] as const;
 
   // Calculate Total Damage Reduction (Skill + Helmet)
-  const totalDamageReduction = calculateHeroDamageReduction(hero, equipment || [], 0);
+  const individualDamageReduction = calculateHeroDamageReduction(hero, equipment || [], 0);
+  const teamDef = teamDefBonus || 0;
+  const hasAnyDefense = individualDamageReduction !== 0 || teamDef !== 0;
 
   // Determine font size and padding based on name length more aggressively
   const getNameStyles = (name: string) => {
@@ -215,9 +219,17 @@ const HeroCard: React.FC<HeroCardProps> = ({
                     HP {hero.hp}
                  </span>
 
-                 {totalDamageReduction !== 0 ? (
-                    <span className={`text-[7px] font-bold px-1 py-0.5 rounded backdrop-blur-sm border whitespace-nowrap flex items-center ${totalDamageReduction > 0 ? 'text-indigo-200 bg-indigo-900/80 border-indigo-500/30' : 'text-rose-200 bg-rose-900/80 border-rose-500/30'}`}>
-                        <span className="mr-0.5">🛡️</span>{totalDamageReduction > 0 ? '+' : ''}{totalDamageReduction.toFixed(1)}%
+                 {hasAnyDefense ? (
+                    <span className={`text-[7px] font-bold px-1 py-0.5 rounded backdrop-blur-sm border whitespace-nowrap flex items-center ${individualDamageReduction > 0 || teamDef > 0 ? 'text-indigo-200 bg-indigo-900/80 border-indigo-500/30' : 'text-rose-200 bg-rose-900/80 border-rose-500/30'}`}>
+                        <span className="mr-0.5">🛡️</span>
+                        {individualDamageReduction !== 0 && (
+                          <span>{individualDamageReduction > 0 ? '+' : ''}{individualDamageReduction.toFixed(1)}%</span>
+                        )}
+                        {teamDef !== 0 && (
+                          <span className={`ml-0.5 ${teamDef > 0 ? 'text-amber-300' : 'text-rose-300'}`}>
+                            {teamDef > 0 ? '+' : ''}{teamDef.toFixed(1)}%
+                          </span>
+                        )}
                     </span>
                  ) : <span></span>}
               </div>

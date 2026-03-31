@@ -106,21 +106,7 @@ const TeamStatusModal: React.FC<TeamStatusModalProps> = ({ stats, onClose }) => 
                     </div>
                 </div>
 
-                {/* Defense Bonus */}
-                <div className="bg-slate-800/40 rounded-xl p-4 border border-slate-700/50">
-                    <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-lg bg-indigo-500/20 flex items-center justify-center text-2xl border border-indigo-500/30">
-                            🛡️
-                        </div>
-                        <div>
-                            <div className="text-[10px] text-indigo-400 font-bold uppercase tracking-wider">{t('party.team_defense')}</div>
-                            <div className="text-2xl font-black text-white">{stats.teamDefBonus >= 0 ? '+' : ''}{stats.teamDefBonus}%</div>
-                        </div>
-                    </div>
-                    <p className="text-[9px] text-slate-500 mt-2 pl-1">
-                        {t('party.team_defense_desc1')}<br/>{t('party.team_defense_desc2')}
-                    </p>
-                </div>
+
 
             </div>
         </div>

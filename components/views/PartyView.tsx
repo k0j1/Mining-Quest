@@ -332,21 +332,27 @@ const PartyView: React.FC<PartyViewProps> = ({
                     })}
                 </div>
 
-                <PartySlotGrid
-                    heroIds={currentPreset}
-                    heroes={gameState.heroes}
-                    activeQuestHeroIds={activeQuestHeroIds}
-                    selectedIndex={selectedSlotIndex}
-                    isPartyLocked={isPartyLocked}
-                    readOnly={false}
-                    showSlotLabels={true}
-                    onSlotClick={handleSlotClick}
-                    onRemoveClick={handleRemoveHero}
-                    onEquipClick={handleEquipClick}
-                    onLongPress={handleHeroLongPress} 
-                    equipment={gameState.equipment}
-                    className="grid grid-cols-3 gap-2"
-                />
+                <div className={`relative ${partyStats.teamDefBonus > 0 ? 'ring-2 ring-indigo-500/50 rounded-xl shadow-[0_0_15px_rgba(99,102,241,0.3)]' : ''}`}>
+                  {partyStats.teamDefBonus > 0 && (
+                    <div className="absolute -inset-1 bg-indigo-500/10 rounded-xl blur-sm z-0 animate-pulse pointer-events-none"></div>
+                  )}
+                  <PartySlotGrid
+                      heroIds={currentPreset}
+                      heroes={gameState.heroes}
+                      activeQuestHeroIds={activeQuestHeroIds}
+                      selectedIndex={selectedSlotIndex}
+                      isPartyLocked={isPartyLocked}
+                      readOnly={false}
+                      showSlotLabels={true}
+                      onSlotClick={handleSlotClick}
+                      onRemoveClick={handleRemoveHero}
+                      onEquipClick={handleEquipClick}
+                      onLongPress={handleHeroLongPress} 
+                      equipment={gameState.equipment}
+                      className="grid grid-cols-3 gap-2 relative z-10"
+                      teamDefBonus={partyStats.teamDefBonus}
+                  />
+                </div>
             </div>
 
             {/* Team Status Dashboard (Moved Below Party Grid) */}
