@@ -178,7 +178,7 @@ const StatusBoard: React.FC<StatusBoardProps> = ({
         farcasterUser={farcasterUser} onChainBalance={onChainBalance} onAccountClick={onAccountClick}
       />
 
-      {farcasterUser?.address && !hasClaimed && previewAssets && (
+      {farcasterUser?.address && !hasClaimed && previewAssets && onChainBalance !== null && (
         <div className="mx-4 mt-4 p-4 bg-gradient-to-r from-indigo-900/50 to-purple-900/50 rounded-2xl border border-indigo-500/50 shadow-lg flex items-center justify-between z-20 relative">
           <div>
             <h3 className="text-white font-bold text-sm">Welcome Reward!</h3>
