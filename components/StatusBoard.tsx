@@ -7,6 +7,7 @@ import PartySlotGrid from './PartySlotGrid';
 import { IS_TEST_MODE, APP_VERSION } from '../constants';
 import { calculatePartyStats } from '../utils/mechanics';
 import { useLanguage } from '../contexts/LanguageContext';
+import { useReward } from '../hooks/actions/useReward';
 
 interface StatusBoardProps {
   state: GameState;
@@ -26,6 +27,7 @@ interface StatusBoardProps {
   onNavigate?: (view: View) => void;
   isFrameAdded?: boolean;
   onAddApp?: () => void;
+  onClaimSuccess?: () => void;
 }
 
 const ADMIN_FIDS = [406233];
@@ -129,9 +131,37 @@ const QuestItem: React.FC<{
 };
 
 const StatusBoard: React.FC<StatusBoardProps> = ({ 
-  state, actionButtonLabel, onAction, title, view, isSoundOn, onToggleSound, onDebugAddTokens, farcasterUser, onChainBalance, onAccountClick, onShowLightpaper, onDebugCompleteQuest, onToggleDebug, onNavigate, isFrameAdded, onAddApp
+  state, actionButtonLabel, onAction, title, view, isSoundOn, onToggleSound, onDebugAddTokens, farcasterUser, onChainBalance, onAccountClick, onShowLightpaper, onDebugCompleteQuest, onToggleDebug, onNavigate, isFrameAdded, onAddApp, onClaimSuccess
 }) => {
   const { t } = useLanguage();
+  const { isClaiming, checkHasClaimed, claimReward } = useReward();
+  const [hasClaimed, setHasClaimed] = useState(true); // Default to true to prevent flicker
+
+  useEffect(() => {
+    if (farcasterUser?.address) {
+      checkHasClaimed(farcasterUser.address).then(claimed => {
+        setHasClaimed(claimed);
+      });
+    }
+  }, [farcasterUser?.address, checkHasClaimed]);
+
+  const handleClaim = async () => {
+    if (!farcasterUser?.address || !farcasterUser?.fid || isClaiming) return;
+    
+    const result = await claimReward(farcasterUser.address, farcasterUser.fid);
+    if (result.success && result.assets) {
+      setHasClaimed(true);
+      alert('Rewards claimed successfully! The page will now reload to update your assets.');
+      if (onClaimSuccess) {
+        onClaimSuccess();
+      } else {
+        window.location.reload();
+      }
+    } else {
+      alert('Failed to claim rewards: ' + ((result.error as Error)?.message || 'Unknown error'));
+    }
+  };
+
   const isAdmin = farcasterUser && ADMIN_FIDS.includes(farcasterUser.fid);
 
   return (
@@ -141,6 +171,24 @@ const StatusBoard: React.FC<StatusBoardProps> = ({
         title={title} tokens={state.tokens} isSoundOn={isSoundOn} onToggleSound={onToggleSound} onDebugAddTokens={onDebugAddTokens}
         farcasterUser={farcasterUser} onChainBalance={onChainBalance} onAccountClick={onAccountClick}
       />
+
+      {farcasterUser?.address && !hasClaimed && (
+        <div className="mx-4 mt-4 p-4 bg-gradient-to-r from-indigo-900/50 to-purple-900/50 rounded-2xl border border-indigo-500/50 shadow-lg flex items-center justify-between z-20 relative">
+          <div>
+            <h3 className="text-white font-bold text-sm">Welcome Reward!</h3>
+            <p className="text-indigo-200 text-xs">Claim your free heroes, equipment, and items.</p>
+          </div>
+          <button
+            onClick={handleClaim}
+            disabled={isClaiming}
+            className={`px-4 py-2 rounded-xl font-bold text-sm shadow-md transition-all ${
+              isClaiming ? 'bg-slate-600 text-slate-400 cursor-not-allowed' : 'bg-indigo-500 text-white hover:bg-indigo-400 active:scale-95'
+            }`}
+          >
+            {isClaiming ? 'Claiming...' : 'Claim'}
+          </button>
+        </div>
+      )}
 
       <div className="flex-1 overflow-y-auto pb-6 custom-scrollbar bg-transparent relative z-10">
         <div className="px-5 pt-5 mb-8">

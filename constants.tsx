@@ -6,9 +6,10 @@ import { getHeroImageUrl } from './utils/heroUtils';
 
 // Toggle this to show/hide "TEST MODE" overlay on banners
 export const IS_TEST_MODE = true;
+export const IS_MAINTENANCE_MODE = true;
 
 // App Version
-export const APP_VERSION = '0.3.09';
+export const APP_VERSION = '0.3.11';
 
 // Item Shop Contract (Base Sepolia / Base Mainnet)
 export const ITEM_SHOP_CONTRACT_ADDRESS = "0xB0748f58befa009A42306c91E01ED9DD3378eb01"; // TODO: Replace with actual deployed address
@@ -16,6 +17,7 @@ export const QUEST_MANAGER_CONTRACT_ADDRESS = "0xDdE103F5bbf19f0F5d177BE983C76e2
 export const QUEST_TREASURY_CONTRACT_ADDRESS = "0x5F07A1992Cb9A652b262dead336E4202349B77F5";
 export const GACHA_PAYMENT_CONTRACT_ADDRESS = "0xaDe81D78B1380b3153BBC1c16116b890FcE41d00";
 export const CHH_CONTRACT_ADDRESS = '0xb0525542E3D818460546332e76E511562dFf9B07';
+export const REWARD_MANAGER_CONTRACT_ADDRESS = "0x86ee7fDf9902119F4fc7a812d0C5F83FB95481e4";
 
 // Equipment Stats Configuration
 export const EQUIPMENT_STATS = {

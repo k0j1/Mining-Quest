@@ -16,6 +16,7 @@ import { useGameLogic } from './hooks/useGameLogic';
 import { sdk } from '@farcaster/frame-sdk';
 import { supabase, isSupabaseConfigured } from './lib/supabase';
 import { useLanguage } from './contexts/LanguageContext';
+import { IS_TEST_MODE, APP_VERSION, IS_MAINTENANCE_MODE } from './constants';
 import gsap from 'gsap';
 
 import TransactionResult from './components/TransactionResult';
@@ -323,6 +324,7 @@ const App: React.FC = () => {
             onNavigate={(view) => setCurrentView(view)} 
             isFrameAdded={isFrameAdded}
             onAddApp={addFrame}
+            onClaimSuccess={() => window.location.reload()}
             {...commonProps} 
           />
         );
@@ -349,7 +351,10 @@ const App: React.FC = () => {
   }
 
   // 2. Maintenance / Blocked / Test
-  if (isMaintenance || isBlocked || isMaintenanceTest) {
+  const isAdmin = farcasterUser && ADMIN_FIDS.includes(farcasterUser.fid);
+  const showMaintenance = (isMaintenance || isBlocked || isMaintenanceTest || IS_MAINTENANCE_MODE) && !isAdmin;
+
+  if (showMaintenance) {
     return (
       <MaintenanceScreen 
         isBlocked={isBlocked}

@@ -3,13 +3,20 @@ import { createPublicClient, createWalletClient, custom, http, parseAbi, formatU
 import { base } from 'viem/chains';
 import { sdk } from '@farcaster/frame-sdk';
 import { playClick, playConfirm, playError } from '../utils/sound';
-import { ITEM_SHOP_CONTRACT_ADDRESS, QUEST_TREASURY_CONTRACT_ADDRESS, QUEST_MANAGER_CONTRACT_ADDRESS, GACHA_PAYMENT_CONTRACT_ADDRESS } from '../constants';
+import { ITEM_SHOP_CONTRACT_ADDRESS, QUEST_TREASURY_CONTRACT_ADDRESS, QUEST_MANAGER_CONTRACT_ADDRESS, GACHA_PAYMENT_CONTRACT_ADDRESS, REWARD_MANAGER_CONTRACT_ADDRESS } from '../constants';
 import { THEME, themeClass } from '../theme';
 import TransactionResult from './TransactionResult';
 
 // Constants
 const REWARD_CONTRACT_ADDRESS = "0x193708bB0AC212E59fc44d6D6F3507F25Bc97fd4" as `0x${string}`;
+const REWARD_MANAGER_ADDRESS = REWARD_MANAGER_CONTRACT_ADDRESS as `0x${string}`;
 const CHH_TOKEN_ADDRESS = "0xb0525542E3D818460546332e76E511562dFf9B07" as `0x${string}`;
+
+const REWARD_MANAGER_ABI = parseAbi([
+  'function setKoharuAddress(address _koharu) external',
+  'function setTestUsers(address[] calldata _users, bool _status) external',
+  'function getUserAssets(address _user) view returns ((uint256 chhBalance, uint256 heroCommon, uint256 heroUncommon, uint256 heroRare, uint256 equipCommon, uint256 equipUncommon, uint256 equipRare, uint256 itemPotion, uint256 itemElixir, uint256 itemWhetstone))'
+]);
 
 const TOKEN_ABI = parseAbi([
   'function balanceOf(address owner) view returns (uint256)',
@@ -49,6 +56,55 @@ const AdminContractPanel: React.FC = () => {
   const [questTreasuryHistory, setQuestTreasuryHistory] = useState<Transaction[]>([]);
   const [rewardPoolHistory, setRewardPoolHistory] = useState<Transaction[]>([]);
   const [isFetchingHistory, setIsFetchingHistory] = useState(false);
+
+  const [koharuAddress, setKoharuAddress] = useState('');
+  const [testUsers, setTestUsers] = useState('');
+  const [targetUser, setTargetUser] = useState('');
+  const [userAssets, setUserAssets] = useState<any>(null);
+
+  const executeRewardManagerAction = async (functionName: 'setKoharuAddress' | 'setTestUsers' | 'getUserAssets', args: any[]) => {
+    setIsLoading(true);
+    setStatusMsg(`Executing ${functionName}...`);
+    try {
+      if (!sdk.wallet.ethProvider) throw new Error('Wallet not connected');
+      const walletClient = createWalletClient({ chain: base, transport: custom(sdk.wallet.ethProvider) });
+      const [account] = await walletClient.requestAddresses();
+      
+      if (functionName === 'getUserAssets') {
+        const assets = await publicClient.readContract({
+          address: REWARD_MANAGER_ADDRESS,
+          abi: REWARD_MANAGER_ABI,
+          functionName,
+          args: [args[0] as `0x${string}`]
+        });
+        setUserAssets(assets);
+        setStatusMsg(`Fetched assets for ${args[0]}`);
+      } else if (functionName === 'setKoharuAddress') {
+        const hash = await walletClient.writeContract({
+          account,
+          address: REWARD_MANAGER_ADDRESS,
+          abi: REWARD_MANAGER_ABI,
+          functionName,
+          args: [args[0] as `0x${string}`]
+        });
+        setStatusMsg(`Transaction sent: ${hash}`);
+      } else if (functionName === 'setTestUsers') {
+        const hash = await walletClient.writeContract({
+          account,
+          address: REWARD_MANAGER_ADDRESS,
+          abi: REWARD_MANAGER_ABI,
+          functionName,
+          args: [args[0] as `0x${string}`[], args[1] as boolean]
+        });
+        setStatusMsg(`Transaction sent: ${hash}`);
+      }
+    } catch (e: any) {
+      console.error(e);
+      setStatusMsg(`Error: ${e.message}`);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const publicClient = createPublicClient({
     chain: base,
@@ -671,6 +727,36 @@ const AdminContractPanel: React.FC = () => {
              </button>
              {statusMsg && !isLoading && <p className="text-center text-xs text-rose-400 mt-2">{statusMsg}</p>}
           </div>
+        </div>
+
+        {/* Action Card: Reward Manager */}
+        <div className="bg-slate-900 border border-purple-900/30 rounded-2xl p-6 shadow-lg col-span-full">
+          <h3 className="text-sm font-bold text-purple-500 uppercase tracking-widest mb-4 border-b border-slate-800 pb-2 flex items-center gap-2">
+            <span>🎁</span> Reward Manager ({REWARD_MANAGER_ADDRESS})
+          </h3>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="bg-purple-950/10 p-4 rounded-xl border border-purple-500/20">
+              <label className="text-[10px] text-slate-500 font-bold block mb-1">Set Koharu Address</label>
+              <input type="text" value={koharuAddress} onChange={(e) => setKoharuAddress(e.target.value)} className="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-sm text-white mb-2" placeholder="0x..." />
+              <button onClick={() => executeRewardManagerAction('setKoharuAddress', [koharuAddress])} className="w-full py-2 bg-purple-600 hover:bg-purple-500 text-white rounded-lg font-bold text-xs">Set</button>
+            </div>
+            <div className="bg-purple-950/10 p-4 rounded-xl border border-purple-500/20">
+              <label className="text-[10px] text-slate-500 font-bold block mb-1">Set Test Users (Comma separated)</label>
+              <input type="text" value={testUsers} onChange={(e) => setTestUsers(e.target.value)} className="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-sm text-white mb-2" placeholder="0x...,0x..." />
+              <button onClick={() => executeRewardManagerAction('setTestUsers', [testUsers.split(','), true])} className="w-full py-2 bg-purple-600 hover:bg-purple-500 text-white rounded-lg font-bold text-xs">Set</button>
+            </div>
+            <div className="bg-purple-950/10 p-4 rounded-xl border border-purple-500/20">
+              <label className="text-[10px] text-slate-500 font-bold block mb-1">Get User Assets</label>
+              <input type="text" value={targetUser} onChange={(e) => setTargetUser(e.target.value)} className="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-sm text-white mb-2" placeholder="0x..." />
+              <button onClick={() => executeRewardManagerAction('getUserAssets', [targetUser])} className="w-full py-2 bg-purple-600 hover:bg-purple-500 text-white rounded-lg font-bold text-xs">Get</button>
+            </div>
+          </div>
+          {userAssets && (
+            <div className="mt-4 p-4 bg-slate-950 rounded-xl text-[10px] text-slate-300 font-mono">
+              <pre>{JSON.stringify(userAssets, null, 2)}</pre>
+            </div>
+          )}
+          <div className="mt-4 text-xs text-slate-400 font-bold">{statusMsg}</div>
         </div>
 
       </div>
