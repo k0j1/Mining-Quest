@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { GameState, View, QuestConfig } from '../types';
 import { playClick } from '../utils/sound';
 import Header from './Header';
@@ -140,10 +140,16 @@ const StatusBoard: React.FC<StatusBoardProps> = ({
   const [showPreview, setShowPreview] = useState(false);
   const [isPreviewing, setIsPreviewing] = useState(false);
 
+  const hasCheckedClaim = useRef(false);
+
   useEffect(() => {
-    if (farcasterUser?.address) {
+    if (farcasterUser?.address && !hasCheckedClaim.current) {
+      hasCheckedClaim.current = true;
+      console.log('Starting claim status check in 3 seconds...');
       const timer = setTimeout(() => {
+        console.log('Checking claim status...');
         checkGetClaimStatus(farcasterUser.address!).then(status => {
+          console.log('Claim status:', status);
           setCanClaim(status);
         });
       }, 3000);
