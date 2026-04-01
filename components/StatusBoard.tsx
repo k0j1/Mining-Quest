@@ -28,7 +28,7 @@ interface StatusBoardProps {
   onNavigate?: (view: View) => void;
   isFrameAdded?: boolean;
   onAddApp?: () => void;
-  onClaimSuccess?: (generatedItems?: any[]) => void;
+  onClaimSuccess?: (result: { generatedItems: any[], assets: any }) => void;
 }
 
 const ADMIN_FIDS = [406233];
@@ -201,7 +201,7 @@ const StatusBoard: React.FC<StatusBoardProps> = ({
       setCanClaim(false);
       setShowPreview(false);
       if (onClaimSuccess) {
-        onClaimSuccess(result.generatedItems);
+        onClaimSuccess({ generatedItems: result.generatedItems || [], assets: result.assets });
       } else {
         alert('Rewards claimed successfully! The page will now reload to update your assets.');
         window.location.reload();

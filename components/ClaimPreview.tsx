@@ -6,9 +6,10 @@ interface ClaimPreviewProps {
   onClaim?: () => void;
   isClaiming?: boolean;
   onCancel?: () => void;
+  onClose?: () => void;
 }
 
-const ClaimPreview: React.FC<ClaimPreviewProps> = ({ assets, title = "Claim Your Rewards Preview", onClaim, isClaiming, onCancel }) => {
+const ClaimPreview: React.FC<ClaimPreviewProps> = ({ assets, title = "Claim Your Rewards Preview", onClaim, isClaiming, onCancel, onClose }) => {
   if (!assets) return null;
 
   const chhBalance = Number(assets.chhBalance || assets[0] || 0);
@@ -134,6 +135,15 @@ const ClaimPreview: React.FC<ClaimPreviewProps> = ({ assets, title = "Claim Your
             )}
           </button>
         </div>
+      )}
+      
+      {onClose && (
+        <button 
+          onClick={onClose}
+          className="w-full py-3 mt-2 rounded-xl font-bold text-sm shadow-md transition-all flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white active:scale-95"
+        >
+          Close
+        </button>
       )}
     </div>
   );

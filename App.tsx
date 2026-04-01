@@ -6,6 +6,7 @@ import MiningBackground from './components/MiningBackground';
 import ResultModal from './components/ResultModal';
 import AccountModal from './components/AccountModal';
 import BottomNav from './components/BottomNav';
+import ClaimPreview from './components/ClaimPreview';
 import Notification from './components/Notification';
 import DebugConsole from './components/DebugConsole'; 
 import EnvSetup from './components/EnvSetup'; 
@@ -49,6 +50,7 @@ const App: React.FC = () => {
   const [isMaintenanceTest, setIsMaintenanceTest] = useState(false); 
   const [isConnectionChecked, setIsConnectionChecked] = useState(false);
   const [showTestWarning, setShowTestWarning] = useState(true);
+  const [claimResultData, setClaimResultData] = useState<{ assets: any, generatedItems: any[] } | null>(null);
 
   // GSAP Ref for view transitions
   const contentRef = useRef<HTMLDivElement>(null);
@@ -323,12 +325,11 @@ const App: React.FC = () => {
             onNavigate={(view) => setCurrentView(view)} 
             isFrameAdded={isFrameAdded}
             onAddApp={addFrame}
-            onClaimSuccess={(generatedItems) => {
-              if (generatedItems && generatedItems.length > 0) {
-                ui.setGachaResult({ type: 'Mixed', data: generatedItems });
-              } else {
-                window.location.reload();
+            onClaimSuccess={(result) => {
+              if (result.generatedItems && result.generatedItems.length > 0) {
+                ui.setGachaResult({ type: 'Mixed', data: result.generatedItems });
               }
+              setClaimResultData(result);
             }}
             {...commonProps} 
           />
@@ -458,11 +459,27 @@ const App: React.FC = () => {
              playClick(); 
              const wasMixed = ui.gachaResult?.type === 'Mixed';
              ui.setGachaResult(null); 
-             if (wasMixed) {
+             if (wasMixed && !claimResultData) {
                window.location.reload();
              }
            }} 
         />
+      )}
+
+      {/* Claim Result Summary */}
+      {claimResultData && !ui.gachaResult && (
+        <div className="fixed inset-0 z-[1400] flex items-center justify-center bg-slate-950/80 backdrop-blur-sm p-4">
+          <div className="w-full max-w-md">
+            <ClaimPreview 
+              assets={claimResultData.assets} 
+              title="Claimed Rewards" 
+              onClose={() => {
+                setClaimResultData(null);
+                window.location.reload();
+              }}
+            />
+          </div>
+        </div>
       )}
 
       {showAccountModal && (
