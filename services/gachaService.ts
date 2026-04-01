@@ -8,7 +8,8 @@ import { getHeroImageUrl } from "../utils/heroUtils";
 export const HERO_RATES = { C: 50, UC: 32, R: 16, E: 1.9, L: 0.1 };
 export const EQUIPMENT_RATES = { C: 50, UC: 32, R: 16, E: 1.9, L: 0.1 };
 
-const determineRarity = (type: 'Hero' | 'Equipment', minRarity: QuestRank = 'C'): QuestRank => {
+const determineRarity = (type: 'Hero' | 'Equipment', minRarity: QuestRank = 'C', exact: boolean = false): QuestRank => {
+  if (exact) return minRarity;
   const rand = Math.random() * 100;
   
   // If minRarity is 'R', we only roll for R, E, L (Guaranteed Pull)
@@ -26,7 +27,7 @@ const determineRarity = (type: 'Hero' | 'Equipment', minRarity: QuestRank = 'C')
   return 'L';
 };
 
-export const rollGachaItem = async (type: 'Hero' | 'Equipment', forceRarity?: QuestRank, fid?: number) => {
+export const rollGachaItem = async (type: 'Hero' | 'Equipment', forceRarity?: QuestRank, fid?: number, exactRarity: boolean = false) => {
   
   // ---------------------------------------------------------
   // HERO LOGIC (DB RPC Priority)
@@ -73,7 +74,7 @@ export const rollGachaItem = async (type: 'Hero' | 'Equipment', forceRarity?: Qu
     }
 
     // --- FALLBACK: Local Logic (No FID) ---
-    const targetRarity = forceRarity || determineRarity(type);
+    const targetRarity = exactRarity ? (forceRarity || 'C') : (forceRarity || determineRarity(type));
     
     const { data, error } = await supabase
       .from('quest_hero')
@@ -136,7 +137,7 @@ export const rollGachaItem = async (type: 'Hero' | 'Equipment', forceRarity?: Qu
     }
 
     // --- FALLBACK: Local Logic ---
-    const targetRarity = forceRarity || determineRarity(type);
+    const targetRarity = exactRarity ? (forceRarity || 'C') : (forceRarity || determineRarity(type));
     const { data, error } = await supabase
       .from('quest_equipment')
       .select('*')

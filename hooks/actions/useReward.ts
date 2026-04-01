@@ -151,7 +151,7 @@ export const useReward = () => {
       const heroPromises: Promise<any>[] = [];
       const addHeroes = (count: number, rarity: string) => {
         for (let i = 0; i < count; i++) {
-          heroPromises.push(rollGachaItem('Hero', rarity as any, fid));
+          heroPromises.push(rollGachaItem('Hero', rarity as any, fid, true));
         }
       };
       
@@ -165,7 +165,7 @@ export const useReward = () => {
       const equipPromises: Promise<any>[] = [];
       const addEquips = (count: number, rarity: string) => {
         for (let i = 0; i < count; i++) {
-          equipPromises.push(rollGachaItem('Equipment', rarity as any, fid));
+          equipPromises.push(rollGachaItem('Equipment', rarity as any, fid, true));
         }
       };
       
