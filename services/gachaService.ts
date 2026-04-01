@@ -55,6 +55,7 @@ export const rollGachaItem = async (type: 'Hero' | 'Equipment', forceRarity?: Qu
         const drMap: Record<string, number> = { C: 2, UC: 5, R: 10, E: 15, L: 20 };
 
         return {
+            type: 'Hero',
             id: (result.res_id || result.id || result.player_hid)?.toString(),
             name: result.name,
             species: result.species,
@@ -86,6 +87,7 @@ export const rollGachaItem = async (type: 'Hero' | 'Equipment', forceRarity?: Qu
     const drMap: Record<string, number> = { C: 2, UC: 5, R: 10, E: 15, L: 20 };
 
     return {
+      type: 'Hero',
       name: selectedHero.name,
       species: selectedHero.species,
       rarity: selectedHero.rarity,
@@ -123,9 +125,10 @@ export const rollGachaItem = async (type: 'Hero' | 'Equipment', forceRarity?: Qu
         const result = data[0];
 
         return { 
+            type: 'Equipment',
             id: (result.res_id || result.id || result.player_eid)?.toString(),
             name: result.name, 
-            type: result.type, 
+            equipmentType: result.type, // type is reserved for Hero/Equipment
             rarity: result.rarity, 
             bonus: result.bonus,
             isPersisted: true
@@ -145,8 +148,9 @@ export const rollGachaItem = async (type: 'Hero' | 'Equipment', forceRarity?: Qu
     const selectedEquip = data[Math.floor(Math.random() * data.length)];
 
     return { 
+      type: 'Equipment',
       name: selectedEquip.name, 
-      type: selectedEquip.type, 
+      equipmentType: selectedEquip.type, 
       rarity: selectedEquip.rarity, 
       bonus: selectedEquip.bonus,
       isPersisted: false
