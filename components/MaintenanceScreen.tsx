@@ -22,13 +22,8 @@ const MaintenanceScreen: React.FC<MaintenanceScreenProps> = ({
     <div className="fixed inset-0 flex flex-col items-center justify-center bg-slate-950 text-white p-8 text-center z-[9999]">
        <MiningBackground />
        
-       {isTestMode && (
-         <div className="absolute top-0 left-0 w-full bg-rose-600 text-white text-xs font-bold py-1 px-2 text-center z-50 shadow-md">
-           ⚠️ MAINTENANCE PREVIEW MODE ⚠️
-         </div>
-       )}
 
-       <div className="relative z-10 flex flex-col items-center">
+        <div className="relative z-10 flex flex-col items-center">
           <div className="text-6xl mb-6 animate-bounce">
               🚧
           </div>
@@ -51,23 +46,13 @@ const MaintenanceScreen: React.FC<MaintenanceScreenProps> = ({
           
           {!isBlocked && (
             <div className="flex flex-col gap-4 w-full max-w-xs">
-              {/* Test Mode: Close Button */}
-              {isTestMode ? (
-                <button 
-                  onClick={onCloseTest}
-                  className="w-full px-8 py-3 bg-emerald-600 hover:bg-emerald-500 rounded-full font-bold text-white transition-all active:scale-95 shadow-lg border border-emerald-500/50 flex items-center justify-center gap-2"
-                >
-                  <span>✅</span> End Test and Return
-                </button>
-              ) : (
-                /* Real Mode: Retry Button */
-                <button 
-                  onClick={onReload}
-                  className="w-full px-8 py-3 bg-indigo-600 hover:bg-indigo-500 rounded-full font-bold text-white transition-all active:scale-95 shadow-lg border border-indigo-500/50 flex items-center justify-center gap-2"
-                >
-                  <span>🔄</span> Retry Connection
-                </button>
-              )}
+              {/* Retry Button */}
+              <button 
+                onClick={onReload}
+                className="w-full px-8 py-3 bg-indigo-600 hover:bg-indigo-500 rounded-full font-bold text-white transition-all active:scale-95 shadow-lg border border-indigo-500/50 flex items-center justify-center gap-2"
+              >
+                <span>🔄</span> Retry Connection
+              </button>
             </div>
           )}
        </div>
