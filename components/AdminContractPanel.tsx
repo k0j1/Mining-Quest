@@ -773,11 +773,11 @@ const AdminContractPanel: React.FC = () => {
               <button onClick={() => executeRewardManagerAction('setKoharuAddress', [koharuAddress])} className="w-full py-2 bg-purple-600 hover:bg-purple-500 text-white rounded-lg font-bold text-xs">Set</button>
             </div>
             <div className="bg-purple-950/10 p-4 rounded-xl border border-purple-500/20">
-              <label className="text-[10px] text-slate-500 font-bold block mb-1">Manage Test Users</label>
-              <input type="text" value={testUsers} onChange={(e) => setTestUsers(e.target.value)} className="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-sm text-white mb-2" placeholder="0x..." />
+              <label className="text-[10px] text-slate-500 font-bold block mb-1">Manage Test Users (comma separated)</label>
+              <input type="text" value={testUsers} onChange={(e) => setTestUsers(e.target.value)} className="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-sm text-white mb-2" placeholder="0x..., 0x..." />
               <div className="flex gap-2">
-                <button onClick={() => executeRewardManagerAction('setTestUsers', [testUsers.split(','), true])} className="flex-1 py-2 bg-purple-600 hover:bg-purple-500 text-white rounded-lg font-bold text-xs">Add</button>
-                <button onClick={() => executeRewardManagerAction('setTestUsers', [testUsers.split(','), false])} className="flex-1 py-2 bg-rose-600 hover:bg-rose-500 text-white rounded-lg font-bold text-xs">Remove</button>
+                <button onClick={() => executeRewardManagerAction('setTestUsers', [testUsers.split(',').map(u => u.trim()), true])} className="flex-1 py-2 bg-purple-600 hover:bg-purple-500 text-white rounded-lg font-bold text-xs">Add</button>
+                <button onClick={() => executeRewardManagerAction('setTestUsers', [testUsers.split(',').map(u => u.trim()), false])} className="flex-1 py-2 bg-rose-600 hover:bg-rose-500 text-white rounded-lg font-bold text-xs">Remove</button>
               </div>
             </div>
             <div className="bg-purple-950/10 p-4 rounded-xl border border-purple-500/20">
