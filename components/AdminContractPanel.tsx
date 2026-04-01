@@ -13,13 +13,14 @@ const REWARD_MANAGER_ADDRESS = REWARD_MANAGER_CONTRACT_ADDRESS as `0x${string}`;
 const CHH_TOKEN_ADDRESS = "0xb0525542E3D818460546332e76E511562dFf9B07" as `0x${string}`;
 
 const REWARD_MANAGER_ABI = parseAbi([
+  'struct UserAssets { uint256 chhBalance; uint256 heroCommon; uint256 heroUncommon; uint256 heroRare; uint256 equipCommon; uint256 equipUncommon; uint256 equipRare; uint256 itemPotion; uint256 itemElixir; uint256 itemWhetstone; }',
   'function setKoharuAddress(address _koharu) external',
   'function setTestUsers(address[] calldata _users, bool _status) external',
   'function setClaimStatus(address _user, bool _status) external',
   'function koharuAddress() view returns (address)',
   'function checkIsTestUser(address _user) view returns (bool)',
   'function getClaimStatus(address _user) view returns (bool)',
-  'function previewClaimAmount(address _user) view returns (tuple(uint256 chhBalance, uint256 heroCommon, uint256 heroUncommon, uint256 heroRare, uint256 equipCommon, uint256 equipUncommon, uint256 equipRare, uint256 itemPotion, uint256 itemElixir, uint256 itemWhetstone))'
+  'function previewClaimAmount(address _user) view returns (UserAssets)'
 ]);
 
 const TOKEN_ABI = parseAbi([
