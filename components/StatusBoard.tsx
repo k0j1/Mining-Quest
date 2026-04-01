@@ -142,9 +142,13 @@ const StatusBoard: React.FC<StatusBoardProps> = ({
 
   useEffect(() => {
     if (farcasterUser?.address) {
-      checkGetClaimStatus(farcasterUser.address).then(status => {
-        setCanClaim(status);
-      });
+      const timer = setTimeout(() => {
+        checkGetClaimStatus(farcasterUser.address!).then(status => {
+          setCanClaim(status);
+        });
+      }, 3000);
+      
+      return () => clearTimeout(timer);
     }
   }, [farcasterUser?.address, checkGetClaimStatus]);
 
