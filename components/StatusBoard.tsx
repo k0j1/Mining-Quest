@@ -142,29 +142,41 @@ const StatusBoard: React.FC<StatusBoardProps> = ({
 
   const hasCheckedClaim = useRef(false);
   const lastAddress = useRef<string | null>(null);
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     if (farcasterUser?.address) {
       if (lastAddress.current !== farcasterUser.address) {
         hasCheckedClaim.current = false;
         lastAddress.current = farcasterUser.address;
+        if (timerRef.current) {
+          clearTimeout(timerRef.current);
+          timerRef.current = null;
+        }
       }
       
-      if (!hasCheckedClaim.current) {
-        hasCheckedClaim.current = true;
+      if (!hasCheckedClaim.current && !timerRef.current) {
         console.log('Starting claim status check in 3 seconds...');
-        const timer = setTimeout(() => {
+        timerRef.current = setTimeout(() => {
           console.log('Checking claim status...');
           checkGetClaimStatus(farcasterUser.address!).then(status => {
             console.log('Claim status:', status);
             setCanClaim(status);
+            hasCheckedClaim.current = true;
+            timerRef.current = null;
           });
         }, 3000);
-        
-        return () => clearTimeout(timer);
       }
     }
   }, [farcasterUser?.address, checkGetClaimStatus]);
+
+  useEffect(() => {
+    return () => {
+      if (timerRef.current) {
+        clearTimeout(timerRef.current);
+      }
+    };
+  }, []);
 
   const handlePreviewClick = async () => {
     if (!farcasterUser?.address) return;
