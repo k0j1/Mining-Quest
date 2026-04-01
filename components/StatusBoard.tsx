@@ -161,7 +161,7 @@ const StatusBoard: React.FC<StatusBoardProps> = ({
           console.log('Checking claim status...');
           checkGetClaimStatus(farcasterUser.address!).then(status => {
             console.log('Claim status:', status);
-            setCanClaim(status);
+            setCanClaim(!status);
             hasCheckedClaim.current = true;
             timerRef.current = null;
           });
