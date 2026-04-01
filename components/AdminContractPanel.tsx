@@ -15,9 +15,11 @@ const CHH_TOKEN_ADDRESS = "0xb0525542E3D818460546332e76E511562dFf9B07" as `0x${s
 const REWARD_MANAGER_ABI = parseAbi([
   'function setKoharuAddress(address _koharu) external',
   'function setTestUsers(address[] calldata _users, bool _status) external',
+  'function setClaimStatus(address _user, bool _status) external',
   'function koharuAddress() view returns (address)',
   'function checkIsTestUser(address _user) view returns (bool)',
-  'function getClaimStatus(address _user) view returns (bool)'
+  'function getClaimStatus(address _user) view returns (bool)',
+  'function previewClaimAmount(address _user) view returns (tuple(uint256 chhBalance, uint256 heroCommon, uint256 heroUncommon, uint256 heroRare, uint256 equipCommon, uint256 equipUncommon, uint256 equipRare, uint256 itemPotion, uint256 itemElixir, uint256 itemWhetstone))'
 ]);
 
 const TOKEN_ABI = parseAbi([
@@ -63,8 +65,9 @@ const AdminContractPanel: React.FC = () => {
   const [testUsers, setTestUsers] = useState('');
   const [targetUser, setTargetUser] = useState('');
   const [targetUserStatus, setTargetUserStatus] = useState<any>(null);
+  const [targetUserPreview, setTargetUserPreview] = useState<any>(null);
 
-  const executeRewardManagerAction = async (functionName: 'setKoharuAddress' | 'setTestUsers' | 'checkStatus', args: any[]) => {
+  const executeRewardManagerAction = async (functionName: 'setKoharuAddress' | 'setTestUsers' | 'checkStatus' | 'setClaimStatus' | 'previewClaimAmount', args: any[]) => {
     setIsLoading(true);
     setStatusMsg(`Executing ${functionName}...`);
     try {
@@ -89,6 +92,15 @@ const AdminContractPanel: React.FC = () => {
         ]);
         setTargetUserStatus({ isTest, isClaimed });
         setStatusMsg(`Fetched status for ${args[0]}`);
+      } else if (functionName === 'previewClaimAmount') {
+        const preview = await publicClient.readContract({
+            address: REWARD_MANAGER_ADDRESS,
+            abi: REWARD_MANAGER_ABI,
+            functionName: 'previewClaimAmount',
+            args: [args[0] as `0x${string}`]
+        });
+        setTargetUserPreview(preview);
+        setStatusMsg(`Fetched preview for ${args[0]}`);
       } else if (functionName === 'setKoharuAddress') {
         const hash = await walletClient.writeContract({
           account,
@@ -105,6 +117,15 @@ const AdminContractPanel: React.FC = () => {
           abi: REWARD_MANAGER_ABI,
           functionName,
           args: [args[0] as `0x${string}`[], args[1] as boolean]
+        });
+        setStatusMsg(`Transaction sent: ${hash}`);
+      } else if (functionName === 'setClaimStatus') {
+        const hash = await walletClient.writeContract({
+          account,
+          address: REWARD_MANAGER_ADDRESS,
+          abi: REWARD_MANAGER_ABI,
+          functionName,
+          args: [args[0] as `0x${string}`, args[1] as boolean]
         });
         setStatusMsg(`Transaction sent: ${hash}`);
       }
@@ -744,27 +765,124 @@ const AdminContractPanel: React.FC = () => {
           <h3 className="text-sm font-bold text-purple-500 uppercase tracking-widest mb-4 border-b border-slate-800 pb-2 flex items-center gap-2">
             <span>🎁</span> Reward Manager ({REWARD_MANAGER_ADDRESS})
           </h3>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div className="bg-purple-950/10 p-4 rounded-xl border border-purple-500/20">
               <label className="text-[10px] text-slate-500 font-bold block mb-1">Set Koharu Address</label>
               <input type="text" value={koharuAddress} onChange={(e) => setKoharuAddress(e.target.value)} className="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-sm text-white mb-2" placeholder="0x..." />
               <button onClick={() => executeRewardManagerAction('setKoharuAddress', [koharuAddress])} className="w-full py-2 bg-purple-600 hover:bg-purple-500 text-white rounded-lg font-bold text-xs">Set</button>
             </div>
             <div className="bg-purple-950/10 p-4 rounded-xl border border-purple-500/20">
-              <label className="text-[10px] text-slate-500 font-bold block mb-1">Set Test Users (Comma separated)</label>
-              <input type="text" value={testUsers} onChange={(e) => setTestUsers(e.target.value)} className="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-sm text-white mb-2" placeholder="0x...,0x..." />
-              <button onClick={() => executeRewardManagerAction('setTestUsers', [testUsers.split(','), true])} className="w-full py-2 bg-purple-600 hover:bg-purple-500 text-white rounded-lg font-bold text-xs">Set</button>
+              <label className="text-[10px] text-slate-500 font-bold block mb-1">Manage Test Users</label>
+              <input type="text" value={testUsers} onChange={(e) => setTestUsers(e.target.value)} className="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-sm text-white mb-2" placeholder="0x..." />
+              <div className="flex gap-2">
+                <button onClick={() => executeRewardManagerAction('setTestUsers', [testUsers.split(','), true])} className="flex-1 py-2 bg-purple-600 hover:bg-purple-500 text-white rounded-lg font-bold text-xs">Add</button>
+                <button onClick={() => executeRewardManagerAction('setTestUsers', [testUsers.split(','), false])} className="flex-1 py-2 bg-rose-600 hover:bg-rose-500 text-white rounded-lg font-bold text-xs">Remove</button>
+              </div>
             </div>
             <div className="bg-purple-950/10 p-4 rounded-xl border border-purple-500/20">
-              <label className="text-[10px] text-slate-500 font-bold block mb-1">Check User Status</label>
+              <label className="text-[10px] text-slate-500 font-bold block mb-1">Manage Claim Status</label>
               <input type="text" value={targetUser} onChange={(e) => setTargetUser(e.target.value)} className="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-sm text-white mb-2" placeholder="0x..." />
-              <button onClick={() => executeRewardManagerAction('checkStatus', [targetUser])} className="w-full py-2 bg-purple-600 hover:bg-purple-500 text-white rounded-lg font-bold text-xs">Check</button>
+              <div className="flex gap-2">
+                <button onClick={() => executeRewardManagerAction('setClaimStatus', [targetUser, true])} className="flex-1 py-2 bg-purple-600 hover:bg-purple-500 text-white rounded-lg font-bold text-xs">Set Claimed</button>
+                <button onClick={() => executeRewardManagerAction('setClaimStatus', [targetUser, false])} className="flex-1 py-2 bg-rose-600 hover:bg-rose-500 text-white rounded-lg font-bold text-xs">Unset Claimed</button>
+              </div>
+            </div>
+            <div className="bg-purple-950/10 p-4 rounded-xl border border-purple-500/20">
+              <label className="text-[10px] text-slate-500 font-bold block mb-1">Check User Status & Preview</label>
+              <input type="text" value={targetUser} onChange={(e) => setTargetUser(e.target.value)} className="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-sm text-white mb-2" placeholder="0x..." />
+              <div className="flex gap-2">
+                <button onClick={() => executeRewardManagerAction('checkStatus', [targetUser])} className="flex-1 py-2 bg-purple-600 hover:bg-purple-500 text-white rounded-lg font-bold text-xs">Status</button>
+                <button onClick={() => executeRewardManagerAction('previewClaimAmount', [targetUser])} className="flex-1 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg font-bold text-xs">Preview</button>
+              </div>
             </div>
           </div>
           {targetUserStatus && (
             <div className="mt-4 p-4 bg-slate-950 rounded-xl text-[10px] text-slate-300 font-mono">
               <p>Is Test User: {targetUserStatus.isTest ? 'Yes' : 'No'}</p>
               <p>Has Claimed: {targetUserStatus.isClaimed ? 'Yes' : 'No'}</p>
+            </div>
+          )}
+          {targetUserPreview && (
+            <div className="mt-4 p-4 bg-gradient-to-r from-indigo-900/50 to-purple-900/50 rounded-2xl border border-indigo-500/50 shadow-lg z-20 relative">
+              <h3 className="text-white font-bold text-sm mb-2">Claim Your Rewards Preview</h3>
+              <div className="grid grid-cols-2 gap-2 mb-4 text-xs text-indigo-200">
+                <div className="bg-slate-800/50 p-2 rounded">
+                  <span className="block text-slate-400 mb-1">CHH Balance</span>
+                  <span className="font-bold text-white text-lg">{Math.round(Number(targetUserPreview.chhBalance || targetUserPreview[0] || 0) / 10**18)} <span className="text-xs text-indigo-300">CHH</span></span>
+                </div>
+
+                {(Number(targetUserPreview.heroCommon || targetUserPreview[1] || 0) > 0 || Number(targetUserPreview.heroUncommon || targetUserPreview[2] || 0) > 0 || Number(targetUserPreview.heroRare || targetUserPreview[3] || 0) > 0) && (
+                  <div className="bg-slate-800/50 p-2 rounded">
+                    <span className="block text-slate-400 mb-1">Heroes</span>
+                    <div className="flex flex-wrap gap-1">
+                      {Array.from({ length: Number(targetUserPreview.heroCommon || targetUserPreview[1] || 0) }).map((_, i) => (
+                        <div key={`hc-${i}`} className="w-8 h-10 rounded bg-slate-800 border border-slate-500 flex items-center justify-center shadow-sm">
+                          <span className="font-bold text-slate-300 text-[10px]">C</span>
+                        </div>
+                      ))}
+                      {Array.from({ length: Number(targetUserPreview.heroUncommon || targetUserPreview[2] || 0) }).map((_, i) => (
+                        <div key={`huc-${i}`} className="w-8 h-10 rounded bg-emerald-900/30 border border-emerald-500 flex items-center justify-center shadow-sm">
+                          <span className="font-bold text-emerald-400 text-[10px]">UC</span>
+                        </div>
+                      ))}
+                      {Array.from({ length: Number(targetUserPreview.heroRare || targetUserPreview[3] || 0) }).map((_, i) => (
+                        <div key={`hr-${i}`} className="w-8 h-10 rounded bg-blue-900/30 border border-blue-500 flex items-center justify-center shadow-sm">
+                          <span className="font-bold text-blue-400 text-[10px]">R</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {(Number(targetUserPreview.equipCommon || targetUserPreview[4] || 0) > 0 || Number(targetUserPreview.equipUncommon || targetUserPreview[5] || 0) > 0 || Number(targetUserPreview.equipRare || targetUserPreview[6] || 0) > 0) && (
+                  <div className="bg-slate-800/50 p-2 rounded">
+                    <span className="block text-slate-400 mb-1">Equipment</span>
+                    <div className="flex flex-wrap gap-1">
+                      {Array.from({ length: Number(targetUserPreview.equipCommon || targetUserPreview[4] || 0) }).map((_, i) => (
+                        <div key={`ec-${i}`} className="w-8 h-8 rounded bg-slate-800 border border-slate-500 flex items-center justify-center shadow-sm">
+                          <span className="font-bold text-slate-300 text-[10px]">C</span>
+                        </div>
+                      ))}
+                      {Array.from({ length: Number(targetUserPreview.equipUncommon || targetUserPreview[5] || 0) }).map((_, i) => (
+                        <div key={`euc-${i}`} className="w-8 h-8 rounded bg-emerald-900/30 border border-emerald-500 flex items-center justify-center shadow-sm">
+                          <span className="font-bold text-emerald-400 text-[10px]">UC</span>
+                        </div>
+                      ))}
+                      {Array.from({ length: Number(targetUserPreview.equipRare || targetUserPreview[6] || 0) }).map((_, i) => (
+                        <div key={`er-${i}`} className="w-8 h-8 rounded bg-blue-900/30 border border-blue-500 flex items-center justify-center shadow-sm">
+                          <span className="font-bold text-blue-400 text-[10px]">R</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {(Number(targetUserPreview.itemPotion || targetUserPreview[7] || 0) > 0 || Number(targetUserPreview.itemElixir || targetUserPreview[8] || 0) > 0 || Number(targetUserPreview.itemWhetstone || targetUserPreview[9] || 0) > 0) && (
+                  <div className="bg-slate-800/50 p-2 rounded">
+                    <span className="block text-slate-400 mb-1">Items</span>
+                    <div className="flex flex-col gap-1">
+                      {Number(targetUserPreview.itemPotion || targetUserPreview[7] || 0) > 0 && (
+                        <div className="flex items-center justify-between bg-slate-900/50 px-2 py-1 rounded">
+                          <span className="text-slate-300 text-[10px]">Potion</span>
+                          <span className="font-bold text-white text-xs">x{Number(targetUserPreview.itemPotion || targetUserPreview[7] || 0)}</span>
+                        </div>
+                      )}
+                      {Number(targetUserPreview.itemElixir || targetUserPreview[8] || 0) > 0 && (
+                        <div className="flex items-center justify-between bg-slate-900/50 px-2 py-1 rounded">
+                          <span className="text-slate-300 text-[10px]">Elixir</span>
+                          <span className="font-bold text-white text-xs">x{Number(targetUserPreview.itemElixir || targetUserPreview[8] || 0)}</span>
+                        </div>
+                      )}
+                      {Number(targetUserPreview.itemWhetstone || targetUserPreview[9] || 0) > 0 && (
+                        <div className="flex items-center justify-between bg-slate-900/50 px-2 py-1 rounded">
+                          <span className="text-slate-300 text-[10px]">Whetstone</span>
+                          <span className="font-bold text-white text-xs">x{Number(targetUserPreview.itemWhetstone || targetUserPreview[9] || 0)}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           )}
           <div className="mt-4 text-xs text-slate-400 font-bold">{statusMsg}</div>
