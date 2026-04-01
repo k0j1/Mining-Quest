@@ -19,6 +19,14 @@ const ClaimPreview: React.FC<ClaimPreviewProps> = ({ assets, generatedItems, tit
   const itemElixir = Number(assets.itemElixir || assets[8] || 0);
   const itemWhetstone = Number(assets.itemWhetstone || assets[9] || 0);
 
+  // 初回報酬用カウント
+  const heroCommon = Number(assets.heroCommon || assets[1] || 0);
+  const heroUncommon = Number(assets.heroUncommon || assets[2] || 0);
+  const heroRare = Number(assets.heroRare || assets[3] || 0);
+  const equipCommon = Number(assets.equipCommon || assets[4] || 0);
+  const equipUncommon = Number(assets.equipUncommon || assets[5] || 0);
+  const equipRare = Number(assets.equipRare || assets[6] || 0);
+
   return (
     <div className="w-full mt-4 p-4 bg-gradient-to-r from-indigo-900/50 to-purple-900/50 rounded-2xl border border-indigo-500/50 shadow-lg z-20 relative">
       <h3 className="text-white font-bold text-sm mb-2">{title}</h3>
@@ -42,8 +50,8 @@ const ClaimPreview: React.FC<ClaimPreviewProps> = ({ assets, generatedItems, tit
         )}
       </div>
 
-      {/* Generated Heroes & Equipment */}
-      {generatedItems && generatedItems.length > 0 && (
+      {/* Generated Items (Result Summary) */}
+      {generatedItems && generatedItems.length > 0 ? (
         <div className="mb-4">
           <span className="block text-slate-400 mb-2 text-xs">Generated Items</span>
           <div className="flex flex-wrap gap-2">
@@ -61,6 +69,30 @@ const ClaimPreview: React.FC<ClaimPreviewProps> = ({ assets, generatedItems, tit
               </div>
             ))}
           </div>
+        </div>
+      ) : (
+        /* Initial Rewards Preview (Rarity Cards) */
+        <div className="grid grid-cols-1 gap-2 mb-4">
+          {(heroCommon > 0 || heroUncommon > 0 || heroRare > 0) && (
+            <div className="bg-slate-800/50 p-2 rounded">
+              <span className="block text-slate-400 mb-1 text-xs">Heroes</span>
+              <div className="flex flex-wrap gap-1">
+                {Array.from({ length: heroCommon }).map((_, i) => <div key={`hc-${i}`} className="w-8 h-10 rounded bg-slate-800 border border-slate-500 flex items-center justify-center shadow-sm"><span className="font-bold text-slate-300 text-[10px]">C</span></div>)}
+                {Array.from({ length: heroUncommon }).map((_, i) => <div key={`huc-${i}`} className="w-8 h-10 rounded bg-emerald-900/30 border border-emerald-500 flex items-center justify-center shadow-sm"><span className="font-bold text-emerald-400 text-[10px]">UC</span></div>)}
+                {Array.from({ length: heroRare }).map((_, i) => <div key={`hr-${i}`} className="w-8 h-10 rounded bg-blue-900/30 border border-blue-500 flex items-center justify-center shadow-sm"><span className="font-bold text-blue-400 text-[10px]">R</span></div>)}
+              </div>
+            </div>
+          )}
+          {(equipCommon > 0 || equipUncommon > 0 || equipRare > 0) && (
+            <div className="bg-slate-800/50 p-2 rounded">
+              <span className="block text-slate-400 mb-1 text-xs">Equipment</span>
+              <div className="flex flex-wrap gap-1">
+                {Array.from({ length: equipCommon }).map((_, i) => <div key={`ec-${i}`} className="w-8 h-8 rounded bg-slate-800 border border-slate-500 flex items-center justify-center shadow-sm"><span className="font-bold text-slate-300 text-[10px]">C</span></div>)}
+                {Array.from({ length: equipUncommon }).map((_, i) => <div key={`euc-${i}`} className="w-8 h-8 rounded bg-emerald-900/30 border border-emerald-500 flex items-center justify-center shadow-sm"><span className="font-bold text-emerald-400 text-[10px]">UC</span></div>)}
+                {Array.from({ length: equipRare }).map((_, i) => <div key={`er-${i}`} className="w-8 h-8 rounded bg-blue-900/30 border border-blue-500 flex items-center justify-center shadow-sm"><span className="font-bold text-blue-400 text-[10px]">R</span></div>)}
+              </div>
+            </div>
+          )}
         </div>
       )}
       
