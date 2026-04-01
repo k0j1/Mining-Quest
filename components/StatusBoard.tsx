@@ -221,107 +221,6 @@ const StatusBoard: React.FC<StatusBoardProps> = ({
       />
 
 
-      {showPreview && previewAssets && (
-        <div className="mx-4 mt-4 p-4 bg-gradient-to-r from-indigo-900/50 to-purple-900/50 rounded-2xl border border-indigo-500/50 shadow-lg z-20 relative">
-          <h3 className="text-white font-bold text-sm mb-2">Claim Your Rewards</h3>
-          <div className="grid grid-cols-2 gap-2 mb-4 text-xs text-indigo-200">
-            <div className="bg-slate-800/50 p-2 rounded">
-              <span className="block text-slate-400 mb-1">CHH Balance</span>
-              <span className="font-bold text-white text-lg">{Math.round(Number(previewAssets.chhBalance) / 10**18)} <span className="text-xs text-indigo-300">CHH</span></span>
-            </div>
-
-            {(Number(previewAssets.heroCommon) > 0 || Number(previewAssets.heroUncommon) > 0 || Number(previewAssets.heroRare) > 0) && (
-              <div className="bg-slate-800/50 p-2 rounded">
-                <span className="block text-slate-400 mb-1">Heroes</span>
-                <div className="flex flex-wrap gap-1">
-                  {Array.from({ length: Number(previewAssets.heroCommon) }).map((_, i) => (
-                    <div key={`hc-${i}`} className="w-8 h-10 rounded bg-slate-800 border border-slate-500 flex items-center justify-center shadow-sm">
-                      <span className="font-bold text-slate-300 text-[10px]">C</span>
-                    </div>
-                  ))}
-                  {Array.from({ length: Number(previewAssets.heroUncommon) }).map((_, i) => (
-                    <div key={`huc-${i}`} className="w-8 h-10 rounded bg-emerald-900/30 border border-emerald-500 flex items-center justify-center shadow-sm">
-                      <span className="font-bold text-emerald-400 text-[10px]">UC</span>
-                    </div>
-                  ))}
-                  {Array.from({ length: Number(previewAssets.heroRare) }).map((_, i) => (
-                    <div key={`hr-${i}`} className="w-8 h-10 rounded bg-blue-900/30 border border-blue-500 flex items-center justify-center shadow-sm">
-                      <span className="font-bold text-blue-400 text-[10px]">R</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {(Number(previewAssets.equipCommon) > 0 || Number(previewAssets.equipUncommon) > 0 || Number(previewAssets.equipRare) > 0) && (
-              <div className="bg-slate-800/50 p-2 rounded">
-                <span className="block text-slate-400 mb-1">Equipment</span>
-                <div className="flex flex-wrap gap-1">
-                  {Array.from({ length: Number(previewAssets.equipCommon) }).map((_, i) => (
-                    <div key={`ec-${i}`} className="w-8 h-8 rounded bg-slate-800 border border-slate-500 flex items-center justify-center shadow-sm">
-                      <span className="font-bold text-slate-300 text-[10px]">C</span>
-                    </div>
-                  ))}
-                  {Array.from({ length: Number(previewAssets.equipUncommon) }).map((_, i) => (
-                    <div key={`euc-${i}`} className="w-8 h-8 rounded bg-emerald-900/30 border border-emerald-500 flex items-center justify-center shadow-sm">
-                      <span className="font-bold text-emerald-400 text-[10px]">UC</span>
-                    </div>
-                  ))}
-                  {Array.from({ length: Number(previewAssets.equipRare) }).map((_, i) => (
-                    <div key={`er-${i}`} className="w-8 h-8 rounded bg-blue-900/30 border border-blue-500 flex items-center justify-center shadow-sm">
-                      <span className="font-bold text-blue-400 text-[10px]">R</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {(Number(previewAssets.itemPotion) > 0 || Number(previewAssets.itemElixir) > 0 || Number(previewAssets.itemWhetstone) > 0) && (
-              <div className="bg-slate-800/50 p-2 rounded">
-                <span className="block text-slate-400 mb-1">Items</span>
-                <div className="flex flex-wrap gap-2">
-                  {Number(previewAssets.itemPotion) > 0 && (
-                    <div className="flex items-center gap-1 bg-slate-900/50 px-1.5 py-0.5 rounded border border-slate-700">
-                      <span className="text-sm">🧪</span>
-                      <span className="font-bold text-white text-[10px]">x{Number(previewAssets.itemPotion)}</span>
-                    </div>
-                  )}
-                  {Number(previewAssets.itemElixir) > 0 && (
-                    <div className="flex items-center gap-1 bg-slate-900/50 px-1.5 py-0.5 rounded border border-slate-700">
-                      <span className="text-sm">🍷</span>
-                      <span className="font-bold text-white text-[10px]">x{Number(previewAssets.itemElixir)}</span>
-                    </div>
-                  )}
-                  {Number(previewAssets.itemWhetstone) > 0 && (
-                    <div className="flex items-center gap-1 bg-slate-900/50 px-1.5 py-0.5 rounded border border-slate-700">
-                      <span className="text-sm">🪨</span>
-                      <span className="font-bold text-white text-[10px]">x{Number(previewAssets.itemWhetstone)}</span>
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-          </div>
-          <div className="flex gap-2">
-            <button
-              onClick={() => setShowPreview(false)}
-              disabled={isClaiming}
-              className="flex-1 px-4 py-2 rounded-xl font-bold text-sm shadow-md transition-all bg-slate-700 text-white hover:bg-slate-600 active:scale-95"
-            >
-              Cancel
-            </button>
-            <button
-              onClick={handleConfirmClaim}
-              disabled={isClaiming}
-              className={`flex-1 px-4 py-2 rounded-xl font-bold text-sm shadow-md transition-all ${
-                isClaiming ? 'bg-slate-600 text-slate-400 cursor-not-allowed' : 'bg-indigo-500 text-white hover:bg-indigo-400 active:scale-95'
-              }`}
-            >
-              {isClaiming ? 'Claiming...' : 'Confirm Claim'}
-            </button>
-          </div>
-        </div>
-      )}
 
       <div className="flex-1 overflow-y-auto pb-6 custom-scrollbar bg-transparent relative z-10">
         <div className="px-5 pt-5 mb-8">
@@ -388,6 +287,108 @@ const StatusBoard: React.FC<StatusBoardProps> = ({
                 >
                   {isPreviewing ? 'Loading...' : 'Claim'}
                 </button>
+              </div>
+            )}
+
+            {showPreview && previewAssets && (
+              <div className="w-full mt-4 p-4 bg-gradient-to-r from-indigo-900/50 to-purple-900/50 rounded-2xl border border-indigo-500/50 shadow-lg z-20 relative">
+                <h3 className="text-white font-bold text-sm mb-2">Claim Your Rewards</h3>
+                <div className="grid grid-cols-2 gap-2 mb-4 text-xs text-indigo-200">
+                  <div className="bg-slate-800/50 p-2 rounded">
+                    <span className="block text-slate-400 mb-1">CHH Balance</span>
+                    <span className="font-bold text-white text-lg">{Math.round(Number(previewAssets.chhBalance) / 10**18)} <span className="text-xs text-indigo-300">CHH</span></span>
+                  </div>
+
+                  {(Number(previewAssets.heroCommon) > 0 || Number(previewAssets.heroUncommon) > 0 || Number(previewAssets.heroRare) > 0) && (
+                    <div className="bg-slate-800/50 p-2 rounded">
+                      <span className="block text-slate-400 mb-1">Heroes</span>
+                      <div className="flex flex-wrap gap-1">
+                        {Array.from({ length: Number(previewAssets.heroCommon) }).map((_, i) => (
+                          <div key={`hc-${i}`} className="w-8 h-10 rounded bg-slate-800 border border-slate-500 flex items-center justify-center shadow-sm">
+                            <span className="font-bold text-slate-300 text-[10px]">C</span>
+                          </div>
+                        ))}
+                        {Array.from({ length: Number(previewAssets.heroUncommon) }).map((_, i) => (
+                          <div key={`huc-${i}`} className="w-8 h-10 rounded bg-emerald-900/30 border border-emerald-500 flex items-center justify-center shadow-sm">
+                            <span className="font-bold text-emerald-400 text-[10px]">UC</span>
+                          </div>
+                        ))}
+                        {Array.from({ length: Number(previewAssets.heroRare) }).map((_, i) => (
+                          <div key={`hr-${i}`} className="w-8 h-10 rounded bg-blue-900/30 border border-blue-500 flex items-center justify-center shadow-sm">
+                            <span className="font-bold text-blue-400 text-[10px]">R</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {(Number(previewAssets.equipCommon) > 0 || Number(previewAssets.equipUncommon) > 0 || Number(previewAssets.equipRare) > 0) && (
+                    <div className="bg-slate-800/50 p-2 rounded">
+                      <span className="block text-slate-400 mb-1">Equipment</span>
+                      <div className="flex flex-wrap gap-1">
+                        {Array.from({ length: Number(previewAssets.equipCommon) }).map((_, i) => (
+                          <div key={`ec-${i}`} className="w-8 h-8 rounded bg-slate-800 border border-slate-500 flex items-center justify-center shadow-sm">
+                            <span className="font-bold text-slate-300 text-[10px]">C</span>
+                          </div>
+                        ))}
+                        {Array.from({ length: Number(previewAssets.equipUncommon) }).map((_, i) => (
+                          <div key={`euc-${i}`} className="w-8 h-8 rounded bg-emerald-900/30 border border-emerald-500 flex items-center justify-center shadow-sm">
+                            <span className="font-bold text-emerald-400 text-[10px]">UC</span>
+                          </div>
+                        ))}
+                        {Array.from({ length: Number(previewAssets.equipRare) }).map((_, i) => (
+                          <div key={`er-${i}`} className="w-8 h-8 rounded bg-blue-900/30 border border-blue-500 flex items-center justify-center shadow-sm">
+                            <span className="font-bold text-blue-400 text-[10px]">R</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {(Number(previewAssets.itemPotion) > 0 || Number(previewAssets.itemElixir) > 0 || Number(previewAssets.itemWhetstone) > 0) && (
+                    <div className="bg-slate-800/50 p-2 rounded">
+                      <span className="block text-slate-400 mb-1">Items</span>
+                      <div className="flex flex-wrap gap-2">
+                        {Number(previewAssets.itemPotion) > 0 && (
+                          <div className="flex items-center gap-1 bg-slate-900/50 px-1.5 py-0.5 rounded border border-slate-700">
+                            <span className="text-sm">🧪</span>
+                            <span className="font-bold text-white text-[10px]">x{Number(previewAssets.itemPotion)}</span>
+                          </div>
+                        )}
+                        {Number(previewAssets.itemElixir) > 0 && (
+                          <div className="flex items-center gap-1 bg-slate-900/50 px-1.5 py-0.5 rounded border border-slate-700">
+                            <span className="text-sm">🍷</span>
+                            <span className="font-bold text-white text-[10px]">x{Number(previewAssets.itemElixir)}</span>
+                          </div>
+                        )}
+                        {Number(previewAssets.itemWhetstone) > 0 && (
+                          <div className="flex items-center gap-1 bg-slate-900/50 px-1.5 py-0.5 rounded border border-slate-700">
+                            <span className="text-sm">🪨</span>
+                            <span className="font-bold text-white text-[10px]">x{Number(previewAssets.itemWhetstone)}</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setShowPreview(false)}
+                    disabled={isClaiming}
+                    className="flex-1 px-4 py-2 rounded-xl font-bold text-sm shadow-md transition-all bg-slate-700 text-white hover:bg-slate-600 active:scale-95"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleConfirmClaim}
+                    disabled={isClaiming}
+                    className={`flex-1 px-4 py-2 rounded-xl font-bold text-sm shadow-md transition-all ${
+                      isClaiming ? 'bg-slate-600 text-slate-400 cursor-not-allowed' : 'bg-indigo-500 text-white hover:bg-indigo-400 active:scale-95'
+                    }`}
+                  >
+                    {isClaiming ? 'Claiming...' : 'Confirm Claim'}
+                  </button>
+                </div>
               </div>
             )}
 
