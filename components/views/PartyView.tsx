@@ -328,8 +328,8 @@ const PartyView: React.FC<PartyViewProps> = ({
                 <div className={`relative ${partyStats.teamDefBonus > 0 ? 'rounded-xl ring-2 ring-cyan-400/80 shadow-[0_0_40px_rgba(34,211,238,0.6)]' : ''}`}>
                   {partyStats.teamDefBonus > 0 && (
                     <>
-                      <div className="absolute -inset-2 bg-gradient-to-r from-cyan-500/30 via-blue-500/30 to-purple-500/30 rounded-xl blur-xl z-0 animate-pulse pointer-events-none"></div>
-                      <div className="absolute -inset-0.5 bg-gradient-to-r from-cyan-400/20 via-blue-400/20 to-purple-400/20 rounded-xl blur-md z-0 animate-pulse pointer-events-none" style={{ animationDuration: '2s' }}></div>
+                      <div className="absolute -inset-2 bg-gradient-to-r from-cyan-500/30 via-blue-500/30 to-purple-500/30 rounded-xl blur-xl z-0 animate-team-def-pulse pointer-events-none"></div>
+                      <div className="absolute -inset-0.5 bg-gradient-to-r from-cyan-400/20 via-blue-400/20 to-purple-400/20 rounded-xl blur-md z-0 animate-team-def-pulse pointer-events-none" style={{ animationDuration: '2s' }}></div>
                       <div className="absolute inset-0 rounded-xl border border-cyan-300/50 z-10 pointer-events-none mix-blend-overlay"></div>
                     </>
                   )}
@@ -349,6 +349,13 @@ const PartyView: React.FC<PartyViewProps> = ({
                       className="grid grid-cols-3 gap-2 relative z-10"
                       teamDefBonus={partyStats.teamDefBonus}
                   />
+                  <style>{`
+                    @keyframes team-def-pulse {
+                      0%, 100% { opacity: 0.5; transform: scale(1); }
+                      50% { opacity: 1; transform: scale(1.02); }
+                    }
+                    .animate-team-def-pulse { animation: team-def-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+                  `}</style>
                 </div>
             </div>
 
