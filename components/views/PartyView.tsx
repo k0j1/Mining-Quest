@@ -297,13 +297,6 @@ const PartyView: React.FC<PartyViewProps> = ({
                         alt="Team Banner" 
                         className="w-full h-auto"
                     />
-                    {IS_TEST_MODE && (
-                        <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-20 bg-black/10">
-                            <span className="text-3xl font-black text-white/30 -rotate-12 border-4 border-white/30 px-4 py-2 rounded-xl uppercase tracking-widest backdrop-blur-[1px]">
-                                {t('common.test_mode')}
-                            </span>
-                        </div>
-                    )}
                 </div>
             </div>
 

@@ -454,10 +454,6 @@ const App: React.FC = () => {
         />
       )}
 
-      {showTestWarning && (
-        <TestWarningModal onClose={() => setShowTestWarning(false)} />
-      )}
-
       <BottomNav 
         currentView={currentView === View.LIGHTPAPER ? View.HOME : currentView} 
         onNavClick={handleNavClick} 
