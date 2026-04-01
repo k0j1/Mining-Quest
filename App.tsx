@@ -472,6 +472,7 @@ const App: React.FC = () => {
           <div className="w-full max-w-md">
             <ClaimPreview 
               assets={claimResultData.assets} 
+              generatedItems={claimResultData.generatedItems}
               title="Claimed Rewards" 
               onClose={() => {
                 setClaimResultData(null);
