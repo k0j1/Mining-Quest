@@ -244,7 +244,7 @@ const StatusBoard: React.FC<StatusBoardProps> = ({
           <div className="grid grid-cols-2 gap-2 mb-4 text-xs text-indigo-200">
             <div className="bg-slate-800/50 p-2 rounded">
               <span className="block text-slate-400 mb-1">CHH Balance</span>
-              <span className="font-bold text-white text-lg">{Math.floor(Number(previewAssets.chhBalance) / 10**18)} <span className="text-xs text-indigo-300">CHH</span></span>
+              <span className="font-bold text-white text-lg">{Math.round(Number(previewAssets.chhBalance) / 10**18)} <span className="text-xs text-indigo-300">CHH</span></span>
             </div>
 
             {(Number(previewAssets.heroCommon) > 0 || Number(previewAssets.heroUncommon) > 0 || Number(previewAssets.heroRare) > 0) && (
