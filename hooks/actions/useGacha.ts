@@ -30,7 +30,7 @@ interface UseGachaProps {
 }
 
 export const useGacha = ({ gameState, setGameState, showNotification, farcasterUser, refetchBalance, t, setTransactionError }: UseGachaProps) => {
-  const [gachaResult, setGachaResult] = useState<{ type: 'Hero' | 'Equipment'; data: any[]; txHash?: string } | null>(null);
+  const [gachaResult, setGachaResult] = useState<{ type: 'Hero' | 'Equipment' | 'Mixed'; data: any[]; txHash?: string } | null>(null);
   const [isGachaRolling, setIsGachaRolling] = useState(false);
 
   // Helper for on-chain payment

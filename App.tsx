@@ -21,6 +21,7 @@ import gsap from 'gsap';
 
 import TransactionResult from './components/TransactionResult';
 import TransactionError from './components/TransactionError';
+import GachaEffect from './components/GachaEffect';
 
 // Views
 import PartyView from './components/views/PartyView';
@@ -256,8 +257,6 @@ const App: React.FC = () => {
             onRollGacha={actions.rollGacha}
             onRollGachaTriple={actions.rollGachaTriple}
             isGachaRolling={ui.isGachaRolling}
-            gachaResult={ui.gachaResult}
-            onCloseResult={() => { playClick(); ui.setGachaResult(null); }}
             {...commonProps}
           />
         );
@@ -324,7 +323,13 @@ const App: React.FC = () => {
             onNavigate={(view) => setCurrentView(view)} 
             isFrameAdded={isFrameAdded}
             onAddApp={addFrame}
-            onClaimSuccess={() => window.location.reload()}
+            onClaimSuccess={(generatedItems) => {
+              if (generatedItems && generatedItems.length > 0) {
+                ui.setGachaResult({ type: 'Mixed', data: generatedItems });
+              } else {
+                window.location.reload();
+              }
+            }}
             {...commonProps} 
           />
         );
@@ -442,6 +447,21 @@ const App: React.FC = () => {
         <TransactionError 
           message={ui.transactionError} 
           onClose={() => ui.setTransactionError(null)} 
+        />
+      )}
+
+      {/* Result Overlay */}
+      {ui.gachaResult && (
+        <GachaEffect 
+           result={ui.gachaResult} 
+           onClose={() => { 
+             playClick(); 
+             const wasMixed = ui.gachaResult?.type === 'Mixed';
+             ui.setGachaResult(null); 
+             if (wasMixed) {
+               window.location.reload();
+             }
+           }} 
         />
       )}
 

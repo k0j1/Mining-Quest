@@ -6,7 +6,7 @@ import gsap from 'gsap';
 import { useLanguage } from '../contexts/LanguageContext';
 
 interface GachaEffectProps {
-  result: { type: 'Hero' | 'Equipment'; data: any[]; txHash?: string } | null;
+  result: { type: 'Hero' | 'Equipment' | 'Mixed'; data: any[]; txHash?: string } | null;
   onClose: () => void;
 }
 
@@ -282,7 +282,7 @@ const GachaEffect: React.FC<GachaEffectProps> = ({ result, onClose }) => {
             >
               {(isSpecialPull || isHighRarity) && <div className="absolute inset-0 border border-white/30 rounded-[2rem] z-50 pointer-events-none" />}
 
-              {result.type === 'Hero' ? (
+              {result.type === 'Hero' || (result.type === 'Mixed' && currentItem.imageUrl) ? (
                 <>
                   <div className="absolute top-0 left-0 w-full h-full bg-slate-900">
                     <img 
@@ -349,7 +349,8 @@ const GachaEffect: React.FC<GachaEffectProps> = ({ result, onClose }) => {
               </a>
               <button 
                 onClick={() => {
-                    const shareText = `I got a new ${result.type === 'Hero' ? 'Hero' : 'Equipment'} from the Gacha!\nTx: https://basescan.org/tx/${result.txHash}\n\n#MiningQuest #CHH`;
+                    const itemType = result.type === 'Mixed' ? (currentItem.imageUrl ? 'Hero' : 'Equipment') : result.type;
+                    const shareText = `I got a new ${itemType} from the Gacha!\nTx: https://basescan.org/tx/${result.txHash}\n\n#MiningQuest #CHH`;
                     const url = `https://warpcast.com/~/compose?text=${encodeURIComponent(shareText)}&embeds[]=${encodeURIComponent('https://farcaster.xyz/miniapps/MR1ItBAqMlzR/mining-quest')}`;
                     import('@farcaster/frame-sdk').then(({ sdk }) => {
                       sdk.actions.openUrl(url);

@@ -129,11 +129,12 @@ export const useReward = () => {
       console.log('[useReward] Claim transaction receipt:', receipt);
 
       // Process claimed assets if fid is provided
+      let generatedItems: any[] = [];
       if (fid && result) {
-        await processClaimedAssets(fid, result as any);
+        generatedItems = await processClaimedAssets(fid, result as any);
       }
 
-      return { success: true, txHash, assets: result };
+      return { success: true, txHash, assets: result, generatedItems };
     } catch (error) {
       console.error('Error claiming reward:', error);
       return { success: false, error };
@@ -158,7 +159,7 @@ export const useReward = () => {
       addHeroes(Number(assets.heroUncommon), 'UC');
       addHeroes(Number(assets.heroRare), 'R');
       
-      await Promise.all(heroPromises);
+      const generatedHeroes = await Promise.all(heroPromises);
 
       // 2. Generate Equipment
       const equipPromises: Promise<any>[] = [];
@@ -172,7 +173,7 @@ export const useReward = () => {
       addEquips(Number(assets.equipUncommon), 'UC');
       addEquips(Number(assets.equipRare), 'R');
       
-      await Promise.all(equipPromises);
+      const generatedEquips = await Promise.all(equipPromises);
 
       // 3. Update Items
       const potionCount = Number(assets.itemPotion);
@@ -208,8 +209,10 @@ export const useReward = () => {
       }
       
       console.log('[useReward] Successfully processed claimed assets');
+      return [...generatedHeroes, ...generatedEquips];
     } catch (error) {
       console.error('[useReward] Error processing claimed assets:', error);
+      return [];
     }
   };
 

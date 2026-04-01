@@ -17,8 +17,6 @@ interface GachaViewProps {
   onRollGacha: (tab: 'Hero' | 'Equipment') => void;
   onRollGachaTriple?: (tab: 'Hero' | 'Equipment') => void;
   isGachaRolling: boolean;
-  gachaResult: { type: 'Hero' | 'Equipment'; data: any[]; txHash?: string } | null;
-  onCloseResult: () => void;
   isSoundOn: boolean;
   onToggleSound: () => void;
   onDebugAddTokens?: () => void;
@@ -560,8 +558,6 @@ const GachaView: React.FC<GachaViewProps> = ({
   onRollGacha, 
   onRollGachaTriple, 
   isGachaRolling, 
-  gachaResult, 
-  onCloseResult, 
   isSoundOn, 
   onToggleSound, 
   onDebugAddTokens, 
@@ -699,14 +695,6 @@ const GachaView: React.FC<GachaViewProps> = ({
             </div>
          </div>
       </div>
-
-      {/* Result Overlay */}
-      {gachaResult && (
-        <GachaEffect 
-           result={gachaResult} 
-           onClose={onCloseResult} 
-        />
-      )}
 
       {/* Lists Modals */}
       {showHeroList && <HeroListModal onClose={() => { playClick(); setShowHeroList(false); }} />}
