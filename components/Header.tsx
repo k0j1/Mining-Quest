@@ -14,6 +14,9 @@ interface HeaderProps {
   onChainBalance?: number | null;
   onAccountClick?: () => void;
   children?: React.ReactNode;
+  canClaim?: boolean;
+  onClaimClick?: () => void;
+  isClaiming?: boolean;
 }
 
 const formatCompactNumber = (num: number): string => {
@@ -35,7 +38,10 @@ const Header: React.FC<HeaderProps> = ({
   farcasterUser, 
   onChainBalance, 
   onAccountClick,
-  children 
+  children,
+  canClaim,
+  onClaimClick,
+  isClaiming
 }) => {
   const [tapCount, setTapCount] = useState(0);
   const { t } = useLanguage();
@@ -136,6 +142,18 @@ const Header: React.FC<HeaderProps> = ({
             {title}
           </h1>
           <div className={`h-1 w-8 rounded-full mt-1.5 ${farcasterUser ? 'bg-indigo-500' : 'bg-amber-500'}`}></div>
+          
+          {canClaim && onClaimClick && (
+            <button
+              onClick={onClaimClick}
+              disabled={isClaiming}
+              className={`mt-2 px-2 py-0.5 rounded text-[10px] font-bold transition-all ${
+                isClaiming ? 'bg-slate-600 text-slate-400' : 'bg-indigo-500 text-white hover:bg-indigo-400'
+              }`}
+            >
+              {isClaiming ? '...' : 'Claim'}
+            </button>
+          )}
         </div>
         
         <div className="flex items-center gap-4">

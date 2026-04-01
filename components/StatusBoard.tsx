@@ -218,25 +218,10 @@ const StatusBoard: React.FC<StatusBoardProps> = ({
       <Header 
         title={title} tokens={state.tokens} isSoundOn={isSoundOn} onToggleSound={onToggleSound} onDebugAddTokens={onDebugAddTokens}
         farcasterUser={farcasterUser} onChainBalance={onChainBalance} onAccountClick={onAccountClick}
+        canClaim={farcasterUser?.address && canClaim && !showPreview}
+        onClaimClick={handlePreviewClick}
+        isClaiming={isPreviewing}
       />
-
-      {farcasterUser?.address && canClaim && !showPreview && (
-        <div className="mx-4 mt-4 p-4 bg-gradient-to-r from-indigo-900/50 to-purple-900/50 rounded-2xl border border-indigo-500/50 shadow-lg flex items-center justify-between z-20 relative">
-          <div>
-            <h3 className="text-white font-bold text-sm">Welcome Reward Available!</h3>
-            <p className="text-indigo-200 text-xs">Claim your initial assets to start playing.</p>
-          </div>
-          <button
-            onClick={handlePreviewClick}
-            disabled={isPreviewing}
-            className={`px-4 py-2 rounded-xl font-bold text-sm shadow-md transition-all ${
-              isPreviewing ? 'bg-slate-600 text-slate-400 cursor-not-allowed' : 'bg-indigo-500 text-white hover:bg-indigo-400 active:scale-95'
-            }`}
-          >
-            {isPreviewing ? 'Loading...' : 'Claim'}
-          </button>
-        </div>
-      )}
 
       {showPreview && previewAssets && (
         <div className="mx-4 mt-4 p-4 bg-gradient-to-r from-indigo-900/50 to-purple-900/50 rounded-2xl border border-indigo-500/50 shadow-lg z-20 relative">
