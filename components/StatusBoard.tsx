@@ -134,14 +134,14 @@ const StatusBoard: React.FC<StatusBoardProps> = ({
   state, actionButtonLabel, onAction, title, view, isSoundOn, onToggleSound, onDebugAddTokens, farcasterUser, onChainBalance, onAccountClick, onShowLightpaper, onDebugCompleteQuest, onToggleDebug, onNavigate, isFrameAdded, onAddApp, onClaimSuccess
 }) => {
   const { t } = useLanguage();
-  const { isClaiming, checkHasClaimed, getPreviewClaimAmount, claimReward } = useReward();
-  const [hasClaimed, setHasClaimed] = useState(true);
+  const { isClaiming, checkGetClaimStatus, getPreviewClaimAmount, claimReward } = useReward();
+  const [isClaimed, setIsClaimed] = useState(true);
   const [previewAssets, setPreviewAssets] = useState<any>(null);
 
   useEffect(() => {
     if (farcasterUser?.address) {
-      checkHasClaimed(farcasterUser.address).then(claimed => {
-        setHasClaimed(claimed);
+      checkGetClaimStatus(farcasterUser.address).then(claimed => {
+        setIsClaimed(claimed);
         if (!claimed) {
             getPreviewClaimAmount(farcasterUser.address).then(assets => {
                 setPreviewAssets(assets);
@@ -149,14 +149,14 @@ const StatusBoard: React.FC<StatusBoardProps> = ({
         }
       });
     }
-  }, [farcasterUser?.address, checkHasClaimed, getPreviewClaimAmount]);
+  }, [farcasterUser?.address, checkGetClaimStatus, getPreviewClaimAmount]);
 
   const handleClaim = async () => {
     if (!farcasterUser?.address || !farcasterUser?.fid || isClaiming) return;
     
     const result = await claimReward(farcasterUser.address, farcasterUser.fid);
     if (result.success) {
-      setHasClaimed(true);
+      setIsClaimed(true);
       alert('Rewards claimed successfully! The page will now reload to update your assets.');
       if (onClaimSuccess) {
         onClaimSuccess();
@@ -178,7 +178,7 @@ const StatusBoard: React.FC<StatusBoardProps> = ({
         farcasterUser={farcasterUser} onChainBalance={onChainBalance} onAccountClick={onAccountClick}
       />
 
-      {farcasterUser?.address && !hasClaimed && previewAssets && onChainBalance !== null && (
+      {farcasterUser?.address && !isClaimed && previewAssets && onChainBalance !== null && (
         <div className="mx-4 mt-4 p-4 bg-gradient-to-r from-indigo-900/50 to-purple-900/50 rounded-2xl border border-indigo-500/50 shadow-lg flex items-center justify-between z-20 relative">
           <div>
             <h3 className="text-white font-bold text-sm">Welcome Reward!</h3>

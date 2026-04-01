@@ -73,7 +73,7 @@ const AdminContractPanel: React.FC = () => {
       const [account] = await walletClient.requestAddresses();
       
       if (functionName === 'checkStatus') {
-        const [isTest, hasClaimed] = await Promise.all([
+        const [isTest, isClaimed] = await Promise.all([
             publicClient.readContract({
                 address: REWARD_MANAGER_ADDRESS,
                 abi: REWARD_MANAGER_ABI,
@@ -87,7 +87,7 @@ const AdminContractPanel: React.FC = () => {
                 args: [args[0] as `0x${string}`]
             })
         ]);
-        setTargetUserStatus({ isTest, hasClaimed });
+        setTargetUserStatus({ isTest, isClaimed });
         setStatusMsg(`Fetched status for ${args[0]}`);
       } else if (functionName === 'setKoharuAddress') {
         const hash = await walletClient.writeContract({
@@ -764,7 +764,7 @@ const AdminContractPanel: React.FC = () => {
           {targetUserStatus && (
             <div className="mt-4 p-4 bg-slate-950 rounded-xl text-[10px] text-slate-300 font-mono">
               <p>Is Test User: {targetUserStatus.isTest ? 'Yes' : 'No'}</p>
-              <p>Has Claimed: {targetUserStatus.hasClaimed ? 'Yes' : 'No'}</p>
+              <p>Has Claimed: {targetUserStatus.isClaimed ? 'Yes' : 'No'}</p>
             </div>
           )}
           <div className="mt-4 text-xs text-slate-400 font-bold">{statusMsg}</div>

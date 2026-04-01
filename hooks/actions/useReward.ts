@@ -61,9 +61,9 @@ const REWARD_MANAGER_ABI = [
   },
   {
     "inputs": [
-      { "internalType": "address", "name": "", "type": "address" }
+      { "internalType": "address", "name": "_user", "type": "address" }
     ],
-    "name": "hasClaimed",
+    "name": "getClaimStatus",
     "outputs": [
       { "internalType": "bool", "name": "", "type": "bool" }
     ],
@@ -75,23 +75,23 @@ const REWARD_MANAGER_ABI = [
 export const useReward = () => {
   const [isClaiming, setIsClaiming] = useState(false);
 
-  const checkHasClaimed = async (address: string) => {
+  const checkGetClaimStatus = async (address: string) => {
     try {
       const publicClient = createPublicClient({
         chain: base,
         transport: http()
       });
 
-      const hasClaimed = await publicClient.readContract({
+      const isClaimed = await publicClient.readContract({
         address: REWARD_MANAGER_CONTRACT_ADDRESS as `0x${string}`,
         abi: REWARD_MANAGER_ABI,
-        functionName: 'hasClaimed',
+        functionName: 'getClaimStatus',
         args: [address as `0x${string}`]
       });
 
-      return hasClaimed as boolean;
+      return isClaimed as boolean;
     } catch (error) {
-      console.error('Error checking hasClaimed:', error);
+      console.error('Error checking getClaimStatus:', error);
       return false;
     }
   };
@@ -174,7 +174,7 @@ export const useReward = () => {
 
   return {
     isClaiming,
-    checkHasClaimed,
+    checkGetClaimStatus,
     getPreviewClaimAmount,
     claimReward
   };
