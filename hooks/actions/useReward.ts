@@ -100,10 +100,16 @@ export const useReward = () => {
     try {
       setIsClaiming(true);
 
-      const data = encodeFunctionData({
+      const publicClient = createPublicClient({
+        chain: base,
+        transport: http()
+      });
+
+      const { request, result } = await publicClient.simulateContract({
+        address: REWARD_MANAGER_CONTRACT_ADDRESS as `0x${string}`,
         abi: REWARD_MANAGER_ABI,
         functionName: 'claim',
-        args: []
+        account: address as `0x${string}`
       });
 
       if (!sdk.wallet.ethProvider) {
@@ -115,39 +121,95 @@ export const useReward = () => {
         transport: custom(sdk.wallet.ethProvider)
       });
 
-      const txHash = await walletClient.sendTransaction({
-        account: address as `0x${string}`,
-        to: REWARD_MANAGER_CONTRACT_ADDRESS as `0x${string}`,
-        data: data,
-        chain: base
-      });
-
-      if (!txHash) {
-        throw new Error('Transaction rejected or failed');
-      }
+      const txHash = await walletClient.writeContract(request);
 
       // Wait for transaction to be mined
-      const publicClient = createPublicClient({
-        chain: base,
-        transport: http()
-      });
-
-      const receipt = await publicClient.waitForTransactionReceipt({ hash: txHash as `0x${string}` });
-      
-      // Note: With the new contract, the claim function returns the assets directly.
-      // However, reading them from transaction logs or just relying on the event is better.
-      // For now, we assume the assets are emitted in the event or we can fetch them if needed.
-      // Since getUserAssets is gone, we rely on the event or return value if possible.
-      // For this implementation, we will return success and let the UI handle the state.
+      const receipt = await publicClient.waitForTransactionReceipt({ hash: txHash });
       
       console.log('[useReward] Claim transaction receipt:', receipt);
 
-      return { success: true, txHash };
+      // Process claimed assets if fid is provided
+      if (fid && result) {
+        await processClaimedAssets(fid, result as any);
+      }
+
+      return { success: true, txHash, assets: result };
     } catch (error) {
       console.error('Error claiming reward:', error);
       return { success: false, error };
     } finally {
       setIsClaiming(false);
+    }
+  };
+
+  const processClaimedAssets = async (fid: number, assets: any) => {
+    try {
+      console.log('[useReward] Processing claimed assets for FID:', fid, assets);
+      
+      // 1. Generate Heroes
+      const heroPromises: Promise<any>[] = [];
+      const addHeroes = (count: number, rarity: string) => {
+        for (let i = 0; i < count; i++) {
+          heroPromises.push(rollGachaItem('Hero', rarity as any, fid));
+        }
+      };
+      
+      addHeroes(Number(assets.heroCommon), 'C');
+      addHeroes(Number(assets.heroUncommon), 'UC');
+      addHeroes(Number(assets.heroRare), 'R');
+      
+      await Promise.all(heroPromises);
+
+      // 2. Generate Equipment
+      const equipPromises: Promise<any>[] = [];
+      const addEquips = (count: number, rarity: string) => {
+        for (let i = 0; i < count; i++) {
+          equipPromises.push(rollGachaItem('Equipment', rarity as any, fid));
+        }
+      };
+      
+      addEquips(Number(assets.equipCommon), 'C');
+      addEquips(Number(assets.equipUncommon), 'UC');
+      addEquips(Number(assets.equipRare), 'R');
+      
+      await Promise.all(equipPromises);
+
+      // 3. Update Items
+      const potionCount = Number(assets.itemPotion);
+      const elixirCount = Number(assets.itemElixir);
+      const whetstoneCount = Number(assets.itemWhetstone);
+
+      if (potionCount > 0 || elixirCount > 0 || whetstoneCount > 0) {
+        const { data: stats } = await supabase
+          .from('quest_player_stats')
+          .select('*')
+          .eq('fid', fid)
+          .single();
+
+        if (stats) {
+          await supabase
+            .from('quest_player_stats')
+            .update({
+              item01: (stats.item01 || 0) + potionCount,
+              item02: (stats.item02 || 0) + elixirCount,
+              item03: (stats.item03 || 0) + whetstoneCount
+            })
+            .eq('fid', fid);
+        } else {
+          await supabase
+            .from('quest_player_stats')
+            .insert({
+              fid: fid,
+              item01: potionCount,
+              item02: elixirCount,
+              item03: whetstoneCount
+            });
+        }
+      }
+      
+      console.log('[useReward] Successfully processed claimed assets');
+    } catch (error) {
+      console.error('[useReward] Error processing claimed assets:', error);
     }
   };
 

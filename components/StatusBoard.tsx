@@ -135,28 +135,40 @@ const StatusBoard: React.FC<StatusBoardProps> = ({
 }) => {
   const { t } = useLanguage();
   const { isClaiming, checkGetClaimStatus, getPreviewClaimAmount, claimReward } = useReward();
-  const [isClaimed, setIsClaimed] = useState(true);
+  const [canClaim, setCanClaim] = useState(false);
   const [previewAssets, setPreviewAssets] = useState<any>(null);
+  const [showPreview, setShowPreview] = useState(false);
+  const [isPreviewing, setIsPreviewing] = useState(false);
 
   useEffect(() => {
     if (farcasterUser?.address) {
-      checkGetClaimStatus(farcasterUser.address).then(claimed => {
-        setIsClaimed(claimed);
-        if (!claimed) {
-            getPreviewClaimAmount(farcasterUser.address).then(assets => {
-                setPreviewAssets(assets);
-            });
-        }
+      checkGetClaimStatus(farcasterUser.address).then(status => {
+        setCanClaim(status);
       });
     }
-  }, [farcasterUser?.address, checkGetClaimStatus, getPreviewClaimAmount]);
+  }, [farcasterUser?.address, checkGetClaimStatus]);
 
-  const handleClaim = async () => {
+  const handlePreviewClick = async () => {
+    if (!farcasterUser?.address) return;
+    setIsPreviewing(true);
+    try {
+      const assets = await getPreviewClaimAmount(farcasterUser.address);
+      setPreviewAssets(assets);
+      setShowPreview(true);
+    } catch (error) {
+      console.error("Failed to preview claim", error);
+    } finally {
+      setIsPreviewing(false);
+    }
+  };
+
+  const handleConfirmClaim = async () => {
     if (!farcasterUser?.address || !farcasterUser?.fid || isClaiming) return;
     
     const result = await claimReward(farcasterUser.address, farcasterUser.fid);
     if (result.success) {
-      setIsClaimed(true);
+      setCanClaim(false);
+      setShowPreview(false);
       alert('Rewards claimed successfully! The page will now reload to update your assets.');
       if (onClaimSuccess) {
         onClaimSuccess();
@@ -178,25 +190,69 @@ const StatusBoard: React.FC<StatusBoardProps> = ({
         farcasterUser={farcasterUser} onChainBalance={onChainBalance} onAccountClick={onAccountClick}
       />
 
-      {farcasterUser?.address && !isClaimed && previewAssets && onChainBalance !== null && (
+      {farcasterUser?.address && canClaim && !showPreview && (
         <div className="mx-4 mt-4 p-4 bg-gradient-to-r from-indigo-900/50 to-purple-900/50 rounded-2xl border border-indigo-500/50 shadow-lg flex items-center justify-between z-20 relative">
           <div>
-            <h3 className="text-white font-bold text-sm">Welcome Reward!</h3>
-            <p className="text-indigo-200 text-xs">
-                {Number(previewAssets.chhBalance) / 10**18} CHH, 
-                {Number(previewAssets.heroCommon)} Common Heroes, 
-                {Number(previewAssets.itemPotion)} Potions
-            </p>
+            <h3 className="text-white font-bold text-sm">Welcome Reward Available!</h3>
+            <p className="text-indigo-200 text-xs">Claim your initial assets to start playing.</p>
           </div>
           <button
-            onClick={handleClaim}
-            disabled={isClaiming}
+            onClick={handlePreviewClick}
+            disabled={isPreviewing}
             className={`px-4 py-2 rounded-xl font-bold text-sm shadow-md transition-all ${
-              isClaiming ? 'bg-slate-600 text-slate-400 cursor-not-allowed' : 'bg-indigo-500 text-white hover:bg-indigo-400 active:scale-95'
+              isPreviewing ? 'bg-slate-600 text-slate-400 cursor-not-allowed' : 'bg-indigo-500 text-white hover:bg-indigo-400 active:scale-95'
             }`}
           >
-            {isClaiming ? 'Claiming...' : 'Claim'}
+            {isPreviewing ? 'Loading...' : 'Claim'}
           </button>
+        </div>
+      )}
+
+      {showPreview && previewAssets && (
+        <div className="mx-4 mt-4 p-4 bg-gradient-to-r from-indigo-900/50 to-purple-900/50 rounded-2xl border border-indigo-500/50 shadow-lg z-20 relative">
+          <h3 className="text-white font-bold text-sm mb-2">Claim Your Rewards</h3>
+          <div className="grid grid-cols-2 gap-2 mb-4 text-xs text-indigo-200">
+            <div className="bg-slate-800/50 p-2 rounded">
+              <span className="block text-slate-400">CHH Balance</span>
+              <span className="font-bold text-white">{Number(previewAssets.chhBalance) / 10**18} CHH</span>
+            </div>
+            <div className="bg-slate-800/50 p-2 rounded">
+              <span className="block text-slate-400">Heroes</span>
+              <span className="font-bold text-white">
+                {Number(previewAssets.heroCommon)}C, {Number(previewAssets.heroUncommon)}UC, {Number(previewAssets.heroRare)}R
+              </span>
+            </div>
+            <div className="bg-slate-800/50 p-2 rounded">
+              <span className="block text-slate-400">Equipment</span>
+              <span className="font-bold text-white">
+                {Number(previewAssets.equipCommon)}C, {Number(previewAssets.equipUncommon)}UC, {Number(previewAssets.equipRare)}R
+              </span>
+            </div>
+            <div className="bg-slate-800/50 p-2 rounded">
+              <span className="block text-slate-400">Items</span>
+              <span className="font-bold text-white">
+                {Number(previewAssets.itemPotion)} Potion, {Number(previewAssets.itemElixir)} Elixir, {Number(previewAssets.itemWhetstone)} Whetstone
+              </span>
+            </div>
+          </div>
+          <div className="flex gap-2">
+            <button
+              onClick={() => setShowPreview(false)}
+              disabled={isClaiming}
+              className="flex-1 px-4 py-2 rounded-xl font-bold text-sm shadow-md transition-all bg-slate-700 text-white hover:bg-slate-600 active:scale-95"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleConfirmClaim}
+              disabled={isClaiming}
+              className={`flex-1 px-4 py-2 rounded-xl font-bold text-sm shadow-md transition-all ${
+                isClaiming ? 'bg-slate-600 text-slate-400 cursor-not-allowed' : 'bg-indigo-500 text-white hover:bg-indigo-400 active:scale-95'
+              }`}
+            >
+              {isClaiming ? 'Claiming...' : 'Confirm Claim'}
+            </button>
+          </div>
         </div>
       )}
 
