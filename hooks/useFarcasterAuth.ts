@@ -156,7 +156,6 @@ export const useFarcasterAuth = (setNotification: (msg: string, type: 'error' | 
                   const { error } = await supabase.from('quest_player_stats').upsert({
                     fid: user.fid,
                     username: user.username,
-                    display_name: user.displayName,
                     last_active: new Date().toISOString()
                   }, { onConflict: 'fid' });
                   
