@@ -3,7 +3,7 @@ import React, { useMemo } from 'react';
 import { QuestRank } from '../types';
 
 interface EquipmentIconProps {
-  type: 'Pickaxe' | 'Helmet' | 'Boots';
+  type: 'Weapon' | 'Pickaxe' | 'Helmet' | 'Boots';
   rarity?: QuestRank | string;
   size?: number | string;
   className?: string;
@@ -27,6 +27,7 @@ const EquipmentIcon: React.FC<EquipmentIconProps> = React.memo(({
   }, [rarity]);
 
   const typeMap = {
+    Weapon: 'P',
     Pickaxe: 'P',
     Helmet: 'H',
     Boots: 'B'
