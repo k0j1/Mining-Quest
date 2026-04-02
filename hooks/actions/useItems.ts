@@ -374,7 +374,7 @@ export const useItems = ({ gameState, setGameState, showNotification, farcasterU
 
     // Optimistic Update
     const newLevel = baseItem.level + 1;
-    const newDurability = baseItem.durability + materialItem.durability;
+    const newDurability = Math.min(20, baseItem.durability + materialItem.durability);
     // Recalculate bonus: Base + (newLevel * 0.1)
     // We derive Base from Current: Base = Current - (currentLevel * 0.1)
     
