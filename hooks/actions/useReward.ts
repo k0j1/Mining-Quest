@@ -180,32 +180,75 @@ export const useReward = () => {
       const elixirCount = Number(assets.itemElixir);
       const whetstoneCount = Number(assets.itemWhetstone);
 
+      console.log(`[useReward] Processing items: Potion=${potionCount}, Elixir=${elixirCount}, Whetstone=${whetstoneCount}`);
+
       if (potionCount > 0 || elixirCount > 0 || whetstoneCount > 0) {
-        const { data: stats } = await supabase
+        const { data: stats, error: fetchError } = await supabase
           .from('quest_player_stats')
-          .select('*')
+          .select('item01, item02, item03')
           .eq('fid', fid)
           .single();
 
-        if (stats) {
-          await supabase
-            .from('quest_player_stats')
-            .update({
-              item01: (stats.item01 || 0) + potionCount,
-              item02: (stats.item02 || 0) + elixirCount,
-              item03: (stats.item03 || 0) + whetstoneCount
-            })
-            .eq('fid', fid);
-        } else {
-          await supabase
-            .from('quest_player_stats')
-            .insert({
-              fid: fid,
-              item01: potionCount,
-              item02: elixirCount,
-              item03: whetstoneCount
-            });
+        if (fetchError && fetchError.code !== 'PGRST116') {
+          console.error('[useReward] Error fetching player stats:', fetchError);
         }
+
+        const currentItem01 = stats?.item01 || 0;
+        const currentItem02 = stats?.item02 || 0;
+        const currentItem03 = stats?.item03 || 0;
+
+        const { error: upsertError } = await supabase
+          .from('quest_player_stats')
+          .upsert({
+            fid: fid,
+            item01: currentItem01 + potionCount,
+            item02: currentItem02 + elixirCount,
+            item03: currentItem03 + whetstoneCount
+          }, { onConflict: 'fid' });
+
+        if (upsertError) {
+          console.error('[useReward] Error upserting player stats:', upsertError);
+        } else {
+          console.log('[useReward] Successfully updated player stats items');
+        }
+      }
+
+      // 4. Save Heroes
+      for (const hero of generatedHeroes) {
+        const { data: masterData } = await supabase.from('quest_hero').select('id').eq('name', hero.name).single();
+        if (masterData) {
+          await supabase.from('quest_player_hero').insert({
+            fid: fid,
+            hero_id: masterData.id,
+            hp: hero.hp,
+            recovery_count: 0
+          });
+        }
+      }
+      if (generatedHeroes.length > 0) {
+          await supabase.rpc('increment_player_stat', { 
+              player_fid: fid, 
+              column_name: 'gacha_hero_count', 
+              amount: generatedHeroes.length 
+          });
+      }
+
+      // 5. Save Equipment
+      for (const equip of generatedEquips) {
+        const { data: masterData } = await supabase.from('quest_equipment').select('id').eq('name', equip.name).single();
+        if (masterData) {
+          await supabase.from('quest_player_equipment').insert({
+            fid: fid,
+            equipment_id: masterData.id
+          });
+        }
+      }
+      if (generatedEquips.length > 0) {
+          await supabase.rpc('increment_player_stat', { 
+              player_fid: fid, 
+              column_name: 'gacha_equipment_count', 
+              amount: generatedEquips.length 
+          });
       }
       
       console.log('[useReward] Successfully processed claimed assets');

@@ -60,8 +60,8 @@ const ClaimPreview: React.FC<ClaimPreviewProps> = ({ assets, generatedItems, tit
                 {item.type === 'Hero' ? (
                   <img src={item.imageUrl} alt={item.name} className="w-10 h-10 object-contain mb-1" />
                 ) : (
-                  <div className="w-10 h-10 mb-1 flex items-center justify-center">
-                    <EquipmentIcon type={item.equipmentType || 'Pickaxe'} rarity={item.rarity} />
+                  <div className="w-10 h-10 mb-1 flex items-center justify-center bg-slate-950 rounded border border-slate-700">
+                    <EquipmentIcon type={(item.equipmentType || 'Pickaxe').toLowerCase()} rarity={item.rarity} size="32px" />
                   </div>
                 )}
                 <span className="text-[9px] font-bold text-white truncate w-full text-center">{item.name}</span>

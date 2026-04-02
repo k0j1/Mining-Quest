@@ -303,11 +303,11 @@ const GachaEffect: React.FC<GachaEffectProps> = ({ result, onClose }) => {
                 </>
               ) : (
                 <div className="w-full h-full flex flex-col items-center justify-center p-6 space-y-4 bg-slate-900/40">
-                  <div className="drop-shadow-lg">
+                  <div className="relative w-32 h-32 bg-slate-950 rounded-xl border-2 border-slate-700 flex items-center justify-center shadow-inner">
                     <EquipmentIcon 
-                        type={currentItem.type} 
+                        type={currentItem.type.toLowerCase()} 
                         rarity={currentItem.rarity} 
-                        size="140px" 
+                        size="100px" 
                     />
                   </div>
                   <div className="text-center">
@@ -317,7 +317,7 @@ const GachaEffect: React.FC<GachaEffectProps> = ({ result, onClose }) => {
                     <h3 className="text-lg font-orbitron font-bold text-white mb-1 leading-tight">{currentItem.name}</h3>
                     <div className="flex items-center justify-center space-x-2 text-indigo-400">
                       <span className="text-[10px] font-black uppercase">
-                        {currentItem.type === 'Pickaxe' ? 'Reward' : currentItem.type === 'Helmet' ? 'Def' : 'Speed'}
+                        {currentItem.type.toLowerCase() === 'pickaxe' ? 'Reward' : currentItem.type.toLowerCase() === 'helmet' ? 'Def' : 'Speed'}
                       </span>
                       <span className="text-base font-orbitron font-bold">
                         {currentItem.bonus >= 0 ? '+' : ''}{currentItem.bonus}%
