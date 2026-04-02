@@ -34,7 +34,7 @@ export const rollGachaItem = async (type: 'Hero' | 'Equipment', forceRarity?: Qu
   // ---------------------------------------------------------
   if (type === 'Hero') {
     // If we have a user FID, run the logic on the DB side for security
-    if (fid) {
+    if (fid && !exactRarity) {
         const { data, error } = await supabase.rpc('roll_hero_gacha', { 
             p_fid: fid, 
             p_min_rarity: forceRarity || null 
@@ -73,7 +73,7 @@ export const rollGachaItem = async (type: 'Hero' | 'Equipment', forceRarity?: Qu
         };
     }
 
-    // --- FALLBACK: Local Logic (No FID) ---
+    // --- FALLBACK: Local Logic (No FID or exactRarity) ---
     const targetRarity = exactRarity ? (forceRarity || 'C') : (forceRarity || determineRarity(type));
     
     const { data, error } = await supabase
@@ -108,7 +108,7 @@ export const rollGachaItem = async (type: 'Hero' | 'Equipment', forceRarity?: Qu
   // EQUIPMENT LOGIC (DB RPC Priority)
   // ---------------------------------------------------------
   else {
-    if (fid) {
+    if (fid && !exactRarity) {
         const { data, error } = await supabase.rpc('roll_equipment_gacha', { 
             p_fid: fid, 
             p_min_rarity: forceRarity || null 

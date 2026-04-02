@@ -49,6 +49,7 @@ interface Transaction {
 
 const AdminContractPanel: React.FC = () => {
   const [contractBalance, setContractBalance] = useState<string>('---');
+  const [rewardManagerBalance, setRewardManagerBalance] = useState<string>('---');
   const [treasuryBalance, setTreasuryBalance] = useState<string>('---');
   const [userBalance, setUserBalance] = useState<string>('---');
   const [depositAmount, setDepositAmount] = useState('');
@@ -242,6 +243,15 @@ const AdminContractPanel: React.FC = () => {
       } as any);
       setContractBalance(formatUnits(cBal as bigint, 18));
 
+      // 1b. Reward Manager Balance
+      const rmBal = await publicClient.readContract({
+        address: CHH_TOKEN_ADDRESS,
+        abi: TOKEN_ABI,
+        functionName: 'balanceOf',
+        args: [REWARD_MANAGER_ADDRESS]
+      } as any);
+      setRewardManagerBalance(formatUnits(rmBal as bigint, 18));
+
       // 2. Treasury Contract Balance
       if (QUEST_TREASURY_CONTRACT_ADDRESS) {
         const tBal = await publicClient.readContract({
@@ -341,6 +351,66 @@ const AdminContractPanel: React.FC = () => {
       setTimeout(() => {
         fetchBalances();
         fetchAllHistory();
+        setStatusMsg('');
+      }, 5000);
+
+    } catch (e: any) {
+      console.error(e);
+      playError();
+      setStatusMsg(`Error: ${e.shortMessage || e.message}`);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleDepositToRewardManager = async () => {
+    if (!depositAmount || isNaN(Number(depositAmount)) || Number(depositAmount) <= 0) {
+      playError();
+      alert("Invalid amount");
+      return;
+    }
+
+    if (!confirm(`あなたのウォレットから ${depositAmount} CHH をRewardManagerへ送金しますか？`)) return;
+
+    setIsLoading(true);
+    setStatusMsg('Initializing Wallet...');
+    playClick();
+
+    try {
+      if (!sdk.wallet.ethProvider) {
+        throw new Error("No wallet provider found.");
+      }
+
+      const walletClient = createWalletClient({
+        chain: base,
+        transport: custom(sdk.wallet.ethProvider)
+      });
+
+      const [address] = await walletClient.requestAddresses();
+      
+      setStatusMsg('Sending Transaction...');
+
+      // 18 decimals
+      const amountWei = parseUnits(depositAmount, 18);
+
+      const hash = await walletClient.writeContract({
+        address: CHH_TOKEN_ADDRESS,
+        abi: TOKEN_ABI,
+        functionName: 'transfer',
+        args: [REWARD_MANAGER_ADDRESS, amountWei],
+        account: address,
+        chain: base
+      });
+
+      console.log("Deposit Hash:", hash);
+      playConfirm();
+      setStatusMsg('Success! Updating balance...');
+      setDepositAmount('');
+      setResult({ hash, type: 'deposit' });
+      
+      // Wait a bit before refreshing balance
+      setTimeout(() => {
+        fetchBalances();
         setStatusMsg('');
       }, 5000);
 
@@ -768,6 +838,16 @@ const AdminContractPanel: React.FC = () => {
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div className="bg-purple-950/10 p-4 rounded-xl border border-purple-500/20">
+              <label className="text-[10px] text-slate-500 font-bold block mb-1">Reward Manager Balance</label>
+              <div className="text-lg font-black text-white font-mono tracking-tight mb-2">
+                {Number(rewardManagerBalance).toLocaleString(undefined, { maximumFractionDigits: 2 })}
+                <span className="text-[10px] text-amber-500 ml-1 font-bold">CHH</span>
+              </div>
+              <label className="text-[10px] text-slate-500 font-bold block mb-1">Deposit CHH</label>
+              <input type="number" value={depositAmount} onChange={(e) => setDepositAmount(e.target.value)} className="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-sm text-white mb-2" placeholder="Amount" />
+              <button onClick={handleDepositToRewardManager} className="w-full py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg font-bold text-xs">Deposit</button>
+            </div>
+            <div className="bg-purple-950/10 p-4 rounded-xl border border-purple-500/20">
               <label className="text-[10px] text-slate-500 font-bold block mb-1">Set Koharu Address</label>
               <input type="text" value={koharuAddress} onChange={(e) => setKoharuAddress(e.target.value)} className="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-sm text-white mb-2" placeholder="0x..." />
               <button onClick={() => executeRewardManagerAction('setKoharuAddress', [koharuAddress])} className="w-full py-2 bg-purple-600 hover:bg-purple-500 text-white rounded-lg font-bold text-xs">Set</button>
@@ -788,14 +868,14 @@ const AdminContractPanel: React.FC = () => {
                 <button onClick={() => executeRewardManagerAction('setClaimStatus', [targetUser, false])} className="flex-1 py-2 bg-rose-600 hover:bg-rose-500 text-white rounded-lg font-bold text-xs">Unset Claimed</button>
               </div>
             </div>
-            <div className="bg-purple-950/10 p-4 rounded-xl border border-purple-500/20">
+          </div>
+          <div className="mt-4 bg-purple-950/10 p-4 rounded-xl border border-purple-500/20">
               <label className="text-[10px] text-slate-500 font-bold block mb-1">Check User Status & Preview</label>
               <input type="text" value={targetUser} onChange={(e) => setTargetUser(e.target.value)} className="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-sm text-white mb-2" placeholder="0x..." />
               <div className="flex gap-2">
                 <button onClick={() => executeRewardManagerAction('checkStatus', [targetUser])} className="flex-1 py-2 bg-purple-600 hover:bg-purple-500 text-white rounded-lg font-bold text-xs">Status</button>
                 <button onClick={() => executeRewardManagerAction('previewClaimAmount', [targetUser])} className="flex-1 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg font-bold text-xs">Preview</button>
               </div>
-            </div>
           </div>
           {targetUserStatus && (
             <div className="mt-4 p-4 bg-slate-950 rounded-xl text-[10px] text-slate-300 font-mono">
