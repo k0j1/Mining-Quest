@@ -26,16 +26,14 @@ const EquipmentIcon: React.FC<EquipmentIconProps> = React.memo(({
     return rarity; // Assume it's already a short code or other
   }, [rarity]);
 
+  const normalizedType = type.toLowerCase();
   const typeMap: Record<string, string> = {
     pickaxe: 'P',
     helmet: 'H',
-    boots: 'B',
-    Pickaxe: 'P',
-    Helmet: 'H',
-    Boots: 'B'
+    boots: 'B'
   };
 
-  const typeChar = typeMap[type] || 'P';
+  const typeChar = typeMap[normalizedType] || 'P';
   const imageUrl = `https://miningquest.k0j1.v2002.coreserver.jp/images/Equipment/${normalizedRarity}${typeChar}.png`;
 
   // Animation classes based on rarity
