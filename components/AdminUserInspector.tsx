@@ -54,7 +54,7 @@ const AdminUserInspector: React.FC = () => {
     try {
       let query = supabase
         .from('quest_player_stats')
-        .select('*')
+        .select('*, farcaster_users(username, display_name)')
         .order('last_active', { ascending: false })
         .limit(20); // Limit increased to 20
       
@@ -63,7 +63,7 @@ const AdminUserInspector: React.FC = () => {
         if (/^\d+$/.test(userSearch)) {
             query = query.eq('fid', parseInt(userSearch));
         } else {
-            query = query.ilike('username', `%${userSearch}%`);
+            query = query.ilike('farcaster_users.username', `%${userSearch}%`);
         }
       }
       
@@ -103,7 +103,7 @@ const AdminUserInspector: React.FC = () => {
   const handleUserSelect = async (user: any) => {
     playClick();
     setSelectedUser(user);
-    setUserSearch(user.username || '');
+    setUserSearch(user.farcaster_users?.username || '');
     setShowUserDropdown(false); 
     setLoadingDetails(true);
 
@@ -279,7 +279,7 @@ const AdminUserInspector: React.FC = () => {
                             onClick={() => handleUserSelect(user)}
                             className="p-3 border-b border-slate-800 last:border-none cursor-pointer hover:bg-indigo-900/20 transition-colors flex items-center justify-between group"
                         >
-                            <div className="font-bold text-slate-200 text-sm group-hover:text-white">@{user.username || '不明'}</div>
+                            <div className="font-bold text-slate-200 text-sm group-hover:text-white">@{user.farcaster_users?.username || '不明'}</div>
                             <div className="text-[10px] text-slate-500 text-right">
                                 <div className="flex gap-2 justify-end">
                                    <span className="text-amber-500 font-bold">獲得: {user.total_reward?.toLocaleString() || 0}</span>
@@ -315,7 +315,7 @@ const AdminUserInspector: React.FC = () => {
                     {selectedUser.pfp_url ? <img src={selectedUser.pfp_url} className="w-full h-full object-cover" /> : <span className="text-4xl">👤</span>}
                  </div>
                   <div className="flex-1 text-center md:text-left">
-                    <h2 className="text-2xl font-black text-white mb-2 tracking-tight">@{selectedUser.username} <span className="text-xs text-slate-500 font-normal ml-2">FID: {selectedUser.fid}</span></h2>
+                    <h2 className="text-2xl font-black text-white mb-2 tracking-tight">@{selectedUser.farcaster_users?.username || '不明'} <span className="text-xs text-slate-500 font-normal ml-2">FID: {selectedUser.fid}</span></h2>
                     <div className="flex flex-wrap justify-center md:justify-start gap-3">
                        <span className="px-3 py-1 rounded-full bg-amber-900/20 border border-amber-500/30 text-amber-500 font-mono font-bold text-sm" title="Total Reward Earned (DB)">
                           獲得: {selectedUser.total_reward?.toLocaleString() || 0} $CHH
