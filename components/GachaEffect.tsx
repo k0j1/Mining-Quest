@@ -209,6 +209,22 @@ const GachaEffect: React.FC<GachaEffectProps> = ({ result, onClose }) => {
     E: '#a855f7',
     L: '#eab308'
   };
+
+  const textColors: Record<string, string> = {
+    C: 'text-slate-500',
+    UC: 'text-emerald-500',
+    R: 'text-indigo-500',
+    E: 'text-fuchsia-500',
+    L: 'text-amber-500'
+  };
+
+  const rarityBgColors: Record<string, string> = {
+    C: 'bg-slate-900 border-slate-700',
+    UC: 'bg-emerald-900/40 border-emerald-700/50',
+    R: 'bg-indigo-900/40 border-indigo-700/50',
+    E: 'bg-fuchsia-900/40 border-fuchsia-700/50',
+    L: 'bg-amber-900/40 border-amber-700/50'
+  };
   
   const isMulti = result.data.length > 1;
   const isLastItem = currentIndex === result.data.length - 1;
@@ -302,13 +318,18 @@ const GachaEffect: React.FC<GachaEffectProps> = ({ result, onClose }) => {
                   </div>
                 </>
               ) : (
-                <div className="w-full h-full flex flex-col items-center justify-center p-6 space-y-4 bg-slate-900/40">
-                  <div className="relative w-32 h-32 bg-slate-950 rounded-xl border-2 border-slate-700 flex items-center justify-center shadow-inner">
-                    <EquipmentIcon 
-                        type={currentItem.type.toLowerCase()} 
-                        rarity={currentItem.rarity} 
-                        size="100px" 
-                    />
+                <div className={`w-full h-full flex flex-col items-center justify-center p-6 space-y-4 ${rarityBgColors[rarity] || rarityBgColors['C']}`}>
+                  <div className="relative w-32 h-32 bg-slate-950 rounded-xl border-2 border-slate-700 flex items-center justify-center shadow-inner overflow-hidden">
+                    <div className={`absolute inset-0 flex items-center justify-center opacity-20 font-black text-6xl -rotate-12 select-none ${textColors[rarity] || textColors['C']}`}>
+                      {rarity}
+                    </div>
+                    <div className="relative z-10">
+                      <EquipmentIcon 
+                          type={(currentItem.equipmentType || 'Pickaxe').toLowerCase()} 
+                          rarity={currentItem.rarity} 
+                          size="100px" 
+                      />
+                    </div>
                   </div>
                   <div className="text-center">
                     <div className="inline-block px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-widest mb-3 border border-white/20" style={{ backgroundColor: `${color}cc`, color: '#fff' }}>
@@ -317,7 +338,7 @@ const GachaEffect: React.FC<GachaEffectProps> = ({ result, onClose }) => {
                     <h3 className="text-lg font-orbitron font-bold text-white mb-1 leading-tight">{currentItem.name}</h3>
                     <div className="flex items-center justify-center space-x-2 text-indigo-400">
                       <span className="text-[10px] font-black uppercase">
-                        {currentItem.type.toLowerCase() === 'pickaxe' ? 'Reward' : currentItem.type.toLowerCase() === 'helmet' ? 'Def' : 'Speed'}
+                        {(currentItem.equipmentType || 'Pickaxe').toLowerCase() === 'pickaxe' ? 'Reward' : (currentItem.equipmentType || 'Pickaxe').toLowerCase() === 'helmet' ? 'Def' : 'Speed'}
                       </span>
                       <span className="text-base font-orbitron font-bold">
                         {currentItem.bonus >= 0 ? '+' : ''}{currentItem.bonus}%

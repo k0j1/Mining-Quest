@@ -55,19 +55,42 @@ const ClaimPreview: React.FC<ClaimPreviewProps> = ({ assets, generatedItems, tit
         <div className="mb-4">
           <span className="block text-slate-400 mb-2 text-xs">Generated Items</span>
           <div className="flex flex-wrap gap-2">
-            {generatedItems.map((item, idx) => (
-              <div key={idx} className="w-16 h-20 bg-slate-800 rounded-lg border border-slate-600 flex flex-col items-center justify-center p-1 shadow-sm">
-                {item.type === 'Hero' ? (
-                  <img src={item.imageUrl} alt={item.name} className="w-10 h-10 object-contain mb-1" />
-                ) : (
-                  <div className="w-10 h-10 mb-1 flex items-center justify-center bg-slate-950 rounded border border-slate-700">
-                    <EquipmentIcon type={(item.equipmentType || 'Pickaxe').toLowerCase()} rarity={item.rarity} size="32px" />
-                  </div>
-                )}
-                <span className="text-[9px] font-bold text-white truncate w-full text-center">{item.name}</span>
-                <span className="text-[8px] text-slate-400">{item.rarity}</span>
-              </div>
-            ))}
+            {generatedItems.map((item, idx) => {
+              const rarity = item.rarity || 'C';
+              const textColors: Record<string, string> = {
+                C: 'text-slate-500',
+                UC: 'text-emerald-500',
+                R: 'text-indigo-500',
+                E: 'text-fuchsia-500',
+                L: 'text-amber-500'
+              };
+              const rarityBgColors: Record<string, string> = {
+                C: 'bg-slate-900 border-slate-700',
+                UC: 'bg-emerald-900/40 border-emerald-700/50',
+                R: 'bg-indigo-900/40 border-indigo-700/50',
+                E: 'bg-fuchsia-900/40 border-fuchsia-700/50',
+                L: 'bg-amber-900/40 border-amber-700/50'
+              };
+
+              return (
+                <div key={idx} className={`w-16 h-20 rounded-lg border flex flex-col items-center justify-center p-1 shadow-sm ${item.type === 'Hero' ? 'bg-slate-800 border-slate-600' : (rarityBgColors[rarity] || rarityBgColors['C'])}`}>
+                  {item.type === 'Hero' ? (
+                    <img src={item.imageUrl} alt={item.name} className="w-10 h-10 object-contain mb-1" />
+                  ) : (
+                    <div className="relative w-10 h-10 mb-1 flex items-center justify-center bg-slate-950 rounded border border-slate-700 overflow-hidden">
+                      <div className={`absolute inset-0 flex items-center justify-center opacity-20 font-black text-xl -rotate-12 select-none ${textColors[rarity] || textColors['C']}`}>
+                        {rarity}
+                      </div>
+                      <div className="relative z-10">
+                        <EquipmentIcon type={(item.equipmentType || 'Pickaxe').toLowerCase()} rarity={item.rarity} size="32px" />
+                      </div>
+                    </div>
+                  )}
+                  <span className="text-[9px] font-bold text-white truncate w-full text-center">{item.name}</span>
+                  <span className="text-[8px] text-slate-400">{item.rarity}</span>
+                </div>
+              );
+            })}
           </div>
         </div>
       ) : (

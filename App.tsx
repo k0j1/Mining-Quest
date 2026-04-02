@@ -31,7 +31,7 @@ import RecoveryView from './components/views/RecoveryView';
 import GachaView from './components/views/GachaView';
 import LightpaperView from './components/views/LightpaperView';
 
-const ADMIN_FIDS = [406233];
+const ADMIN_FIDS = [406233, 1379028];
 
 const App: React.FC = () => {
   // Setup State for Manual Reset
@@ -44,6 +44,8 @@ const App: React.FC = () => {
   const [appError, setAppError] = useState<string | null>(null);
   const [isFarcasterEnv, setIsFarcasterEnv] = useState(false); 
   const [isDebugMode, setIsDebugMode] = useState(false);
+  
+  const [isAuthChecking, setIsAuthChecking] = useState(true);
   
   // Maintenance State
   const [isMaintenance, setIsMaintenance] = useState(false);
@@ -60,9 +62,22 @@ const App: React.FC = () => {
 
   // Admin Auto-Debug Mode
   useEffect(() => {
-    if (farcasterUser && ADMIN_FIDS.includes(farcasterUser.fid)) {
-      setIsDebugMode(true);
-      console.log("Admin detected. Debug mode enabled.");
+    if (isSDKLoaded) {
+      // Give it a moment to resolve farcasterUser from context
+      const timer = setTimeout(() => {
+        setIsAuthChecking(false);
+      }, 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [isSDKLoaded]);
+
+  useEffect(() => {
+    if (farcasterUser) {
+      setIsAuthChecking(false);
+      if (ADMIN_FIDS.includes(farcasterUser.fid)) {
+        setIsDebugMode(true);
+        console.log("Admin detected. Debug mode enabled.");
+      }
     }
   }, [farcasterUser]);
 
@@ -358,7 +373,7 @@ const App: React.FC = () => {
 
   // 2. Maintenance / Blocked / Test
   const isAdmin = farcasterUser && ADMIN_FIDS.includes(farcasterUser.fid);
-  const showMaintenance = (isMaintenance || isBlocked || isMaintenanceTest || IS_MAINTENANCE_MODE) && !isAdmin;
+  const showMaintenance = (isMaintenance || isBlocked || isMaintenanceTest || IS_MAINTENANCE_MODE) && !isAdmin && !isAuthChecking;
 
   if (showMaintenance) {
     return (
