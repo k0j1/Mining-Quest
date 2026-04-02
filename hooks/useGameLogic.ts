@@ -17,7 +17,7 @@ export const useGameLogic = () => {
   const { t } = useLanguage();
   // --- Central Game State ---
   const [gameState, setGameState] = useState<GameState>({
-    tokens: 50000, 
+    tokens: 0, 
     heroes: INITIAL_HEROES,
     equipment: INITIAL_EQUIPMENT,
     activeQuests: [],
