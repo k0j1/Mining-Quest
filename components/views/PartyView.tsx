@@ -131,9 +131,11 @@ const PartyView: React.FC<PartyViewProps> = ({
       onSwitchParty(idx);
       setSelectedSlotIndex(null);
       setSelectedHeroId(null);
-    } else {
+    } else if (idx === 0) { // Only allow unlocking party 1 (index 0)
       playClick();
       setUnlockingIndex(idx);
+    } else {
+      playError(); // Play error sound for locked parties 2 and 3
     }
   };
 
