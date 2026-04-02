@@ -9,9 +9,10 @@ interface LogMessage {
 
 interface DebugConsoleProps {
   isEnabled: boolean;
+  showButton: boolean;
 }
 
-const DebugConsole: React.FC<DebugConsoleProps> = ({ isEnabled }) => {
+const DebugConsole: React.FC<DebugConsoleProps> = ({ isEnabled, showButton }) => {
   const [logs, setLogs] = useState<LogMessage[]>([]);
   const [isExpanded, setIsExpanded] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -130,14 +131,14 @@ const DebugConsole: React.FC<DebugConsoleProps> = ({ isEnabled }) => {
   return (
     <div className="fixed bottom-24 right-4 z-[9999] flex flex-col items-end pointer-events-none">
       <div className="pointer-events-auto">
-        {!isExpanded ? (
+        {(!isExpanded && showButton) ? (
           <button 
             onClick={() => setIsExpanded(true)}
             className="w-12 h-12 bg-slate-800/90 backdrop-blur border border-slate-600 rounded-full flex items-center justify-center shadow-lg text-slate-400 hover:text-white hover:bg-slate-700 transition-colors active:scale-95 animate-fade-in"
           >
             🐛
           </button>
-        ) : (
+        ) : isExpanded ? (
           <div className="w-80 h-64 bg-slate-950/95 backdrop-blur-md border border-slate-700 rounded-xl shadow-2xl flex flex-col overflow-hidden text-[10px] font-mono animate-fade-in">
             <div className="flex justify-between items-center px-3 py-2 bg-slate-900 border-b border-slate-800">
               <span className="font-bold text-slate-400">Debug Console</span>
@@ -177,7 +178,7 @@ const DebugConsole: React.FC<DebugConsoleProps> = ({ isEnabled }) => {
               ))}
             </div>
           </div>
-        )}
+        ) : null}
       </div>
       <style>{`
         @keyframes fade-in {

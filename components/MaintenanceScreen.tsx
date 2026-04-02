@@ -58,7 +58,7 @@ const MaintenanceScreen: React.FC<MaintenanceScreenProps> = ({
        </div>
        
        {/* Debug Console in Maintenance Mode */}
-       <DebugConsole isEnabled={true} />
+       <DebugConsole isEnabled={true} showButton={false} />
     </div>
   );
 };

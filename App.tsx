@@ -46,6 +46,7 @@ const App: React.FC = () => {
   const [isDebugMode, setIsDebugMode] = useState(false);
   
   const [isAuthChecking, setIsAuthChecking] = useState(true);
+  const [showDebugButton, setShowDebugButton] = useState(false);
   
   // Maintenance State
   const [isMaintenance, setIsMaintenance] = useState(false);
@@ -61,6 +62,12 @@ const App: React.FC = () => {
   const { t } = useLanguage();
 
   // Admin Auto-Debug Mode
+  useEffect(() => {
+    const handleShowDebug = () => setShowDebugButton(true);
+    window.addEventListener('show-debug-button', handleShowDebug);
+    return () => window.removeEventListener('show-debug-button', handleShowDebug);
+  }, []);
+
   useEffect(() => {
     if (isSDKLoaded) {
       // Give it a moment to resolve farcasterUser from context
@@ -337,6 +344,7 @@ const App: React.FC = () => {
             onShowLightpaper={() => setCurrentView(View.LIGHTPAPER)}
             onDebugCompleteQuest={actions.debugCompleteQuest}
             onToggleDebug={() => setIsDebugMode(p => !p)}
+            showDebugButton={showDebugButton}
             onNavigate={(view) => setCurrentView(view)} 
             isFrameAdded={isFrameAdded}
             onAddApp={addFrame}
@@ -410,7 +418,7 @@ const App: React.FC = () => {
               {t('app.reload_app')}
             </button>
         </div>
-        <DebugConsole isEnabled={true} />
+        <DebugConsole isEnabled={true} showButton={false} />
       </div>
     );
   }
@@ -426,7 +434,7 @@ const App: React.FC = () => {
       </main>
 
       {/* Debug Console */}
-      <DebugConsole isEnabled={appError !== null || isDebugMode} />
+      <DebugConsole isEnabled={appError !== null || isDebugMode} showButton={showDebugButton} />
 
       {/* Notification Toast */}
       {ui.notification && (

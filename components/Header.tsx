@@ -44,6 +44,8 @@ const Header: React.FC<HeaderProps> = ({
   isClaiming
 }) => {
   const [tapCount, setTapCount] = useState(0);
+  const [isLongPress, setIsLongPress] = useState(false);
+  const longPressTimer = useRef<NodeJS.Timeout | null>(null);
   const { t } = useLanguage();
   
   // Farcasterユーザーかつオンチェーン残高が取得できている場合はそちらを表示
@@ -107,6 +109,24 @@ const Header: React.FC<HeaderProps> = ({
     return () => clearTimeout(timer);
   }, [tapCount]);
 
+  const handleIconPressStart = () => {
+    if (!farcasterUser) return;
+    longPressTimer.current = setTimeout(() => {
+      setIsLongPress(true);
+      // Trigger show debug button
+      if (window.dispatchEvent) {
+        window.dispatchEvent(new CustomEvent('show-debug-button'));
+      }
+    }, 10000); // 10 seconds
+  };
+
+  const handleIconPressEnd = () => {
+    if (longPressTimer.current) {
+      clearTimeout(longPressTimer.current);
+      longPressTimer.current = null;
+    }
+  };
+
   const handleTokenClick = () => {
     if (farcasterUser && onAccountClick) {
       onAccountClick();
@@ -138,7 +158,14 @@ const Header: React.FC<HeaderProps> = ({
     <div className="sticky top-0 z-[60] bg-slate-900 border-b border-slate-700 shadow-sm">
       <div className="px-5 py-4 flex justify-between items-center h-16">
         <div className="flex flex-col">
-          <h1 className={`text-sm font-bold tracking-wider uppercase ${themeColorClass}`}>
+          <h1 
+            className={`text-sm font-bold tracking-wider uppercase ${themeColorClass} cursor-pointer select-none`}
+            onMouseDown={handleIconPressStart}
+            onMouseUp={handleIconPressEnd}
+            onMouseLeave={handleIconPressEnd}
+            onTouchStart={handleIconPressStart}
+            onTouchEnd={handleIconPressEnd}
+          >
             {title}
           </h1>
           <div className={`h-1 w-8 rounded-full mt-1.5 ${farcasterUser ? 'bg-indigo-500' : 'bg-amber-500'}`}></div>

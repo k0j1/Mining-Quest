@@ -25,6 +25,7 @@ interface StatusBoardProps {
   onShowLightpaper?: () => void;
   onDebugCompleteQuest?: (questId: string) => void;
   onToggleDebug?: () => void;
+  showDebugButton?: boolean;
   onNavigate?: (view: View) => void;
   isFrameAdded?: boolean;
   onAddApp?: () => void;
@@ -132,7 +133,7 @@ const QuestItem: React.FC<{
 };
 
 const StatusBoard: React.FC<StatusBoardProps> = ({ 
-  state, actionButtonLabel, onAction, title, view, isSoundOn, onToggleSound, onDebugAddTokens, farcasterUser, onChainBalance, onAccountClick, onShowLightpaper, onDebugCompleteQuest, onToggleDebug, onNavigate, isFrameAdded, onAddApp, onClaimSuccess
+  state, actionButtonLabel, onAction, title, view, isSoundOn, onToggleSound, onDebugAddTokens, farcasterUser, onChainBalance, onAccountClick, onShowLightpaper, onDebugCompleteQuest, onToggleDebug, showDebugButton, onNavigate, isFrameAdded, onAddApp, onClaimSuccess
 }) => {
   const { t } = useLanguage();
   const { isClaiming, checkGetClaimStatus, getPreviewClaimAmount, claimReward } = useReward();
@@ -263,13 +264,15 @@ const StatusBoard: React.FC<StatusBoardProps> = ({
               )}
 
               {isAdmin && onToggleDebug && view === View.HOME && (
-                <button 
-                  onClick={() => { playClick(); onToggleDebug(); }}
-                  className="flex items-center gap-2 px-3 py-1.5 bg-rose-900/30 hover:bg-rose-900/50 rounded-full border border-rose-800 transition-all active:scale-95 group"
-                >
-                  <span className="text-lg">🐛</span>
-                  <span className="text-[10px] font-bold text-rose-300 group-hover:text-rose-200">DEBUG</span>
-                </button>
+                <div className={showDebugButton ? "" : "hidden"}>
+                  <button 
+                    onClick={() => { playClick(); onToggleDebug(); }}
+                    className="flex items-center gap-2 px-3 py-1.5 bg-rose-900/30 hover:bg-rose-900/50 rounded-full border border-rose-800 transition-all active:scale-95 group"
+                  >
+                    <span className="text-lg">🐛</span>
+                    <span className="text-[10px] font-bold text-rose-300 group-hover:text-rose-200">DEBUG</span>
+                  </button>
+                </div>
               )}
             </div>
 
