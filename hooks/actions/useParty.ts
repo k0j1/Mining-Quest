@@ -18,6 +18,29 @@ const PARTY_UNLOCK_ABI = [
   }
 ];
 
+const ERC20_ABI = [
+  {
+    "inputs": [
+      { "internalType": "address", "name": "owner", "type": "address" },
+      { "internalType": "address", "name": "spender", "type": "address" }
+    ],
+    "name": "allowance",
+    "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "address", "name": "spender", "type": "address" },
+      { "internalType": "uint256", "name": "amount", "type": "uint256" }
+    ],
+    "name": "approve",
+    "outputs": [{ "internalType": "bool", "name": "", "type": "bool" }],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  }
+];
+
 interface UsePartyProps {
   gameState: GameState;
   setGameState: Dispatch<SetStateAction<GameState>>;
@@ -89,7 +112,41 @@ export const useParty = ({ gameState, setGameState, showNotification, farcasterU
         return;
       }
 
-      // 1.1 Unlock Party
+      // 1.1 Check Allowance and Approve CHH Tokens if needed
+      const requiredAmount = BigInt(cost) * 10n**18n;
+      const approveAmount = 1000000n * 10n**18n; // 1,000,000 CHH
+
+      const currentAllowance = await publicClient.readContract({
+        address: CHH_CONTRACT_ADDRESS as `0x${string}`,
+        abi: ERC20_ABI,
+        functionName: 'allowance',
+        args: [account, PARTY_UNLOCK_CONTRACT_ADDRESS as `0x${string}`]
+      }) as bigint;
+
+      if (currentAllowance < requiredAmount) {
+        const approveData = encodeFunctionData({
+          abi: ERC20_ABI,
+          functionName: 'approve',
+          args: [PARTY_UNLOCK_CONTRACT_ADDRESS as `0x${string}`, approveAmount]
+        });
+
+        showNotification(t('notify.approving_tokens'), 'success');
+        const approveTxHash = await walletClient.sendTransaction({
+          account,
+          to: CHH_CONTRACT_ADDRESS as `0x${string}`,
+          data: approveData,
+          value: 0n,
+        });
+
+        if (!approveTxHash) {
+           showNotification(t('notify.approve_cancelled'), 'error');
+           return;
+        }
+
+        await publicClient.waitForTransactionReceipt({ hash: approveTxHash });
+      }
+
+      // 1.2 Unlock Party
       const unlockData = encodeFunctionData({
         abi: PARTY_UNLOCK_ABI,
         functionName: 'unlockParty',
