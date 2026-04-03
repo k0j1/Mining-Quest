@@ -186,6 +186,10 @@ const LightpaperView: React.FC<LightpaperViewProps> = ({
                 <span className="text-amber-500 font-bold whitespace-nowrap ml-4">30,000 $CHH</span>
               </li>
               <li className="flex justify-between items-center">
+                <span>{t('lightpaper.party_unlock')}</span>
+                <span className="text-amber-500 font-bold whitespace-nowrap ml-4">100,000 $CHH</span>
+              </li>
+              <li className="flex justify-between items-center">
                 <span>{t('lightpaper.potion')}</span>
                 <span className="text-amber-500 font-bold whitespace-nowrap ml-4">100 $CHH</span>
               </li>

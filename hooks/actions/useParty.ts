@@ -3,6 +3,20 @@ import { Dispatch, SetStateAction } from 'react';
 import { GameState } from '../../types';
 import { playClick, playConfirm, playError } from '../../utils/sound';
 import { supabase } from '../../lib/supabase';
+import { sdk } from '@farcaster/frame-sdk';
+import { encodeFunctionData, createWalletClient, custom, createPublicClient, http } from 'viem';
+import { base } from 'viem/chains';
+import { PARTY_UNLOCK_CONTRACT_ADDRESS, CHH_CONTRACT_ADDRESS } from '../../constants';
+
+const PARTY_UNLOCK_ABI = [
+  {
+    "inputs": [{ "internalType": "uint256", "name": "partyIndex", "type": "uint256" }],
+    "name": "unlockParty",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  }
+];
 
 interface UsePartyProps {
   gameState: GameState;
@@ -50,32 +64,78 @@ export const useParty = ({ gameState, setGameState, showNotification, farcasterU
   };
 
   const unlockParty = async (index: number) => {
-    const cost = 10000;
+    const cost = 100000; // 10万 CHH
     if (gameState.tokens < cost) {
       playError();
       showNotification(t('notify.insufficient_tokens', { amount: cost.toLocaleString() }), 'error');
       return;
     }
-    playConfirm();
-    setGameState(prev => {
-      const newUnlocked = [...prev.unlockedParties];
-      newUnlocked[index] = true;
-      return { ...prev, tokens: prev.tokens - cost, unlockedParties: newUnlocked, activePartyIndex: index };
-    });
-    
-    // In DB, unlocking is implicit by having a record, or we just rely on local token burn for now
-    if (farcasterUser?.fid) {
-        await supabase.from('quest_player_party').upsert({
-            fid: farcasterUser.fid,
-            party_no: index + 1,
-            hero1_hid: null,
-            hero2_hid: null,
-            hero3_hid: null
-        }, { onConflict: 'fid,party_no' });
+
+    try {
+      // 1. スマートコントラクトの呼び出し (オンチェーン決済)
+      const walletClient = createWalletClient({
+        chain: base,
+        transport: custom(sdk.wallet.ethProvider)
+      });
+
+      const publicClient = createPublicClient({
+        chain: base,
+        transport: http()
+      });
+
+      const [account] = await walletClient.requestAddresses();
+      if (!account) {
+        showNotification(t('notify.wallet_not_connected'), 'error');
+        return;
+      }
+
+      // 1.1 Unlock Party
+      const unlockData = encodeFunctionData({
+        abi: PARTY_UNLOCK_ABI,
+        functionName: 'unlockParty',
+        args: [BigInt(index + 1)] // partyIndex is 1-based
+      });
+
+      showNotification(t('notify.unlocking_party'), 'success');
+      const txHash = await walletClient.sendTransaction({
+        account,
+        to: PARTY_UNLOCK_CONTRACT_ADDRESS as `0x${string}`,
+        data: unlockData,
+        value: 0n,
+      });
+
+      if (!txHash) {
+          showNotification(t('notify.tx_cancelled'), 'error');
+          return;
+      }
+
+      await publicClient.waitForTransactionReceipt({ hash: txHash });
+
+      // 2. トランザクション成功後、オフチェーンのステータスを更新
+      playConfirm();
+      setGameState(prev => {
+        const newUnlocked = [...prev.unlockedParties];
+        newUnlocked[index] = true;
+        return { ...prev, tokens: prev.tokens - cost, unlockedParties: newUnlocked, activePartyIndex: index };
+      });
+      
+      if (farcasterUser?.fid) {
+          await supabase.from('quest_player_party').upsert({
+              fid: farcasterUser.fid,
+              party_no: index + 1,
+              hero1_hid: null,
+              hero2_hid: null,
+              hero3_hid: null
+          }, { onConflict: 'fid,party_no' });
+      }
+      
+      refetchBalance();
+      showNotification(t('notify.party_unlocked'), 'success');
+    } catch (error: any) {
+      console.error("Unlock failed:", error);
+      playError();
+      showNotification(t('error.unknown'), 'error');
     }
-    
-    // Refetch balance once
-    refetchBalance();
   };
 
   const savePartyToDB = async (partyIndex: number, heroes: (string | null)[]) => {

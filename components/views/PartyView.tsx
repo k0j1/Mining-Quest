@@ -131,11 +131,9 @@ const PartyView: React.FC<PartyViewProps> = ({
       onSwitchParty(idx);
       setSelectedSlotIndex(null);
       setSelectedHeroId(null);
-    } else if (idx === 0) { // Only allow unlocking party 1 (index 0)
+    } else {
       playClick();
       setUnlockingIndex(idx);
-    } else {
-      playError(); // Play error sound for locked parties 2 and 3
     }
   };
 
@@ -571,12 +569,12 @@ const PartyView: React.FC<PartyViewProps> = ({
              </div>
              <h3 className="text-lg font-bold text-white mb-2 tracking-wide">{t('party.deploy_party')} 0{unlockingIndex + 1}</h3>
              <p className="text-slate-400 text-xs mb-8 leading-relaxed">
-               {t('party.cost')}: <span className="text-amber-500 font-bold">10,000 $CHH</span>
+               {t('party.cost')}: <span className="text-amber-500 font-bold">100,000 $CHH</span>
              </p>
              <div className="flex gap-3">
                 <button onClick={() => setUnlockingIndex(null)} className="flex-1 py-3 rounded-xl bg-slate-800 text-slate-400 font-bold text-sm hover:bg-slate-700">{t('party.cancel')}</button>
-                <button onClick={confirmUnlock} className={`flex-1 py-3 rounded-xl font-bold text-sm text-white shadow-md transition-all ${gameState.tokens >= 10000 ? 'bg-indigo-600 hover:bg-indigo-500' : 'bg-slate-700 text-slate-500'}`}>
-                  {gameState.tokens >= 10000 ? t('party.unlock') : t('party.insufficient')}
+                <button onClick={confirmUnlock} className={`flex-1 py-3 rounded-xl font-bold text-sm text-white shadow-md transition-all ${gameState.tokens >= 100000 ? 'bg-indigo-600 hover:bg-indigo-500' : 'bg-slate-700 text-slate-500'}`}>
+                  {gameState.tokens >= 100000 ? t('party.unlock') : t('party.insufficient')}
                 </button>
              </div>
           </div>
