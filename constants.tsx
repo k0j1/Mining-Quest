@@ -9,7 +9,7 @@ export const IS_TEST_MODE = true;
 export const IS_MAINTENANCE_MODE = true;
 
 // App Version
-export const APP_VERSION = '0.3.50';
+export const APP_VERSION = '1.0.0';
 
 // Item Shop Contract (Base Sepolia / Base Mainnet)
 export const ITEM_SHOP_CONTRACT_ADDRESS = "0xB0748f58befa009A42306c91E01ED9DD3378eb01"; // TODO: Replace with actual deployed address
