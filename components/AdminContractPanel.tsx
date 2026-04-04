@@ -6,6 +6,7 @@ import { playClick, playConfirm, playError } from '../utils/sound';
 import { ITEM_SHOP_CONTRACT_ADDRESS, QUEST_TREASURY_CONTRACT_ADDRESS, QUEST_MANAGER_CONTRACT_ADDRESS, GACHA_PAYMENT_CONTRACT_ADDRESS, REWARD_MANAGER_CONTRACT_ADDRESS } from '../constants';
 import { THEME, themeClass } from '../theme';
 import TransactionResult from './TransactionResult';
+import { supabase } from '../lib/supabase';
 
 // Constants
 const REWARD_CONTRACT_ADDRESS = "0x193708bB0AC212E59fc44d6D6F3507F25Bc97fd4" as `0x${string}`;
@@ -45,6 +46,8 @@ interface Transaction {
   type: 'IN' | 'OUT' | 'EVENT';
   eventName?: string;
   timestamp?: string;
+  fromUser?: { username: string, display_name: string, pfp_url?: string };
+  toUser?: { username: string, display_name: string, pfp_url?: string };
 }
 
 const AdminContractPanel: React.FC = () => {
@@ -187,6 +190,18 @@ const AdminContractPanel: React.FC = () => {
 
       const allTransfers = [...toTransfers, ...fromTransfers];
       
+      // ユーザー情報を取得
+      const addresses = Array.from(new Set(allTransfers.map((tx: any) => [tx.from, tx.to]).flat()));
+      const { data: users } = await supabase
+          .from('farcaster_users')
+          .select('address, username, display_name, pfp_url')
+          .in('address', addresses);
+
+      const userMap = new Map();
+      if (users) {
+          users.forEach((u: any) => userMap.set(u.address.toLowerCase(), u));
+      }
+      
       const transactions: Transaction[] = allTransfers.map((tx: any) => {
         const isIncoming = tx.to?.toLowerCase() === contractAddress.toLowerCase();
         const isCHH = tx.rawContract?.address?.toLowerCase() === CHH_TOKEN_ADDRESS.toLowerCase();
@@ -199,7 +214,9 @@ const AdminContractPanel: React.FC = () => {
           blockNumber: BigInt(parseInt(tx.blockNum, 16)),
           type: isIncoming ? 'IN' : 'OUT',
           eventName: !isCHH && tx.category === 'external' ? 'External Transfer' : (isCHH ? 'CHH Transfer' : 'Contract Interaction'),
-          timestamp: tx.metadata?.blockTimestamp
+          timestamp: tx.metadata?.blockTimestamp,
+          fromUser: userMap.get(tx.from.toLowerCase()),
+          toUser: userMap.get(tx.to.toLowerCase())
         };
       });
 
@@ -532,11 +549,25 @@ const AdminContractPanel: React.FC = () => {
                   }`}>
                     {tx.type}
                   </span>
-                  <span className="text-slate-400 font-mono">
-                    {tx.type === 'IN' ? `From: ${tx.from.slice(0, 6)}...` : 
-                     tx.type === 'OUT' ? `To: ${tx.to.slice(0, 6)}...` : 
-                     tx.eventName}
-                  </span>
+                  <div className="flex items-center gap-2 text-slate-400">
+                    {tx.fromUser ? (
+                      <div className="flex items-center gap-1">
+                        <img src={tx.fromUser.pfp_url || ''} className="w-3 h-3 rounded-full" />
+                        <span className="text-slate-300">{tx.fromUser.display_name || tx.fromUser.username}</span>
+                      </div>
+                    ) : (
+                      <span>From: {tx.from.slice(0, 6)}...</span>
+                    )}
+                    <span>→</span>
+                    {tx.toUser ? (
+                      <div className="flex items-center gap-1">
+                        <img src={tx.toUser.pfp_url || ''} className="w-3 h-3 rounded-full" />
+                        <span className="text-slate-300">{tx.toUser.display_name || tx.toUser.username}</span>
+                      </div>
+                    ) : (
+                      <span>To: {tx.to.slice(0, 6)}...</span>
+                    )}
+                  </div>
                 </div>
                 <a 
                   href={`https://basescan.org/tx/${tx.hash}`} 
