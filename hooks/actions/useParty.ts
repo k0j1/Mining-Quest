@@ -150,7 +150,7 @@ export const useParty = ({ gameState, setGameState, showNotification, farcasterU
       const unlockData = encodeFunctionData({
         abi: PARTY_UNLOCK_ABI,
         functionName: 'unlockParty',
-        args: [BigInt(index + 1)] // partyIndex is 1-based
+        args: [BigInt(index + 2)] // partyIndex 0 -> 2, 1 -> 3
       });
 
       showNotification(t('notify.unlocking_party'), 'success');
