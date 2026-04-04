@@ -125,11 +125,19 @@ export const rollGachaItem = async (type: 'Hero' | 'Equipment', forceRarity?: Qu
 
         const result = data[0];
 
+        let eqType = result.type || result.equipment_type;
+        if (!eqType || eqType === 'Equipment') {
+            const nameLower = (result.name || '').toLowerCase();
+            if (nameLower.includes('helmet')) eqType = 'Helmet';
+            else if (nameLower.includes('shoes') || nameLower.includes('boots')) eqType = 'Boots';
+            else eqType = 'Pickaxe';
+        }
+
         return { 
             type: 'Equipment',
             id: (result.res_id || result.id || result.player_eid)?.toString(),
             name: result.name, 
-            equipmentType: result.type, // type is reserved for Hero/Equipment
+            equipmentType: eqType, // type is reserved for Hero/Equipment
             rarity: result.rarity, 
             bonus: result.bonus,
             isPersisted: true

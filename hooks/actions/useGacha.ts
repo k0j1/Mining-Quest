@@ -198,7 +198,7 @@ export const useGacha = ({ gameState, setGameState, showNotification, farcasterU
         const newEquipment = items.map(result => ({
             id: result.id || Math.random().toString(),
             name: result.name,
-            type: result.type,
+            type: result.equipmentType,
             bonus: result.bonus,
             rarity: result.rarity,
             level: 0,
