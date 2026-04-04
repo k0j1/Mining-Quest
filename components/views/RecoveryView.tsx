@@ -1,11 +1,23 @@
 
 import React from 'react';
+import { gsap } from 'gsap';
 import { GameState, Hero, Equipment } from '../../types';
 import Header from '../Header';
 import EquipmentIcon from '../EquipmentIcon';
 import { playClick } from '../../utils/sound';
 import { FlaskConical, TestTube, Hammer } from 'lucide-react';
 import { useLanguage } from '../../contexts/LanguageContext';
+
+const EffectDisplay = ({ text }: { text: string }) => {
+    const ref = React.useRef<HTMLDivElement>(null);
+    React.useEffect(() => {
+        if (ref.current) {
+            gsap.fromTo(ref.current, { opacity: 0, y: 0 }, { opacity: 1, y: -20, duration: 0.5, ease: "power2.out" });
+            gsap.to(ref.current, { opacity: 0, delay: 0.5, duration: 0.5 });
+        }
+    }, [text]);
+    return <div ref={ref} className="absolute top-0 left-0 w-full h-full flex items-center justify-center z-50 pointer-events-none"><span className="text-amber-400 font-black text-lg drop-shadow-md">{text}</span></div>;
+}
 
 interface RecoveryViewProps {
   gameState: GameState;
@@ -38,6 +50,12 @@ const RecoveryView: React.FC<RecoveryViewProps> = ({
   const [potionAmount, setPotionAmount] = React.useState(0);
   const [elixirAmount, setElixirAmount] = React.useState(0);
   const [whetstoneAmount, setWhetstoneAmount] = React.useState(0);
+  const [activeEffect, setActiveEffect] = React.useState<{id: string, text: string} | null>(null);
+
+  const triggerEffect = (id: string, text: string) => {
+    setActiveEffect({id, text});
+    setTimeout(() => setActiveEffect(null), 1000);
+  };
 
   const [activeTab, setActiveTab] = React.useState<'heroes' | 'equipment'>('heroes');
 
@@ -110,6 +128,7 @@ const RecoveryView: React.FC<RecoveryViewProps> = ({
                 ? 'border-indigo-500/30 shadow-sm' 
                 : 'border-slate-700'
       }`}>
+          {activeEffect?.id === hero.id && <EffectDisplay text={activeEffect.text} />}
           {/* Questing Overlay */}
           {isQuesting && (
             <div className="absolute inset-0 bg-slate-950/70 z-20 flex items-center justify-center backdrop-blur-[1px]">
@@ -160,7 +179,10 @@ const RecoveryView: React.FC<RecoveryViewProps> = ({
               <div className="grid grid-cols-2 gap-1 mt-0.5">
                   {/* Potion Button */}
                   <button 
-                    onClick={() => onPotion(hero.id)}
+                    onClick={() => {
+                        onPotion(hero.id);
+                        triggerEffect(hero.id, 'HP+10');
+                    }}
                     disabled={isFull || isQuesting || !hasPotion} 
                     className={`h-8 rounded-lg flex flex-col items-center justify-center border transition-all active:scale-95 ${
                         isFull || isQuesting || !hasPotion
@@ -170,12 +192,15 @@ const RecoveryView: React.FC<RecoveryViewProps> = ({
                     title="Potion (+10 HP)"
                   >
                       <span className="flex items-center justify-center h-4"><FlaskConical size={12} className="text-emerald-400" /></span>
-                      <span className={`text-[7px] font-bold leading-tight ${hasPotion ? 'text-slate-300' : 'text-rose-500'}`}>{t('recovery.use')}</span>
+                      <span className={`text-[7px] font-bold leading-tight ${hasPotion ? 'text-slate-300' : 'text-rose-500'}`}>HP+10</span>
                   </button>
                   
                   {/* Elixir Button */}
                   <button 
-                      onClick={() => onElixir(hero.id)}
+                      onClick={() => {
+                          onElixir(hero.id);
+                          triggerEffect(hero.id, 'HP100%');
+                      }}
                       disabled={isFull || isQuesting || !hasElixir} 
                       className={`h-8 rounded-lg flex flex-col items-center justify-center border transition-all active:scale-95 ${
                           isFull || isQuesting || !hasElixir
@@ -185,7 +210,7 @@ const RecoveryView: React.FC<RecoveryViewProps> = ({
                       title="Elixir (Full Heal)"
                   >
                       <span className="flex items-center justify-center h-4"><TestTube size={12} className="text-indigo-400" /></span>
-                      <span className={`text-[7px] font-bold leading-tight ${hasElixir ? 'text-indigo-300' : 'text-rose-500'}`}>{t('recovery.use')}</span>
+                      <span className={`text-[7px] font-bold leading-tight ${hasElixir ? 'text-indigo-300' : 'text-rose-500'}`}>HP100%</span>
                   </button>
               </div>
           </div>
@@ -227,6 +252,7 @@ const RecoveryView: React.FC<RecoveryViewProps> = ({
                 ? 'border-amber-500/30 shadow-sm' 
                 : 'border-slate-700'
       }`}>
+          {activeEffect?.id === eq.id && <EffectDisplay text={activeEffect.text} />}
           {/* Questing Overlay */}
           {isQuesting && (
             <div className="absolute inset-0 bg-slate-950/70 z-20 flex items-center justify-center backdrop-blur-[1px]">
@@ -289,7 +315,10 @@ const RecoveryView: React.FC<RecoveryViewProps> = ({
               <div className="mt-0.5">
                   {/* Whetstone Button */}
                   <button 
-                    onClick={() => onWhetstone(eq.id)}
+                    onClick={() => {
+                        onWhetstone(eq.id);
+                        triggerEffect(eq.id, 'Dur+1');
+                    }}
                     disabled={isLimit || isQuesting || !hasWhetstone} 
                     className={`w-full h-8 rounded-lg flex items-center justify-center gap-1 border transition-all active:scale-95 ${
                         isLimit || isQuesting || !hasWhetstone
@@ -299,7 +328,7 @@ const RecoveryView: React.FC<RecoveryViewProps> = ({
                     title={t('recovery.whetstone')}
                   >
                       <Hammer size={12} className="text-slate-300" />
-                      <span className={`text-[7px] font-bold leading-tight ${hasWhetstone ? 'text-slate-300' : 'text-rose-500'}`}>{t('recovery.use')}</span>
+                      <span className={`text-[7px] font-bold leading-tight ${hasWhetstone ? 'text-slate-300' : 'text-rose-500'}`}>Dur+1</span>
                   </button>
               </div>
           </div>
