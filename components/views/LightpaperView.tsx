@@ -113,6 +113,31 @@ const LightpaperView: React.FC<LightpaperViewProps> = ({
             </div>
           </section>
 
+          {/* Specs: Equipment Synthesis */}
+          <section>
+            <h2 className="text-lg font-bold text-emerald-400 mb-4 flex items-center">
+              <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full mr-2"></span>
+              装備品の合成
+            </h2>
+            <p className="text-sm text-slate-400">
+              同じ種類・レアリティ・レベルの装備品を合成できます。<br/>
+              合成するとレベルが上がり、ステータスが0.1%増加します。耐久値は合成した装備品の合計値になります。
+            </p>
+          </section>
+
+          {/* Specs: Recovery Items */}
+          <section>
+            <h2 className="text-lg font-bold text-emerald-400 mb-4 flex items-center">
+              <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full mr-2"></span>
+              回復アイテム
+            </h2>
+            <ul className="text-sm text-slate-400 list-disc list-inside space-y-1">
+              <li><strong>ポーション</strong>: HP+10</li>
+              <li><strong>エリクサー</strong>: HP100%</li>
+              <li><strong>砥石</strong>: 耐久値を+1回復</li>
+            </ul>
+          </section>
+
           {/* Specs: Quests */}
           <section>
             <h2 className="text-lg font-bold text-rose-400 mb-4 flex items-center">
