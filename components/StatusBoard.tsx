@@ -338,7 +338,11 @@ const StatusBoard: React.FC<StatusBoardProps> = ({
                     config={state.questConfigs.find(c => c.rank === q.rank)}
                     farcasterUser={farcasterUser} 
                     onDebugComplete={onDebugCompleteQuest} // Always pass it if provided
-                    onClick={() => view === View.HOME && onNavigate?.(View.RETURN)}
+                    onClick={() => {
+                      if (view === View.HOME && q.endTime <= Date.now()) {
+                        onNavigate?.(View.RETURN);
+                      }
+                    }}
                   />
                 ))
               ) : (
