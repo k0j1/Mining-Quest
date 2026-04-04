@@ -216,8 +216,10 @@ const App: React.FC = () => {
       }
     };
 
-    if (sdk && !isSDKLoaded) {
+    if (sdk) {
       load();
+    } else {
+      setIsSDKLoaded(true);
     }
     
     return () => clearTimeout(safetyTimer);
