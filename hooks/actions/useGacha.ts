@@ -142,7 +142,8 @@ export const useGacha = ({ gameState, setGameState, showNotification, farcasterU
         if (masterData) {
             const { data: inserted, error } = await supabase.from('quest_player_equipment').insert({
                 fid: fid,
-                equipment_id: masterData.id
+                equipment_id: masterData.id,
+                durability: 10
             }).select('player_eid').single();
 
             if (!error && inserted) {
@@ -201,7 +202,7 @@ export const useGacha = ({ gameState, setGameState, showNotification, farcasterU
             bonus: result.bonus,
             rarity: result.rarity,
             level: 0,
-            durability: result.durability || 100 // Default durability for new items
+            durability: result.durability || 10 // Default durability for new items
         }));
         next.equipment = [...prev.equipment, ...newEquipment];
       }

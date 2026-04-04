@@ -324,7 +324,7 @@ export const useItems = ({ gameState, setGameState, showNotification, farcasterU
       return;
     }
 
-    const newDurability = Math.min(100, equipment.durability + 1);
+    const newDurability = Math.min(10, equipment.durability + 1);
     playConfirm();
     setGameState(prev => ({
       ...prev,

@@ -194,6 +194,10 @@ const LightpaperView: React.FC<LightpaperViewProps> = ({
                 <span className="text-amber-500 font-bold whitespace-nowrap ml-4">100 $CHH</span>
               </li>
               <li className="flex justify-between items-center">
+                <span>{t('recovery.whetstone_item')}</span>
+                <span className="text-amber-500 font-bold whitespace-nowrap ml-4">100 $CHH</span>
+              </li>
+              <li className="flex justify-between items-center">
                 <span>{t('lightpaper.elixir')}</span>
                 <span className="text-amber-500 font-bold whitespace-nowrap ml-4">500 $CHH</span>
               </li>
