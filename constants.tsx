@@ -6,7 +6,7 @@ import { getHeroImageUrl } from './utils/heroUtils';
 
 // Toggle this to show/hide "TEST MODE" overlay on banners
 export const IS_TEST_MODE = true;
-export const IS_MAINTENANCE_MODE = true;
+export const IS_MAINTENANCE_MODE = false;
 
 // App Version
 export const APP_VERSION = '1.0.3';
