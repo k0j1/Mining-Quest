@@ -186,6 +186,16 @@ const App: React.FC = () => {
 
     const load = async () => {
       try {
+        // Ready signal first
+        if (sdk && sdk.actions) {
+          sdk.actions.ready();
+          setIsSDKLoaded(true);
+        } else {
+          console.log("Farcaster SDK actions not available (Browser mode?)");
+          setIsSDKLoaded(true);
+        }
+
+        // Context detection
         if (sdk && sdk.context) {
            sdk.context.then(context => {
              if (context) {
@@ -196,21 +206,6 @@ const App: React.FC = () => {
              console.log("Not in Farcaster Frame context or context failed:", e);
            });
         }
-
-        setTimeout(() => {
-          try {
-            if (sdk && sdk.actions) {
-               sdk.actions.ready();
-               setIsSDKLoaded(true); 
-            } else {
-               console.log("Farcaster SDK actions not available (Browser mode?)");
-               setIsSDKLoaded(true);
-            }
-          } catch (e: any) {
-            console.warn("Farcaster SDK ready signal failed:", e);
-            setAppError(`SDK Ready Error: ${e.message}`);
-          }
-        }, 200); 
       } catch (e: any) {
          setAppError(`Init Error: ${e.message}`);
       }
