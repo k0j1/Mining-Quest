@@ -75,6 +75,7 @@ const PartySlotGrid: React.FC<PartySlotGridProps> = ({
                   isMainSlot
                   equipment={equipment}
                   teamDefBonus={teamDefBonus}
+                  allHeroes={heroes}
                 />
                 {!readOnly && !isLocked && onRemoveClick && (
                   <button 

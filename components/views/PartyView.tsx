@@ -464,6 +464,7 @@ const PartyView: React.FC<PartyViewProps> = ({
                           onClick={() => handleHeroListClick(hero.id)} 
                           equipment={gameState.equipment}
                           onLongPress={() => handleHeroLongPress(hero.id)} 
+                          allHeroes={gameState.heroes}
                         />
                       </div>
                     );

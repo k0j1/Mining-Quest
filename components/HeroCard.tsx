@@ -17,6 +17,7 @@ interface HeroCardProps {
   isMainSlot?: boolean;
   equipment?: Equipment[];
   teamDefBonus?: number;
+  allHeroes?: Hero[];
 }
 
 const HeroCard: React.FC<HeroCardProps> = ({ 
@@ -30,7 +31,8 @@ const HeroCard: React.FC<HeroCardProps> = ({
   onEquipClick,
   isMainSlot,
   equipment,
-  teamDefBonus
+  teamDefBonus,
+  allHeroes
 }) => {
   const [hasError, setHasError] = useState(false);
 
@@ -87,6 +89,15 @@ const HeroCard: React.FC<HeroCardProps> = ({
   };
 
   const nameStyles = getNameStyles(hero.name);
+
+  const checkIsEquippable = (slotIndex: number) => {
+    if (isLocked || !equipment || !allHeroes) return false;
+    const type = slotTypes[slotIndex];
+    return equipment.some(e => 
+      e.type === type && 
+      !allHeroes.some(h => h.equipmentIds.includes(e.id))
+    );
+  };
 
   // Error Placeholder Component
   const ErrorPlaceholder = () => (
@@ -158,7 +169,12 @@ const HeroCard: React.FC<HeroCardProps> = ({
                      className="w-5 h-5"
                      title={item ? item.name : 'Empty'}
                    >
-                      <EquipmentDisplay equipment={item} type={type} size="1.25rem" />
+                      <EquipmentDisplay 
+                        equipment={item} 
+                        type={type} 
+                        size="1.25rem" 
+                        isEquippable={!item && checkIsEquippable(slotIdx)}
+                      />
                    </div>
                  );
                })}
@@ -277,6 +293,7 @@ const HeroCard: React.FC<HeroCardProps> = ({
                   size="100%" 
                   onClick={() => onEquipClick && onEquipClick(hero.id, i)}
                   disabled={isLocked}
+                  isEquippable={!equippedItem && checkIsEquippable(i)}
                 />
                 {equippedItem && (equippedItem.level || 0) > 0 ? (
                   <div className="absolute -top-1.5 -right-1.5 bg-amber-500 text-black text-[8px] font-black w-4 h-4 flex items-center justify-center rounded-full border border-slate-900 shadow-sm z-20">

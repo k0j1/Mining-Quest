@@ -10,6 +10,7 @@ interface EquipmentDisplayProps {
   showRarityText?: boolean;
   onClick?: () => void;
   disabled?: boolean;
+  isEquippable?: boolean;
 }
 
 const EquipmentDisplay: React.FC<EquipmentDisplayProps> = ({ 
@@ -19,7 +20,8 @@ const EquipmentDisplay: React.FC<EquipmentDisplayProps> = ({
   className = '', 
   showRarityText = false,
   onClick,
-  disabled
+  disabled,
+  isEquippable = false
 }) => {
   const rarity = equipment?.rarity || 'C';
   const rarityBgColors: Record<string, string> = {
@@ -44,7 +46,13 @@ const EquipmentDisplay: React.FC<EquipmentDisplayProps> = ({
     <Component 
       onClick={onClick}
       disabled={disabled}
-      className={`relative flex items-center justify-center rounded-lg border ${equipment ? rarityBgColors[rarity] || rarityBgColors['C'] : 'bg-slate-900/40 border-slate-800 border-dashed'} ${className}`} 
+      className={`relative flex items-center justify-center rounded-lg border transition-all ${
+        equipment 
+          ? rarityBgColors[rarity] || rarityBgColors['C'] 
+          : isEquippable
+            ? 'bg-indigo-900/30 border-indigo-500/60 shadow-[0_0_10px_rgba(99,102,241,0.2)]'
+            : 'bg-slate-900/40 border-slate-800 border-dashed'
+      } ${className}`} 
       style={{ width: size, height: size }}
     >
       {equipment && showRarityText && (
@@ -55,6 +63,9 @@ const EquipmentDisplay: React.FC<EquipmentDisplayProps> = ({
       <div className={`${equipment ? '' : 'opacity-20 grayscale scale-75'}`}>
         <EquipmentIcon type={type} rarity={rarity} size="80%" />
       </div>
+      {!equipment && isEquippable && (
+        <div className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-indigo-500 rounded-full shadow-[0_0_5px_#6366f1] animate-pulse"></div>
+      )}
     </Component>
   );
 };
