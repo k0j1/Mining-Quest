@@ -382,9 +382,9 @@ const AdminUserInspector: React.FC = () => {
                                                    />
                                                    {/* Equipment Icons Overlay */}
                                                    <div className="absolute top-0 right-0 p-1 flex flex-col gap-0.5 items-end">
-                                                      {pickaxe && <span className="text-[8px] bg-slate-900/80 text-amber-500 px-1 rounded border border-slate-700">⛏️{pickaxe.quest_equipment?.bonus}%</span>}
-                                                      {helmet && <span className="text-[8px] bg-slate-900/80 text-emerald-500 px-1 rounded border border-slate-700">🪖{helmet.quest_equipment?.bonus}%</span>}
-                                                      {boots && <span className="text-[8px] bg-slate-900/80 text-blue-500 px-1 rounded border border-slate-700">👢{boots.quest_equipment?.bonus}%</span>}
+                                                      {pickaxe && <span className="text-[8px] bg-slate-900/80 text-amber-500 px-1 rounded border border-slate-700" title={pickaxe.quest_equipment?.name}>⛏️{pickaxe.quest_equipment?.bonus}%</span>}
+                                                      {helmet && <span className="text-[8px] bg-slate-900/80 text-emerald-500 px-1 rounded border border-slate-700" title={helmet.quest_equipment?.name}>🪖{helmet.quest_equipment?.bonus}%</span>}
+                                                      {boots && <span className="text-[8px] bg-slate-900/80 text-blue-500 px-1 rounded border border-slate-700" title={boots.quest_equipment?.name}>👢{boots.quest_equipment?.bonus}%</span>}
                                                    </div>
                                                    <div className="absolute bottom-0 inset-x-0 bg-black/60 backdrop-blur-[1px] p-1 text-center">
                                                        <div className="text-[8px] font-bold text-white truncate w-full">{h.quest_hero?.name}</div>
