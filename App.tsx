@@ -55,9 +55,8 @@ const App: React.FC = () => {
   const [showTestWarning, setShowTestWarning] = useState(true);
   const [claimResultData, setClaimResultData] = useState<{ assets: any, generatedItems: any[] } | null>(null);
 
-  // GSAP Ref for view transitions
-  const contentRef = useRef<HTMLDivElement>(null);
-
+  // GSAP Ref for view transitions removed
+  
   const { gameState, farcasterUser, onChainBalanceRaw, isBlocked, ui, actions, isFrameAdded, addFrame } = useGameLogic();
   const { t } = useLanguage();
 
@@ -87,16 +86,6 @@ const App: React.FC = () => {
       }
     }
   }, [farcasterUser]);
-
-  // View Transition Animation
-  useLayoutEffect(() => {
-    if (contentRef.current) {
-        gsap.fromTo(contentRef.current, 
-            { opacity: 0, y: 10, scale: 0.98 },
-            { opacity: 1, y: 0, scale: 1, duration: 0.3, ease: "power2.out" }
-        );
-    }
-  }, [currentView]);
 
   // Supabase Connection Check
   useEffect(() => {
@@ -425,7 +414,7 @@ const App: React.FC = () => {
       <main className="flex-1 relative overflow-hidden">
         <MiningBackground />
         {/* Animated View Container */}
-        <div ref={contentRef} className="relative z-10 h-full">
+        <div className="relative z-10 h-full">
           {renderContent()}
         </div>
       </main>
